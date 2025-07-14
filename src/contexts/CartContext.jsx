@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { addOrder as syncAddOrder } from '../utils/orderSyncUtils';
-import KirilmazlarStorage from '../core/storage';
+import KirilmazlarStorage from '../core/storage/index.js';
 
 const CartContext = createContext();
 

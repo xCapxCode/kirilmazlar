@@ -9,7 +9,7 @@ import FilterModal from './components/FilterModal';
 import OrderTrackingModal from './components/OrderTrackingModal';
 import { useCart } from '../../../../contexts/CartContext';
 import { isDemoOrdersDisabled } from '../../../../utils/orderSyncUtils';
-import KirilmazlarStorage from '../../../../core/storage';
+import KirilmazlarStorage from '../../../../core/storage/index.js';
 
 const CustomerOrderHistory = () => {
   const { addToCart, orders } = useCart();

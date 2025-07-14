@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@contexts/AuthContext';
 import SaticiHeader from '@shared/components/ui/SaticiHeader';
 import Icon from '@shared/components/AppIcon';
-import KirilmazlarStorage from '../../../../core/storage';
+import KirilmazlarStorage from '../../../../core/storage/index.js';
 import resetApplication from '@utils/resetApp';
 
 // Bileşenler
