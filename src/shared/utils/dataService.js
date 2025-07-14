@@ -1,11 +1,5 @@
 import { withRetry } from './retryUtils';
-
-// Unified storage keys
-const STORAGE_KEYS = {
-  PRODUCTS: 'kirilmazlar_products',
-  ORDERS: 'kirilmazlar_orders',
-  CATEGORIES: 'kirilmazlar_categories'
-};
+import storage from '../../core/storage/index.js';
 
 const demoProducts = [
   { id: 1, name: 'Domates', image_url: '/assets/images/products/tomatoes.png', price: '20.00', unit: 'kg', rating: 4, status: 'active', stock: 100, category: 'Sebzeler' },
@@ -20,11 +14,11 @@ const demoProducts = [
 
 const productsService = {
   getAll: async (sellerId = null) => {
-    const products = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS) || '[]');
+    const products = storage.get('products', []);
     return { success: true, data: products };
   },
   create: async (productData) => {
-    const products = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS) || '[]');
+    const products = storage.get('products', []);
     const newProduct = {
       ...productData,
       id: Date.now(),
@@ -32,40 +26,41 @@ const productsService = {
       updated_at: new Date().toISOString()
     };
     products.push(newProduct);
-    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+    storage.set('products', products);
     return { success: true, data: newProduct };
   },
   update: async (id, updates) => {
-    const products = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS) || '[]');
+    const products = storage.get('products', []);
     const index = products.findIndex(p => p.id === id);
     if (index !== -1) {
       products[index] = { ...products[index], ...updates, updated_at: new Date().toISOString() };
-      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+      storage.set('products', products);
       return { success: true, data: products[index] };
     }
     return { success: false, error: 'Ürün bulunamadı.' };
   },
   delete: async (id) => {
-    const products = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS) || '[]');
+    const products = storage.get('products', []);
     const filteredProducts = products.filter(p => p.id !== id);
-    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(filteredProducts));
+    storage.set('products', filteredProducts);
     return { success: true };
   },
   initializeDemoProducts: () => {
-    const existingProducts = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS) || '[]');
+    const existingProducts = storage.get('products', []);
     if (existingProducts.length === 0) {
-      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(demoProducts));
+      storage.set('products', demoProducts);
+      console.log('Demo ürünler yüklendi.');
     }
   }
 };
 
 const ordersService = {
   getAll: async (sellerId = null) => {
-    const orders = JSON.parse(localStorage.getItem(STORAGE_KEYS.ORDERS) || '[]');
+    const orders = storage.get('orders', []);
     return { success: true, data: orders };
   },
   create: async (orderData) => {
-    const orders = JSON.parse(localStorage.getItem(STORAGE_KEYS.ORDERS) || '[]');
+    const orders = storage.get('orders', []);
     const newOrder = {
       ...orderData,
       id: Date.now(),
@@ -74,15 +69,15 @@ const ordersService = {
       updated_at: new Date().toISOString()
     };
     orders.push(newOrder);
-    localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
+    storage.set('orders', orders);
     return { success: true, data: newOrder };
   },
   updateStatus: async (id, status) => {
-    const orders = JSON.parse(localStorage.getItem(STORAGE_KEYS.ORDERS) || '[]');
+    const orders = storage.get('orders', []);
     const index = orders.findIndex(o => o.id === id);
     if (index !== -1) {
       orders[index] = { ...orders[index], status, updated_at: new Date().toISOString() };
-      localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
+      storage.set('orders', orders);
       return { success: true, data: orders[index] };
     }
     return { success: false, error: 'Sipariş bulunamadı.' };

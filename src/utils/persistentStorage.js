@@ -1,19 +1,9 @@
 /**
  * Persistent Storage Manager
- * Demo modunda verilerin kalıcı olması için localStorage'ı optimize eder
+ * KirilmazlarStorage abstraction layer'ını kullanarak güvenli veri yönetimi
  */
 
-// localStorage anahtarları - TÜM UYGULAMA AYNI KEY'LERİ KULLANSIN
-const STORAGE_KEYS = {
-  PRODUCTS: 'kirilmazlar_products',
-  USERS: 'kirilmazlar_users', 
-  BUSINESS_INFO: 'kirilmazlar_business_info',
-  ORDERS: 'kirilmazlar_orders',
-  CATEGORIES: 'kirilmazlar_categories',
-  SETTINGS: 'kirilmazlar_settings',
-  DEMO_INITIALIZED: 'kirilmazlar_demo_initialized',
-  DATA_VERSION: 'kirilmazlar_data_version'
-};
+import storage from '../core/storage/index.js';
 
 // Veri versiyonu (schema değişikliklerini takip etmek için)
 const DATA_VERSION = '1.0.0';
@@ -25,11 +15,11 @@ class PersistentStorage {
 
   init() {
     // İlk kez çalışıyorsa demo verilerini yükle
-    const isInitialized = localStorage.getItem(STORAGE_KEYS.DEMO_INITIALIZED);
+    const isInitialized = storage.get('demo_initialized', false);
     if (!isInitialized) {
       this.initializeDemoData();
-      localStorage.setItem(STORAGE_KEYS.DEMO_INITIALIZED, DATA_VERSION);
-      localStorage.setItem(STORAGE_KEYS.DATA_VERSION, DATA_VERSION);
+      storage.set('demo_initialized', DATA_VERSION);
+      storage.set('data_version', DATA_VERSION);
     }
   }
 
@@ -37,12 +27,12 @@ class PersistentStorage {
     console.log('🔧 Demo verileri initialize ediliyor...');
     
     // Sadece boş olan verileri initialize et, mevcut verileri koru
-    if (!localStorage.getItem(STORAGE_KEYS.PRODUCTS)) {
-      this.setProducts([]);
+    if (!storage.get('products', null)) {
+      storage.set('products', []);
     }
     
-    if (!localStorage.getItem(STORAGE_KEYS.BUSINESS_INFO)) {
-      this.setBusinessInfo({
+    if (!storage.get('business_info', null)) {
+      storage.set('business_info', {
         name: 'KIRILMAZLAR',
         slogan: 'Taze ve Kaliteli Ürünler',
         logo: null,
@@ -55,17 +45,12 @@ class PersistentStorage {
 
   // Products
   getProducts() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS) || '[]');
-    } catch (error) {
-      console.error('Products yüklenirken hata:', error);
-      return [];
-    }
+    return storage.get('products', []);
   }
 
   setProducts(products) {
     try {
-      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+      storage.set('products', products);
       this.triggerUpdate('products');
       return true;
     } catch (error) {
@@ -76,17 +61,12 @@ class PersistentStorage {
 
   // Business Info
   getBusinessInfo() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEYS.BUSINESS_INFO) || '{}');
-    } catch (error) {
-      console.error('Business info yüklenirken hata:', error);
-      return {};
-    }
+    return storage.get('business_info', {});
   }
 
   setBusinessInfo(businessInfo) {
     try {
-      localStorage.setItem(STORAGE_KEYS.BUSINESS_INFO, JSON.stringify(businessInfo));
+      storage.set('business_info', businessInfo);
       this.triggerUpdate('businessInfo');
       return true;
     } catch (error) {
@@ -97,17 +77,12 @@ class PersistentStorage {
 
   // Users
   getUsers() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
-    } catch (error) {
-      console.error('Users yüklenirken hata:', error);
-      return [];
-    }
+    return storage.get('users', []);
   }
 
   setUsers(users) {
     try {
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+      storage.set('users', users);
       this.triggerUpdate('users');
       return true;
     } catch (error) {
@@ -118,17 +93,12 @@ class PersistentStorage {
 
   // Orders
   getOrders() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEYS.ORDERS) || '[]');
-    } catch (error) {
-      console.error('Orders yüklenirken hata:', error);
-      return [];
-    }
+    return storage.get('orders', []);
   }
 
   setOrders(orders) {
     try {
-      localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
+      storage.set('orders', orders);
       this.triggerUpdate('orders');
       return true;
     } catch (error) {
@@ -164,7 +134,7 @@ class PersistentStorage {
     if (window.localStorage) {
       const event = new StorageEvent('storage', {
         key: dataType,
-        newValue: localStorage.getItem(dataType)
+        newValue: storage.get(dataType, null)
       });
       window.dispatchEvent(event);
     }
@@ -172,29 +142,29 @@ class PersistentStorage {
 
   // Clear all demo data
   clearAll() {
-    Object.values(STORAGE_KEYS).forEach(key => {
-      localStorage.removeItem(key);
-    });
+    storage.clearAll();
     console.log('🗑️ Tüm demo verileri temizlendi');
   }
 
   // Export data (yedekleme için)
   exportData() {
-    const data = {};
-    Object.entries(STORAGE_KEYS).forEach(([key, storageKey]) => {
-      data[key] = localStorage.getItem(storageKey);
-    });
-    return data;
+    return storage.exportData();
   }
 
   // Import data (yedekten geri yükleme için)
   importData(data) {
-    Object.entries(data).forEach(([key, value]) => {
-      if (value !== null) {
-        localStorage.setItem(STORAGE_KEYS[key], value);
-      }
-    });
+    storage.importData(data);
     console.log('📥 Veriler import edildi');
+  }
+
+  // Veri migration kontrolü
+  checkDataMigration() {
+    const currentVersion = storage.get('data_version', '0.0.0');
+    if (currentVersion !== DATA_VERSION) {
+      console.log(`� Veri migration: ${currentVersion} → ${DATA_VERSION}`);
+      // Migration logic burada olabilir
+      storage.set('data_version', DATA_VERSION);
+    }
   }
 }
 
@@ -202,4 +172,3 @@ class PersistentStorage {
 const persistentStorage = new PersistentStorage();
 
 export default persistentStorage;
-export { STORAGE_KEYS };
