@@ -69,7 +69,6 @@ const SellerDashboard = () => {
       
       // Siparişleri birleştir
       const orders = [...sellerOrders, ...customerOrders];
-      }
       
       // Duplicate siparişleri filtrele
       const uniqueOrders = orders.filter((order, index, self) => 
