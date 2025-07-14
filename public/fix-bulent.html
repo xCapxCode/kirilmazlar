@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bülent Üner Siparişlerini Koruma</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+        .btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        .btn-danger {
+            background: #f44336;
+        }
+        .btn-danger:hover {
+            background: #da190b;
+        }
+        .output {
+            background: rgba(0,0,0,0.4);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        .warning {
+            background: rgba(255, 193, 7, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 5px solid #ffc107;
+        }
+        .success {
+            background: rgba(76, 175, 80, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 5px solid #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Bülent Üner Siparişlerini Koruma</h1>
+        
+        <div class="warning">
+            <strong>⚠️ UYARI:</strong> Bu işlem Bülent Üner'in siparişlerini koruyacak ve diğer tüm cache verisini temizleyecektir.
+        </div>
+        
+        <div style="text-align: center;">
+            <button class="btn" onclick="checkBulent()">🔍 Bülent Siparişlerini Bul</button>
+            <button class="btn btn-danger" onclick="fixData()">🎯 Bülent Verilerini Koru ve Temizle</button>
+            <button class="btn" onclick="goToApp()">🚀 Uygulamaya Git</button>
+        </div>
+        
+        <div class="output" id="output">
+Sistem başlatılıyor...
+        </div>
+    </div>
+
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message) {
+            output.innerHTML += message + '\n';
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function checkBulent() {
+            output.innerHTML = '';
+            log('🔍 BÜLENT ÜNER SİPARİŞLERİ ARANIYORIK');
+            log('===================================');
+            
+            // orders1'de ara
+            const orders1 = localStorage.getItem('orders');
+            const orders2 = localStorage.getItem('kirilmazlar_orders');
+            
+            let bulentFound = false;
+            let bulentLocation = '';
+            let bulentCount = 0;
+            
+            if (orders1) {
+                try {
+                    const orderList1 = JSON.parse(orders1);
+                    const bulentOrders1 = orderList1.filter(order => 
+                        (order.customerName && order.customerName.includes('Bülent')) ||
+                        (order.customer_name && order.customer_name.includes('Bülent'))
+                    );
+                    if (bulentOrders1.length > 0) {
+                        log('✅ orders1\'de bulundu: ' + bulentOrders1.length + ' sipariş');
+                        bulentOrders1.forEach(order => {
+                            log('  📋 ' + (order.customerName || order.customer_name) + ' - ' + (order.total || order.total_amount) + '₺');
+                        });
+                        bulentFound = true;
+                        bulentLocation = 'orders1';
+                        bulentCount = bulentOrders1.length;
+                    }
+                } catch (e) {
+                    log('❌ orders1 parse edilemedi');
+                }
+            }
+            
+            if (orders2) {
+                try {
+                    const orderList2 = JSON.parse(orders2);
+                    const bulentOrders2 = orderList2.filter(order => 
+                        (order.customerName && order.customerName.includes('Bülent')) ||
+                        (order.customer_name && order.customer_name.includes('Bülent'))
+                    );
+                    if (bulentOrders2.length > 0) {
+                        log('✅ orders2\'de bulundu: ' + bulentOrders2.length + ' sipariş');
+                        bulentOrders2.forEach(order => {
+                            log('  📋 ' + (order.customerName || order.customer_name) + ' - ' + (order.total || order.total_amount) + '₺');
+                        });
+                        bulentFound = true;
+                        bulentLocation = 'orders2';
+                        bulentCount = bulentOrders2.length;
+                    }
+                } catch (e) {
+                    log('❌ orders2 parse edilemedi');
+                }
+            }
+            
+            log('');
+            if (bulentFound) {
+                log('🎯 SONUÇ: Bülent Üner siparişleri ' + bulentLocation + '\'de ' + bulentCount + ' adet bulundu');
+                log('✅ Veri korunabilir!');
+            } else {
+                log('❌ SONUÇ: Bülent Üner siparişi bulunamadı!');
+            }
+        }
+        
+        function fixData() {
+            output.innerHTML = '';
+            log('🎯 BÜLENT ÜNİR VERİLERİNİ KORUMA İŞLEMİ');
+            log('=====================================');
+            
+            // Bülent siparişlerini bul
+            const orders1 = localStorage.getItem('orders');
+            const orders2 = localStorage.getItem('kirilmazlar_orders');
+            const products1 = localStorage.getItem('products');
+            const products2 = localStorage.getItem('kirilmazlar_products');
+            
+            let correctOrders = [];
+            let correctProducts = [];
+            
+            // orders1'de ara
+            if (orders1) {
+                try {
+                    const orderList1 = JSON.parse(orders1);
+                    const bulentOrders1 = orderList1.filter(order => 
+                        (order.customerName && order.customerName.includes('Bülent')) ||
+                        (order.customer_name && order.customer_name.includes('Bülent'))
+                    );
+                    if (bulentOrders1.length > 0) {
+                        log('✅ Bülent siparişleri orders1\'de bulundu');
+                        correctOrders = orderList1;
+                        correctProducts = products1 ? JSON.parse(products1) : [];
+                    }
+                } catch (e) {
+                    log('❌ orders1 parse edilemedi');
+                }
+            }
+            
+            // orders2'de ara (üzerine yaz)
+            if (orders2) {
+                try {
+                    const orderList2 = JSON.parse(orders2);
+                    const bulentOrders2 = orderList2.filter(order => 
+                        (order.customerName && order.customerName.includes('Bülent')) ||
+                        (order.customer_name && order.customer_name.includes('Bülent'))
+                    );
+                    if (bulentOrders2.length > 0) {
+                        log('✅ Bülent siparişleri orders2\'de bulundu (bu kullanılacak)');
+                        correctOrders = orderList2;
+                        correctProducts = products2 ? JSON.parse(products2) : [];
+                    }
+                } catch (e) {
+                    log('❌ orders2 parse edilemedi');
+                }
+            }
+            
+            if (correctOrders.length === 0) {
+                log('❌ Bülent Üner siparişleri bulunamadı!');
+                return;
+            }
+            
+            log('');
+            log('🧹 Tüm cache temizleniyor...');
+            localStorage.clear();
+            
+            log('💾 Bülent verilerini kaydediyorum...');
+            
+            // Doğru veriyi kaydet
+            localStorage.setItem('kirilmazlar_orders', JSON.stringify(correctOrders));
+            localStorage.setItem('kirilmazlar_products', JSON.stringify(correctProducts));
+            
+            // Kategoriler
+            const categories = [
+                { id: 1, name: 'Tüm Ürünler', icon: 'Package', color: 'gray', subcategories: [] },
+                { id: 2, name: 'Sebzeler', icon: 'Leaf', color: 'green', subcategories: ['Yeşil Yapraklılar', 'Kök Sebzeler', 'Mevsim Sebzeleri'] },
+                { id: 3, name: 'Meyveler', icon: 'Apple', color: 'red', subcategories: ['Turunçgiller', 'Çekirdekli Meyveler', 'Tropik Meyveler'] }
+            ];
+            
+            localStorage.setItem('kirilmazlar_categories', JSON.stringify(categories));
+            localStorage.setItem('kirilmazlar_data_version', '1.0.0');
+            
+            log('✅ Veriler kaydedildi:');
+            log('  📋 Siparişler: ' + correctOrders.length + ' adet');
+            log('  📦 Ürünler: ' + correctProducts.length + ' adet');
+            log('  📂 Kategoriler: 3 adet');
+            
+            log('');
+            log('🎉 İŞLEM TAMAMLANDI!');
+            log('Sayfa 3 saniye sonra yenilenecek...');
+            
+            setTimeout(() => {
+                window.location.href = 'http://localhost:5173/seller/orders';
+            }, 3000);
+        }
+        
+        function goToApp() {
+            window.location.href = 'http://localhost:5173/seller/orders';
+        }
+        
+        // Otomatik kontrol
+        setTimeout(checkBulent, 1000);
+    </script>
+</body>
+</html>

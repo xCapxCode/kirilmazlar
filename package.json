@@ -1,0 +1,30 @@
+{
+  "name": "kirilmazlar-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kırılmazlar Monorepo",
+  "author": "Kırılmazlar Team",
+  "scripts": {
+    "dev": "vite --port 5173",
+    "build": "vite build",
+    "serve": "vite preview --port 4173",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "lucide-react": "^0.525.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^6.14.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.0.3",
+    "autoprefixer": "^10.4.14",
+    "eslint": "^8.45.0",
+    "eslint-plugin-react": "^7.32.2",
+    "postcss": "^8.4.27",
+    "tailwindcss": "^3.3.3",
+    "vite": "^4.4.5",
+    "vitest": "^0.33.0"
+  }
+}

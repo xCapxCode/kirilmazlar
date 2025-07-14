@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+footer {
+    height: 700px;
+    background-color: black;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.card {
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}

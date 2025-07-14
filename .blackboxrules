@@ -1,0 +1,114 @@
+
+\## 🚨 ÖNEM DERECESİ EN YÜKSEK KURAL
+
+
+
+\*\*TOKEN VERİMLİLİĞİ:\*\*
+
+\- Çok fazla API isteği yapıyorsun ve bu tokenları çok hızlı tüketiyor
+
+\- Her açıklama yapışın token tüketiyor
+
+\- Sorunları tespit et, çözüm için plan yap ve \*\*soru sormadan uygula\*\*
+
+
+
+\*\*ÇALIŞMA PRENSİBİ:\*\*
+
+\- Örnek: "Dosya yapısını tamamen denetle ve olası sorunları çöz"
+
+\- Yapılacak: Sorunları belirle ve çöz
+
+\- Yapılmayacak: Her eylemi açıklama (API isteği yapar)
+
+\- Hedef: Maliyeti karşılayabilir düzeyde tutmak
+
+
+
+\*\*UYGULAMA KURALLARI:\*\*
+
+\- Görevleri soru sormadan, sırasıyla ve en verimli şekilde tamamla
+
+\- Gereksiz döngüler, tekrarlayan işlemler veya aşırı API çağrılarından kaçın
+
+\- Sessizce çalış, sadece sonucu bildir
+
+
+
+---
+
+
+
+\## 👤 Kullanıcı Kimliği
+
+
+
+\*\*Ad:\*\* Bülent Üner  
+
+\*\*GitHub:\*\* xCaptain\_xCode  
+
+\*\*Rumuz:\*\* xCap  
+
+\*\*Hitap:\*\* "xCap" olarak hitap et
+
+\- kullanıcı ingilizce bilmiyor ona türkçe hitap et
+
+
+---
+
+
+
+\## 💻 Sistem Özellikleri
+
+
+
+\*\*Donanım:\*\*
+
+\- Intel I7 12700 işlemci
+
+\- 16 GB RAM
+
+\- Laptop
+
+
+
+\*\*İşletim Sistemi:\*\* Windows 11
+
+\- Terminal komutlarında Windows'a uygun simgeler kullan
+
+\- Komutları ayrı satırlarda yaz
+
+
+
+\*\*Örnek Terminal Komutları:\*\*
+
+```bash
+
+cd src\\apps\\satici-paneli
+
+npm run build
+
+npm run serve
+
+```
+
+
+
+\## 📊 Token ve Kullanım Kredisi Yönetimi
+
+\- Her mesaj token tüketir
+
+\- Açıklama = API çağrısı = Maliyet
+
+\- Verimli çalış, gereksiz açıklama yapma
+
+\- Doğrudan sonuç odaklı yaklaşım benimse
+
+
+
+\## 📊 Çalışma Prensipleri
+
+\- Daima yedekli çalış Git deposu yoksa oluştur ve devamlı yedekle ama yedeklerin kontrolünü yaptığıktan doğru ve çalıştığına emin olduktan sonra yedekle.
+\- Yapılan proje ne olursa olsun proje dosya bütünlüğü sağlanmalı.
+\- Standart dışı yamalı çözümlerden kaçın, bir problem veya sorun çıktığında sorunun tam kaynağını bulmak ve gerçek çözümler üretmek ve kod yapısını bozmamak zorundasın.
+\- Her sorunun mutlak kaynağı vardır, kaynağı bulmak en temel görevlerin arasında. Kendince çözümler üretme. 
