@@ -2,26 +2,22 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@contexts/AuthContext';
 import SaticiHeader from '@shared/components/ui/SaticiHeader';
 import Icon from '@shared/components/AppIcon';
-import persistentStorage from '@utils/persistentStorage';
+import KirilmazlarStorage from '@core/storage';
 import resetApplication from '@utils/resetApp';
-import { STORAGE_KEYS, checkDataVersion, safeGetItem, safeSetItem } from '@utils/storageManager';
 
 // Bileşenler
 import UrunModali from './components/UrunModali';
+
+// Storage instance
+const storage = KirilmazlarStorage.getInstance();
 
 // Utility function to trigger product updates
 const triggerProductsUpdate = () => {
   // Trigger custom event to notify other components
   window.dispatchEvent(new CustomEvent('productsUpdated'));
   
-  // For same-tab communication
-  if (window.localStorage) {
-    const event = new StorageEvent('storage', {
-      key: 'products',
-      newValue: localStorage.getItem('products')
-    });
-    window.dispatchEvent(event);
-  }
+  // Use unified storage for cross-device sync
+  storage.broadcastChange('products');
 };
 
 const UrunYonetimi = () => {
@@ -45,31 +41,25 @@ const UrunYonetimi = () => {
     sortBy: 'name'
   });
 
-  // Cross-tab communication - localStorage events
+  // Cross-device communication - unified storage events
   useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === 'products') {
-        const updatedProducts = JSON.parse(e.newValue || '[]');
-        setProducts(updatedProducts);
-        console.log('🔄 Products updated from another tab');
-      }
+    const handleProductsUpdated = (data) => {
+      setProducts(data.products || []);
+      console.log('🔄 Products updated via cross-device sync');
     };
 
-    const handleProductsUpdated = () => {
-      const savedProducts = persistentStorage.getProducts();
-      setProducts(savedProducts);
-      console.log('🔄 Products updated from same tab');
+    const handleCategoriesUpdated = (data) => {
+      setCategories(data.categories || []);
+      console.log('🔄 Categories updated via cross-device sync');
     };
 
-    // Listen for storage events (cross-tab)
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Listen for custom events (same-tab)
-    window.addEventListener('productsUpdated', handleProductsUpdated);
+    // Listen for unified storage changes
+    storage.addEventListener('products', handleProductsUpdated);
+    storage.addEventListener('categories', handleCategoriesUpdated);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('productsUpdated', handleProductsUpdated);
+      storage.removeEventListener('products', handleProductsUpdated);
+      storage.removeEventListener('categories', handleCategoriesUpdated);
     };
   }, []);
 
@@ -84,8 +74,8 @@ const UrunYonetimi = () => {
         console.log('� Veri versiyonu uyumsuz, temiz başlangıç yapılıyor...');
       }
       
-      // Kategorileri yükle
-      let mockCategories = safeGetItem(STORAGE_KEYS.CATEGORIES, null);
+      // Kategorileri yükle - unified storage kullan
+      let mockCategories = storage.get('categories', null);
       
       if (!mockCategories || !Array.isArray(mockCategories) || mockCategories.length === 0) {
         console.log('🆕 Varsayılan kategoriler oluşturuluyor...');
@@ -112,11 +102,11 @@ const UrunYonetimi = () => {
             subcategories: ['Turunçgiller', 'Çekirdekli Meyveler', 'Tropik Meyveler']
           }
         ];
-        safeSetItem(STORAGE_KEYS.CATEGORIES, mockCategories);
+        storage.set('categories', mockCategories);
       }
 
-      // Ürünleri yükle
-      let loadedProducts = safeGetItem(STORAGE_KEYS.PRODUCTS, []);
+      // Ürünleri yükle - unified storage kullan
+      let loadedProducts = storage.get('products', []);
       
       // Ürünler boş veya geçersizse demo verilerini yükle
       if (!Array.isArray(loadedProducts) || loadedProducts.length === 0) {
@@ -604,9 +594,8 @@ const UrunYonetimi = () => {
       ];
 
         setProducts(loadedProducts);
-        // Demo verileri yeni storage manager ile kaydet
-        safeSetItem(STORAGE_KEYS.PRODUCTS, loadedProducts);
-        persistentStorage.setProducts(loadedProducts); // Eski sistem ile uyumluluk
+        // Demo verileri unified storage ile kaydet
+        storage.set('products', loadedProducts);
         console.log('📦 Demo ürünler yüklendi:', loadedProducts.length);
       } else {
         // Mevcut ürünleri set et
@@ -807,8 +796,8 @@ const UrunYonetimi = () => {
       const updatedCategories = [...categories, newCategory];
       setCategories(updatedCategories);
       
-      // localStorage'a kaydet
-      localStorage.setItem('productCategories', JSON.stringify(updatedCategories));
+      // Unified storage'a kaydet (cross-device sync ile)
+      storage.set('categories', updatedCategories);
       
       setActiveTab(newCategory.name);
       setNewCategoryName('');
@@ -839,8 +828,8 @@ const UrunYonetimi = () => {
       const updatedCategories = categories.filter(cat => cat.id !== categoryToDelete.id);
       setCategories(updatedCategories);
       
-      // localStorage'a kaydet
-      localStorage.setItem('productCategories', JSON.stringify(updatedCategories));
+      // Unified storage'a kaydet (cross-device sync ile)
+      storage.set('categories', updatedCategories);
       
       // Eğer silinen kategori aktif sekme ise, ilk kategoriye geç
       if (activeTab === categoryToDelete.name) {
@@ -911,9 +900,9 @@ const UrunYonetimi = () => {
     // State'i güncelle
     setProducts(updatedProducts);
     
-    // localStorage'a kaydet
-    persistentStorage.setProducts(updatedProducts);
-    console.log('🔍 localStorage\'a kaydedildi');
+    // Unified storage'a kaydet (cross-device sync ile)
+    storage.set('products', updatedProducts);
+    console.log('🔍 Unified storage\'a kaydedildi');
     
     // Show success toast
     window.showToast && window.showToast(
@@ -953,7 +942,7 @@ const UrunYonetimi = () => {
     }
     
     setProducts(updatedProducts);
-    persistentStorage.setProducts(updatedProducts);
+    storage.set('products', updatedProducts);
     setSelectedProducts([]);
   };
 
@@ -967,7 +956,7 @@ const UrunYonetimi = () => {
           p.id === productId ? { ...p, image: imageData } : p
         );
         setProducts(updatedProducts);
-        persistentStorage.setProducts(updatedProducts);
+        storage.set('products', updatedProducts);
       };
       reader.readAsDataURL(file);
     }

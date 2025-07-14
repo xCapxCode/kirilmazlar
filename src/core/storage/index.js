@@ -8,7 +8,9 @@ class KirilmazlarStorage {
   constructor() {
     this.prefix = 'kirilmazlar_';
     this.version = '1.0.0';
+    this.channel = null;
     this.init();
+    this.setupCrossDeviceSync();
   }
 
   init() {
@@ -19,6 +21,99 @@ class KirilmazlarStorage {
       this.migrate();
       this.setRaw('data_version', this.version);
     }
+  }
+
+  // CROSS-DEVICE SYNC SETUp
+  setupCrossDeviceSync() {
+    try {
+      // BroadcastChannel for same-origin communication
+      this.channel = new BroadcastChannel('kirilmazlar_sync');
+      
+      this.channel.addEventListener('message', (event) => {
+        console.log('📡 Cross-device sync received:', event.data);
+        this.handleRemoteUpdate(event.data);
+      });
+
+      // Storage event for cross-tab sync
+      window.addEventListener('storage', (event) => {
+        if (event.key && event.key.startsWith(this.prefix)) {
+          console.log('🔄 Storage event detected:', event.key);
+          this.notifyStorageChange(event.key, event.newValue);
+        }
+      });
+
+      console.log('✅ Cross-device sync enabled');
+    } catch (error) {
+      console.warn('⚠️ Cross-device sync not available:', error);
+    }
+  }
+
+  // Handle remote updates from other devices
+  handleRemoteUpdate(data) {
+    const { key, value, timestamp, deviceId } = data;
+    
+    // Don't process our own updates
+    const currentDeviceId = this.getDeviceId();
+    if (deviceId === currentDeviceId) return;
+
+    // Apply remote update locally
+    try {
+      if (value === null) {
+        this.removeRaw(key);
+      } else {
+        this.setRaw(key, value);
+      }
+      
+      // Notify local components
+      window.dispatchEvent(new CustomEvent('storage_remote_update', {
+        detail: { key: this.prefix + key, value, timestamp, deviceId }
+      }));
+      
+      console.log('✅ Applied remote update:', key);
+    } catch (error) {
+      console.error('❌ Failed to apply remote update:', error);
+    }
+  }
+
+  // Broadcast changes to other devices
+  broadcastChange(key, value) {
+    if (!this.channel) return;
+
+    try {
+      const message = {
+        key,
+        value,
+        timestamp: Date.now(),
+        deviceId: this.getDeviceId(),
+        type: 'storage_update'
+      };
+      
+      this.channel.postMessage(message);
+      console.log('📡 Broadcasted change:', key);
+    } catch (error) {
+      console.error('❌ Broadcast failed:', error);
+    }
+  }
+
+  // Get unique device identifier
+  getDeviceId() {
+    let deviceId = this.getRaw('device_id');
+    if (!deviceId) {
+      deviceId = 'device_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+      this.setRaw('device_id', deviceId);
+    }
+    return deviceId;
+  }
+
+  // Notify about storage changes
+  notifyStorageChange(fullKey, newValue) {
+    window.dispatchEvent(new CustomEvent('kirilmazlar_storage_change', {
+      detail: { 
+        key: fullKey, 
+        value: newValue,
+        timestamp: Date.now()
+      }
+    }));
   }
 
   // Raw localStorage operations
@@ -50,8 +145,16 @@ class KirilmazlarStorage {
 
   set(key, value) {
     try {
-      this.setRaw(key, JSON.stringify(value));
+      const jsonValue = JSON.stringify(value);
+      this.setRaw(key, jsonValue);
+      
+      // Broadcast to other devices
+      this.broadcastChange(key, jsonValue);
+      
+      // Trigger local events
       this.triggerChangeEvent(key, value);
+      
+      console.log('💾 Stored with cross-device sync:', key);
       return true;
     } catch (error) {
       console.error(`Storage set error for key "${key}":`, error);
@@ -61,6 +164,11 @@ class KirilmazlarStorage {
 
   remove(key) {
     this.removeRaw(key);
+    
+    // Broadcast removal to other devices  
+    this.broadcastChange(key, null);
+    
+    // Trigger local events
     this.triggerChangeEvent(key, null);
   }
 

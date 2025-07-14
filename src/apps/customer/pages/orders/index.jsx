@@ -29,7 +29,7 @@ const CustomerOrderHistory = () => {
     sortBy: 'newest'
   });
 
-  // Demo sipariş verileri - Türkçe ürünlerle
+  // Demo sipariş verileri - SINIRLI miktar (infinite loop önlemek için)
   const mockOrders = [
     {
       id: "SIP-241001",
@@ -43,7 +43,7 @@ const CustomerOrderHistory = () => {
         {
           id: 1,
           name: "Taze Domates",
-          image: "/assets/images/no_image.png",
+          image: "/assets/images/no_image.svg",
           quantity: 2,
           unit: "kg",
           price: 18.00,
@@ -52,7 +52,7 @@ const CustomerOrderHistory = () => {
         {
           id: 2,
           name: "Organik Ispanak",
-          image: "/assets/images/no_image.png",
+          image: "/assets/images/no_image.svg",
           quantity: 1,
           unit: "demet",
           price: 12.50,
@@ -61,7 +61,7 @@ const CustomerOrderHistory = () => {
         {
           id: 3,
           name: "Kırmızı Biber",
-          image: "/assets/images/no_image.png",
+          image: "/assets/images/no_image.svg",
           quantity: 1.5,
           unit: "kg",
           price: 25.00,
@@ -70,7 +70,7 @@ const CustomerOrderHistory = () => {
         {
           id: 4,
           name: "Taze Havuç",
-          image: "/assets/images/no_image.png",
+          image: "/assets/images/no_image.svg",
           quantity: 2,
           unit: "kg",
           price: 15.00,
@@ -79,7 +79,7 @@ const CustomerOrderHistory = () => {
         {
           id: 5,
           name: "Salatalık",
-          image: "/assets/images/no_image.png",
+          image: "/assets/images/no_image.svg",
           quantity: 2,
           unit: "kg",
           price: 12.00,
@@ -109,7 +109,7 @@ const CustomerOrderHistory = () => {
         {
           id: 3,
           name: "Taze Elma",
-          image: "/assets/images/no_image.png",
+          image: "/assets/images/no_image.svg",
           quantity: 1,
           unit: "kg",
           price: 22.00,
@@ -118,7 +118,7 @@ const CustomerOrderHistory = () => {
         {
           id: 4,
           name: "Olgun Muz",
-          image: "/assets/images/no_image.png",
+          image: "/assets/images/no_image.svg",
           quantity: 1,
           unit: "demet",
           price: 18.50,
@@ -127,7 +127,7 @@ const CustomerOrderHistory = () => {
         {
           id: 5,
           name: "Taze Portakal",
-          image: "/assets/images/no_image.png",
+          image: "/assets/images/no_image.svg",
           quantity: 1,
           unit: "kg",
           price: 28.75,
@@ -157,7 +157,7 @@ const CustomerOrderHistory = () => {
         {
           id: 6,
           name: "Kabak",
-          image: "/assets/images/no_image.png",
+          image: "/assets/images/no_image.svg",
           quantity: 2,
           unit: "kg",
           price: 14.00,
@@ -166,7 +166,7 @@ const CustomerOrderHistory = () => {
         {
           id: 7,
           name: "Patlıcan",
-          image: "/assets/images/no_image.png",
+          image: "/assets/images/no_image.svg",
           quantity: 1,
           unit: "kg",
           price: 28.00,
@@ -175,7 +175,7 @@ const CustomerOrderHistory = () => {
         {
           id: 8,
           name: "Soğan",
-          image: "/assets/images/no_image.png",
+          image: "/assets/images/no_image.svg",
           quantity: 2,
           unit: "kg",
           price: 8.00,

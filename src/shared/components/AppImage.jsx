@@ -33,7 +33,7 @@ function Image({
 
   // VS Code Simple Browser uyumluluğu için absolute path kontrolü
   const getImageSrc = (imageSrc) => {
-    if (!imageSrc) return "/assets/images/no_image.png";
+    if (!imageSrc) return "/assets/images/no_image.svg";
     
     // Base64 string ise olduğu gibi döndür
     if (imageSrc.startsWith('data:')) {
@@ -60,13 +60,13 @@ function Image({
       alt={alt}
       className={className}
       onError={(e) => {
-        // console.warn(`Image load failed: ${e.target.src}`);
-        // First try the no_image.png fallback
-        if (!e.target.src.includes('no_image.png')) {
-          e.target.src = "/assets/images/no_image.png";
+        // Prevent infinite loop - only try fallback once
+        if (!e.target.dataset.fallbackTried) {
+          e.target.dataset.fallbackTried = 'true';
+          e.target.src = "/assets/images/no_image.svg";
         } else {
-          // If even no_image.png fails, generate a placeholder
-          e.target.src = generatePlaceholder(alt);
+          // If SVG also fails, use data URL placeholder
+          e.target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5Q0EzQUYiPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4K";
         }
       }}
       {...props}
