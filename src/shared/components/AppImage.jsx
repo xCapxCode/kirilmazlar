@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 function Image({
   src,
@@ -6,6 +6,9 @@ function Image({
   className = "",
   ...props
 }) {
+  const [imageState, setImageState] = useState('loading');
+  const [fallbackAttempted, setFallbackAttempted] = useState(false);
+
   // Generate a simple placeholder SVG based on the alt text
   const generatePlaceholder = (text, width = 200, height = 200) => {
     const colors = [
@@ -28,6 +31,19 @@ function Image({
       </svg>
     `;
     
+    return `data:image/svg+xml;base64,${btoa(svg)}`;
+  };
+
+  // Default fallback SVG
+  const getDefaultSvg = () => {
+    const svg = `
+      <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="200" height="200" fill="#F3F4F6"/>
+        <path d="M150 70L120 100L90 70L50 110V150H150V70Z" fill="#9CA3AF"/>
+        <circle cx="80" cy="80" r="15" fill="#9CA3AF"/>
+        <text x="100" y="175" text-anchor="middle" font-family="Arial" font-size="12" fill="#6B7280">No Image</text>
+      </svg>
+    `;
     return `data:image/svg+xml;base64,${btoa(svg)}`;
   };
 
@@ -54,21 +70,46 @@ function Image({
     return `/${imageSrc}`;
   };
 
+  const getCurrentSrc = () => {
+    if (!src) {
+      return generatePlaceholder(alt);
+    }
+    
+    if (imageState === 'error') {
+      if (!fallbackAttempted) {
+        return getDefaultSvg();
+      } else {
+        return generatePlaceholder(alt);
+      }
+    }
+    
+    return getImageSrc(src);
+  };
+
+  const handleImageError = () => {
+    console.log('Image error for:', src);
+    
+    if (!fallbackAttempted) {
+      console.log('Trying fallback SVG');
+      setFallbackAttempted(true);
+      setImageState('error');
+    } else {
+      console.log('Using generated placeholder');
+      setImageState('placeholder');
+    }
+  };
+
+  const handleImageLoad = () => {
+    setImageState('loaded');
+  };
+
   return (
     <img
-      src={getImageSrc(src)}
+      src={getCurrentSrc()}
       alt={alt}
       className={className}
-      onError={(e) => {
-        // Prevent infinite loop - only try fallback once
-        if (!e.target.dataset.fallbackTried) {
-          e.target.dataset.fallbackTried = 'true';
-          e.target.src = "/assets/images/no_image.svg";
-        } else {
-          // If SVG also fails, use data URL placeholder
-          e.target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5Q0EzQUYiPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4K";
-        }
-      }}
+      onError={handleImageError}
+      onLoad={handleImageLoad}
       {...props}
     />
   );

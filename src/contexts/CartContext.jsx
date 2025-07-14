@@ -1,7 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { addOrder as syncAddOrder } from '../utils/orderSyncUtils';
+import KirilmazlarStorage from '../core/storage';
 
 const CartContext = createContext();
+
+// Storage instance
+const storage = KirilmazlarStorage.getInstance();
 
 export const useCart = () => {
   const context = useContext(CartContext);
@@ -15,91 +19,66 @@ export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   const [orders, setOrders] = useState([]);
 
-  // Load cart from localStorage on mount
+  // Load cart from unified storage on mount
   useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      try {
-        const parsedCart = JSON.parse(savedCart);
-        console.log('Loading cart from localStorage:', parsedCart);
-        
-        // Veri doğrulama
-        const validatedCart = parsedCart.map(item => ({
-          id: item.id,
-          name: item.name || 'Bilinmeyen Ürün',
-          price: Number(item.price) || 0,
-          unit: item.unit || 'adet',
-          quantity: Number(item.quantity) || 1,
-          image: item.image || '',
-          total: Number(item.total) || (Number(item.price) || 0) * (Number(item.quantity) || 1)
-        }));
-        
-        console.log('Validated cart:', validatedCart);
-        setCartItems(validatedCart);
-      } catch (error) {
-        console.error('Error loading cart from localStorage:', error);
-        // Hatalı veriyi temizle
-        localStorage.removeItem('cart');
-        setCartItems([]);
-      }
-    }
-  }, []);
-
-  // Load orders from localStorage on mount
-  useEffect(() => {
-    const savedOrders = localStorage.getItem('customerOrders');
-    if (savedOrders) {
-      try {
-        const parsedOrders = JSON.parse(savedOrders);
-        const ordersWithDates = parsedOrders.map(order => ({
-          ...order,
-          date: new Date(order.date),
-          estimatedDelivery: order.estimatedDelivery ? new Date(order.estimatedDelivery) : null,
-          timeline: order.timeline ? order.timeline.map(t => ({
-            ...t,
-            time: t.time ? new Date(t.time) : null
-          })) : []
-        }));
-        setOrders(ordersWithDates);
-      } catch (error) {
-        console.error('Error loading orders from localStorage:', error);
-      }
-    }
-
-    // Listen for order status updates from seller panel
-    const handleOrderStatusUpdate = (event) => {
-      const { orderId, newStatus } = event.detail;
-      console.log('CartContext: Order status updated:', orderId, newStatus);
+    try {
+      const savedCart = storage.get('cart', []);
+      console.log('Loading cart from unified storage:', savedCart);
       
-      setOrders(prevOrders => 
-        prevOrders.map(order => 
-          order.id === orderId 
-            ? { ...order, status: newStatus }
-            : order
-        )
-      );
-    };
-
-    window.addEventListener('orderStatusUpdated', handleOrderStatusUpdate);
-
-    return () => {
-      window.removeEventListener('orderStatusUpdated', handleOrderStatusUpdate);
-    };
+      // Veri doğrulama
+      const validatedCart = savedCart.map(item => ({
+        id: item.id,
+        name: item.name || 'Bilinmeyen Ürün',
+        price: Number(item.price) || 0,
+        unit: item.unit || 'adet',
+        quantity: Number(item.quantity) || 1,
+        image: item.image || '',
+        total: Number(item.total) || (Number(item.price) || 0) * (Number(item.quantity) || 1)
+      }));
+      
+      console.log('Validated cart:', validatedCart);
+      setCartItems(validatedCart);
+    } catch (error) {
+      console.error('Error loading cart from storage:', error);
+      setCartItems([]);
+    }
   }, []);
 
-  // Save cart to localStorage whenever it changes
+  // Load orders from unified storage on mount
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cartItems));
+    try {
+      const savedOrders = storage.get('customerOrders', []);
+      console.log('Loading orders from unified storage:', savedOrders);
+      
+      const ordersWithDates = savedOrders.map(order => ({
+        ...order,
+        date: new Date(order.date),
+        estimatedDelivery: order.estimatedDelivery ? new Date(order.estimatedDelivery) : null,
+        timeline: order.timeline ? order.timeline.map(t => ({
+          ...t,
+          time: t.time ? new Date(t.time) : null
+        })) : []
+      }));
+      setOrders(ordersWithDates);
+    } catch (error) {
+      console.error('Error loading orders from storage:', error);
+      setOrders([]);
+    }
+  }, []);
+
+  // Save cart to unified storage whenever it changes
+  useEffect(() => {
+    storage.set('cart', cartItems);
   }, [cartItems]);
 
-  // Save orders to localStorage whenever they change
+  // Save orders to unified storage whenever they change
   useEffect(() => {
     if (orders.length > 0) {
       const realOrders = orders.filter(order => !order.isDemo);
       if (realOrders.length > 0) {
-        localStorage.setItem('customerOrders', JSON.stringify(realOrders));
+        storage.set('customerOrders', realOrders);
       } else {
-        localStorage.removeItem('customerOrders');
+        storage.remove('customerOrders');
       }
     }
   }, [orders]);
@@ -180,7 +159,7 @@ export const CartProvider = ({ children }) => {
     const removedItem = cartItems.find(item => item.id === productId);
     if (removedItem) {
       // Stoka geri ekle (negatif miktar ile stok artır)
-      const products = JSON.parse(localStorage.getItem('products') || '[]');
+      const products = storage.get('products', []);
       const product = products.find(p => p.id === productId);
       if (product) {
         updateProductStock(productId, product.stock + removedItem.quantity);
@@ -206,7 +185,7 @@ export const CartProvider = ({ children }) => {
       
       if (difference > 0) {
         // Miktar artıyor - stok kontrolü yap
-        const products = JSON.parse(localStorage.getItem('products') || '[]');
+        const products = storage.get('products', []);
         const product = products.find(p => p.id === productId);
         
         if (product && product.stock < difference) {
@@ -224,7 +203,7 @@ export const CartProvider = ({ children }) => {
         reduceStock(productId, difference);
       } else if (difference < 0) {
         // Miktar azalıyor - stoka geri ekle
-        const products = JSON.parse(localStorage.getItem('products') || '[]');
+        const products = storage.get('products', []);
         const product = products.find(p => p.id === productId);
         if (product) {
           updateProductStock(productId, product.stock + Math.abs(difference));
@@ -249,7 +228,7 @@ export const CartProvider = ({ children }) => {
     if (restoreStock) {
       // Sepetteki tüm ürünleri stoka geri ekle
       cartItems.forEach(item => {
-        const products = JSON.parse(localStorage.getItem('products') || '[]');
+        const products = storage.get('products', []);
         const product = products.find(p => p.id === item.id);
         if (product) {
           updateProductStock(item.id, product.stock + item.quantity);
@@ -258,8 +237,8 @@ export const CartProvider = ({ children }) => {
     }
     
     setCartItems([]);
-    localStorage.removeItem('cart');
-    console.log('Cart cleared from localStorage');
+    storage.remove('cart');
+    console.log('Cart cleared from unified storage');
   };
 
   const getCartTotal = () => {
@@ -277,8 +256,8 @@ export const CartProvider = ({ children }) => {
     const uniqueId = `SIP-${timestamp}-${randomNum}`;
     
     // Mevcut siparişlerde bu ID var mı kontrol et
-    const existingOrders = JSON.parse(localStorage.getItem('customerOrders') || '[]');
-    const sellerOrders = JSON.parse(localStorage.getItem('sellerOrders') || '[]');
+    const existingOrders = storage.get('customerOrders', []);
+    const sellerOrders = storage.get('sellerOrders', []);
     const allOrders = [...existingOrders, ...sellerOrders];
     
     // Eğer aynı ID varsa yeniden generate et
@@ -325,7 +304,7 @@ export const CartProvider = ({ children }) => {
   // Stok yönetimi fonksiyonları
   const updateProductStock = (productId, newStock) => {
     // Mevcut ürünleri al
-    const products = JSON.parse(localStorage.getItem('products') || '[]');
+    const products = storage.get('products', []);
     
     // Ürünü bul ve stokunu güncelle
     const updatedProducts = products.map(product => 
@@ -335,13 +314,13 @@ export const CartProvider = ({ children }) => {
     );
     
     // Güncellenmiş ürünleri kaydet
-    localStorage.setItem('products', JSON.stringify(updatedProducts));
+    storage.set('products', updatedProducts);
     
     console.log(`Ürün ${productId} stoku güncellendi: ${newStock}`);
   };
 
   const reduceStock = (productId, quantity) => {
-    const products = JSON.parse(localStorage.getItem('products') || '[]');
+    const products = storage.get('products', []);
     const product = products.find(p => p.id === productId);
     
     if (product) {

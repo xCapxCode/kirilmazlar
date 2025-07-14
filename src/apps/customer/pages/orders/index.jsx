@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Icon from '../../../../shared/components/AppIcon';
 import Header from '../../../../shared/components/ui/Header';
@@ -9,10 +9,13 @@ import FilterModal from './components/FilterModal';
 import OrderTrackingModal from './components/OrderTrackingModal';
 import { useCart } from '../../../../contexts/CartContext';
 import { isDemoOrdersDisabled } from '../../../../utils/orderSyncUtils';
+import KirilmazlarStorage from '../../../../core/storage';
 
 const CustomerOrderHistory = () => {
   const { addToCart, orders } = useCart();
   const navigate = useNavigate();
+  const storage = KirilmazlarStorage.getInstance();
+  
   const [allOrders, setAllOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [activeFilter, setActiveFilter] = useState('all');
@@ -28,6 +31,26 @@ const CustomerOrderHistory = () => {
     timeRange: 'all',
     sortBy: 'newest'
   });
+
+  // Optimized order loading function
+  const loadOrders = useCallback(() => {
+    const demoDisabled = isDemoOrdersDisabled();
+    
+    let combined;
+    if (demoDisabled) {
+      // Sadece gerçek siparişleri göster
+      combined = [...orders];
+    } else {
+      // Demo siparişleri de dahil et
+      const deletedDemoOrders = storage.get('deletedDemoOrders', []);
+      const visibleMockOrders = mockOrders.filter(order => !deletedDemoOrders.includes(order.id));
+      combined = [...orders, ...visibleMockOrders];
+    }
+    
+    setAllOrders(combined);
+    console.log('Orders loaded:', combined.length);
+    return combined;
+  }, [orders, storage]);
 
   // Demo sipariş verileri - SINIRLI miktar (infinite loop önlemek için)
   const mockOrders = [
@@ -195,34 +218,21 @@ const CustomerOrderHistory = () => {
     }
   ];
 
-  // Combine orders from context with demo orders
+  // Combine orders from context with demo orders - OPTIMIZED
   useEffect(() => {
     // Scroll'u en üste taşı
     window.scrollTo(0, 0);
     
-    // Demo siparişleri kontrol et
-    const demoDisabled = isDemoOrdersDisabled();
-    
-    let combined;
-    if (demoDisabled) {
-      // Sadece gerçek siparişleri göster
-      combined = [...orders];
-    } else {
-      // Demo siparişleri de dahil et
-      const deletedDemoOrders = JSON.parse(localStorage.getItem('deletedDemoOrders') || '[]');
-      const visibleMockOrders = mockOrders.filter(order => !deletedDemoOrders.includes(order.id));
-      combined = [...orders, ...visibleMockOrders];
-    }
-    
-    setAllOrders(combined);
-    console.log('Tüm siparişler:', combined);
+    loadOrders();
     setLoading(false);
-  }, [orders]);
+  }, [loadOrders]);
 
-  // Satıcı panelinden gelen durum güncellemelerini dinle
+  // Storage event handlers and cleanup - OPTIMIZED for unified storage
   useEffect(() => {
+    let refreshTimeout;
+
     const handleOrderStatusUpdate = (event) => {
-      console.log('Sipariş durumu güncelleme eventi alındı:', event.detail);
+      console.log('Order status update:', event.detail);
       
       // Toast bildirimi göster
       const toastEvent = new CustomEvent('showToast', {
@@ -233,88 +243,84 @@ const CustomerOrderHistory = () => {
       });
       window.dispatchEvent(toastEvent);
       
-      // Otomatik yenile (CartContext otomatik güncellenecek)
-      setTimeout(() => {
+      // Debounced refresh
+      clearTimeout(refreshTimeout);
+      refreshTimeout = setTimeout(() => {
         setIsRefreshing(true);
+        loadOrders();
         setTimeout(() => setIsRefreshing(false), 1000);
-      }, 500);
+      }, 300);
     };
 
-    const handleStorageChange = (e) => {
-      if (e.key === 'customerOrders') {
-        console.log('CustomerOrders localStorage değişti, sayfa yenileniyor...');
+    const handleStorageChange = () => {
+      console.log('Storage changed, refreshing orders...');
+      clearTimeout(refreshTimeout);
+      refreshTimeout = setTimeout(() => {
         setIsRefreshing(true);
+        loadOrders();
         setTimeout(() => setIsRefreshing(false), 1000);
-      }
-    };
-
-    // Yeni sipariş bildirimi dinle
-    const handleNewOrderStatus = () => {
-      console.log('Yeni sipariş durumu bildirimi');
-      setIsRefreshing(true);
-      setTimeout(() => setIsRefreshing(false), 1000);
-    };
-
-    // orderSyncUtils event'lerini dinle
-    const handleAllOrdersCleared = () => {
-      console.log('Tüm siparişler temizlendi');
-      setIsRefreshing(true);
-      setTimeout(() => setIsRefreshing(false), 1000);
+      }, 300);
     };
 
     const handleOrderDeleted = (event) => {
-      console.log('Sipariş silindi:', event.detail.orderId);
-      setIsRefreshing(true);
-      
-      // Siparişleri yeniden yükle
-      const demoDisabled = isDemoOrdersDisabled();
-      let combined;
-      if (demoDisabled) {
-        combined = [...orders];
-      } else {
-        const deletedDemoOrders = JSON.parse(localStorage.getItem('deletedDemoOrders') || '[]');
-        const visibleMockOrders = mockOrders.filter(order => !deletedDemoOrders.includes(order.id));
-        combined = [...orders, ...visibleMockOrders];
-      }
-      setAllOrders(combined);
-      
-      setTimeout(() => setIsRefreshing(false), 1000);
+      console.log('Order deleted:', event.detail.orderId);
+      clearTimeout(refreshTimeout);
+      refreshTimeout = setTimeout(() => {
+        setIsRefreshing(true);
+        loadOrders();
+        setTimeout(() => setIsRefreshing(false), 1000);
+      }, 300);
     };
 
+    // Subscribe to storage events
+    const unsubscribe = storage.subscribe('customerOrders', handleStorageChange);
+    
+    // Window event listeners
     window.addEventListener('orderStatusUpdated', handleOrderStatusUpdate);
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('newOrderStatus', handleNewOrderStatus);
-    window.addEventListener('allOrdersCleared', handleAllOrdersCleared);
+    window.addEventListener('newOrderStatus', handleStorageChange);
+    window.addEventListener('allOrdersCleared', handleStorageChange);
     window.addEventListener('orderDeleted', handleOrderDeleted);
 
     return () => {
+      clearTimeout(refreshTimeout);
+      unsubscribe();
       window.removeEventListener('orderStatusUpdated', handleOrderStatusUpdate);
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('newOrderStatus', handleNewOrderStatus);
-      window.removeEventListener('allOrdersCleared', handleAllOrdersCleared);
+      window.removeEventListener('newOrderStatus', handleStorageChange);
+      window.removeEventListener('allOrdersCleared', handleStorageChange);
       window.removeEventListener('orderDeleted', handleOrderDeleted);
     };
-  }, []);
+  }, [storage, loadOrders]);
 
+  // Optimized filtering and sorting
   useEffect(() => {
+    if (!allOrders.length) {
+      setFilteredOrders([]);
+      return;
+    }
+
     let filtered = [...allOrders];
 
     if (activeFilter !== 'all') {
       filtered = filtered.filter(order => order.status === activeFilter);
     }
 
+    // Optimize sorting
     filtered.sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      
       switch (sortBy) {
         case 'newest':
-          return new Date(b.date) - new Date(a.date);
+          return dateB - dateA;
         case 'oldest':
-          return new Date(a.date) - new Date(b.date);
+          return dateA - dateB;
         default:
           return 0;
       }
     });
 
     setFilteredOrders(filtered);
+    console.log('Filtered orders:', filtered.length);
   }, [allOrders, activeFilter, sortBy]);
 
   const handleOrderSelect = (order) => {
