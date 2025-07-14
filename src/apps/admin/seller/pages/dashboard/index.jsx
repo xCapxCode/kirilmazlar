@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@contexts/AuthContext';
 import SaticiHeader from '@shared/components/ui/SaticiHeader';
 import Icon from '@shared/components/AppIcon';
+import KirilmazlarStorage from '@core/storage';
 
 // Dashboard bileşenleri
 import GunlukOzet from './components/GunlukOzet';
@@ -11,6 +12,7 @@ import HizliIstatistikler from './components/HizliIstatistikler';
 
 const SellerDashboard = () => {
   const { user, userProfile, loading: authLoading } = useAuth();
+  const storage = KirilmazlarStorage.getInstance();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -29,53 +31,44 @@ const SellerDashboard = () => {
     }
   }, [authLoading, userProfile]);
 
-  // Dashboard verilerini yükle
+  // Dashboard verilerini yükle ve storage değişikliklerini dinle
   useEffect(() => {
     if (user?.id && (userProfile?.role === 'seller' || userProfile?.role === 'admin')) {
       loadDashboardData();
     }
     
-    // localStorage değişikliklerini dinle
+    // Unified storage değişikliklerini dinle
     const handleStorageChange = () => {
       if (user?.id && (userProfile?.role === 'seller' || userProfile?.role === 'admin')) {
+        console.log('Storage changed, refreshing dashboard...');
         loadDashboardData();
       }
     };
     
-    window.addEventListener('storage', handleStorageChange);
+    // Storage subscribers
+    const unsubscribeProducts = storage.subscribe('products', handleStorageChange);
+    const unsubscribeSellerOrders = storage.subscribe('sellerOrders', handleStorageChange);
+    const unsubscribeCustomerOrders = storage.subscribe('customerOrders', handleStorageChange);
     
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
+      unsubscribeProducts();
+      unsubscribeSellerOrders();
+      unsubscribeCustomerOrders();
     };
-  }, [user?.id, userProfile?.role]);
+  }, [user?.id, userProfile?.role, storage]);
 
   const loadDashboardData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // localStorage'dan verileri al
-      const savedProducts = localStorage.getItem('products');
-      const savedSellerOrders = localStorage.getItem('sellerOrders');
-      const savedCustomerOrders = localStorage.getItem('customerOrders');
+      // Unified storage'dan verileri al
+      const products = storage.get('products', []);
+      const sellerOrders = storage.get('sellerOrders', []);
+      const customerOrders = storage.get('customerOrders', []);
       
-      let products = [];
-      let orders = [];
-      
-      // Ürünleri yükle
-      if (savedProducts) {
-        products = JSON.parse(savedProducts);
-      }
-      
-      // Siparişleri yükle - hem seller hem customer orders'ı birleştir
-      if (savedSellerOrders) {
-        const sellerOrders = JSON.parse(savedSellerOrders);
-        orders = [...orders, ...sellerOrders];
-      }
-      
-      if (savedCustomerOrders) {
-        const customerOrders = JSON.parse(savedCustomerOrders);
-        orders = [...orders, ...customerOrders];
+      // Siparişleri birleştir
+      const orders = [...sellerOrders, ...customerOrders];
       }
       
       // Duplicate siparişleri filtrele
