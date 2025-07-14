@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename)
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 5173,
+    port: 5500, // Live Server uyumlu port
     strictPort: true,
     host: true
   },
@@ -22,6 +22,14 @@ export default defineConfig({
       '@components': path.resolve(__dirname, 'src/components'),
       '@utils': path.resolve(__dirname, 'src/utils'),
       '@apps': path.resolve(__dirname, 'src/apps'),
+      '@core': path.resolve(__dirname, 'src/core'), // Core storage alias'ı eklendi
     },
   },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+    rollupOptions: {
+      external: [], // Live Server için external dependencies yok
+    }
+  }
 })
