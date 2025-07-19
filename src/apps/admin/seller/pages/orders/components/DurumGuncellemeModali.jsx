@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import Icon from '@shared/components/AppIcon';
+import { useNotification } from '../../../../../../contexts/NotificationContext';
 
 const DurumGuncellemeModali = ({ order, onClose, onUpdate }) => {
+  const { showSuccess, showError } = useNotification();
   const [selectedStatus, setSelectedStatus] = useState(order.status);
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -20,9 +22,11 @@ const DurumGuncellemeModali = ({ order, onClose, onUpdate }) => {
 
     try {
       await onUpdate(order.id, selectedStatus, notes);
+      showSuccess('Sipariş durumu başarıyla güncellendi');
       onClose(); // Modal'ı kapat
     } catch (error) {
       console.error('Status update error:', error);
+      showError('Sipariş durumu güncellenirken bir hata oluştu');
     } finally {
       setIsSubmitting(false);
     }

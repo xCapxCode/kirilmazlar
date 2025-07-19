@@ -1,11 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { addOrder as syncAddOrder } from '../utils/orderSyncUtils';
-import KirilmazlarStorage from '@core/storage';
+import { orderSyncUtils } from '../shared/utils/orderSyncUtils';
+import storage from '@core/storage/index.js';
 
 const CartContext = createContext();
-
-// Storage instance
-const storage = KirilmazlarStorage.getInstance();
 
 export const useCart = () => {
   const context = useContext(CartContext);
@@ -47,12 +44,12 @@ export const CartProvider = ({ children }) => {
   // Load orders from unified storage on mount
   useEffect(() => {
     try {
-      const savedOrders = storage.get('customerOrders', []);
+      const savedOrders = storage.get('customer_orders', []);
       console.log('Loading orders from unified storage:', savedOrders);
       
       const ordersWithDates = savedOrders.map(order => ({
         ...order,
-        date: new Date(order.date),
+        date: new Date(order.date || order.createdAt),
         estimatedDelivery: order.estimatedDelivery ? new Date(order.estimatedDelivery) : null,
         timeline: order.timeline ? order.timeline.map(t => ({
           ...t,
@@ -96,7 +93,7 @@ export const CartProvider = ({ children }) => {
     const validPrice = Number(product.price) || 0;
 
     // Stok kontrolü
-    if (product.stock < validQuantity) {
+    if (product.stock !== undefined && product.stock < validQuantity) {
       const event = new CustomEvent('showToast', {
         detail: { 
           message: `Yetersiz stok! Mevcut stok: ${product.stock} ${product.unit}`, 
@@ -271,7 +268,7 @@ export const CartProvider = ({ children }) => {
   // Yeni sipariş ekleme fonksiyonu
   const addNewOrder = (orderData) => {
     // orderSyncUtils kullanarak sipariş ekle
-    const orderId = syncAddOrder(orderData);
+    const orderId = orderSyncUtils.addOrder(orderData);
     
     // Local state'i güncelle
     const newOrder = {

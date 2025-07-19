@@ -1,16 +1,24 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { BrowserRouter, Routes as RouterRoutes, Route, Navigate } from "react-router-dom";
 import ScrollToTop from "./shared/components/ScrollToTop";
 import ErrorBoundary from "./shared/components/ErrorBoundary";
 import { useAuth } from "./contexts/AuthContext";
 
-// App Routes
-import LandingRoutes from "./apps/web/landing/LandingRoutes";
-import SellerRoutes from "./apps/admin/seller/SellerRoutes";
-import CustomerRoutes from "./apps/customer/CustomerRoutes";
+// Lazy loaded components
+const LandingRoutes = lazy(() => import("./apps/web/landing/LandingRoutes"));
+const SellerRoutes = lazy(() => import("./apps/admin/seller/SellerRoutes"));
+const CustomerRoutes = lazy(() => import("./apps/customer/CustomerRoutes"));
+const Login = lazy(() => import("./shared/components/auth/Login"));
 
-// Shared Components
-import Login from "./shared/components/auth/Login";
+// Loading component
+const LoadingComponent = () => (
+  <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+    <div className="text-center">
+      <div className="w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p className="text-gray-600">Yükleniyor...</p>
+    </div>
+  </div>
+);
 
 // General Protected Route Component (both seller and customer)
 const GeneralProtectedRoute = ({ children }) => {
@@ -107,18 +115,21 @@ const Routes = () => {
       <ScrollToTop />
       <ErrorBoundary>
         <RouterRoutes>
-          {/* Landing Page */}
-          <Route path="/*" element={<LandingRoutes />} />
-          
           {/* Authentication */}
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={
+            <Suspense fallback={<LoadingComponent />}>
+              <Login />
+            </Suspense>
+          } />
           
-          {/* Seller App Routes */}
+          {/* Seller App Routes - Production */}
           <Route 
             path="/seller/*" 
             element={
               <SellerProtectedRoute>
-                <SellerRoutes />
+                <Suspense fallback={<LoadingComponent />}>
+                  <SellerRoutes />
+                </Suspense>
               </SellerProtectedRoute>
             } 
           />
@@ -128,23 +139,20 @@ const Routes = () => {
             path="/customer/*" 
             element={
               <CustomerProtectedRoute>
-                <CustomerRoutes />
+                <Suspense fallback={<LoadingComponent />}>
+                  <CustomerRoutes />
+                </Suspense>
               </CustomerProtectedRoute>
             } 
           />
           
-          {/* Development/Testing Routes */}
-          {/* <Route 
-            path="/test/localstorage" 
-            element={
-              <GeneralProtectedRoute>
-                <LocalStorageTest />
-              </GeneralProtectedRoute>
-            } 
-          /> */}
-          
-          {/* Catch All - 404 */}
-          {/* <Route path="*" element={<NotFound />} /> */}
+          {/* Landing Page */}
+          <Route path="/*" element={
+            <Suspense fallback={<LoadingComponent />}>
+              <LandingRoutes />
+            </Suspense>
+          } />
+          <Route path="*" element={<div>404 - Page Not Found</div>} />
         </RouterRoutes>
       </ErrorBoundary>
     </BrowserRouter>

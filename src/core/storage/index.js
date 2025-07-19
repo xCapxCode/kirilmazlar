@@ -9,6 +9,12 @@ class KirilmazlarStorage {
     this.prefix = 'kirilmazlar_';
     this.version = '1.0.0';
     this.channel = null;
+    
+    // Development mode - use localStorage but with enhanced sync
+    this.isDevelopment = import.meta.env.DEV || window.location.hostname === 'localhost';
+    
+    console.log('🔧 Storage Mode:', this.isDevelopment ? 'LOCALSTORAGE (Development with Enhanced Sync)' : 'LOCALSTORAGE (Production)');
+    
     this.init();
     this.setupCrossDeviceSync();
   }
@@ -50,7 +56,7 @@ class KirilmazlarStorage {
 
   // Handle remote updates from other devices
   handleRemoteUpdate(data) {
-    const { key, value, timestamp, deviceId } = data;
+    const { key, value, timestamp, deviceId, source } = data;
     
     // Don't process our own updates
     const currentDeviceId = this.getDeviceId();
@@ -58,23 +64,25 @@ class KirilmazlarStorage {
 
     // Apply remote update locally
     try {
+      // Always use localStorage
       if (value === null) {
-        this.removeRaw(key);
+        localStorage.removeItem(this.prefix + key);
       } else {
-        this.setRaw(key, value);
+        localStorage.setItem(this.prefix + key, value);
       }
+      console.log('✅ Applied localStorage update from remote:', key, 'source:', source || 'unknown');
       
       // Notify local components
       window.dispatchEvent(new CustomEvent('storage_remote_update', {
-        detail: { key: this.prefix + key, value, timestamp, deviceId }
+        detail: { key: this.prefix + key, value, timestamp, deviceId, source }
       }));
       
-      console.log('✅ Applied remote update:', key);
     } catch (error) {
       console.error('❌ Failed to apply remote update:', error);
     }
   }
 
+  // Broadcast changes to other devices
   // Broadcast changes to other devices
   broadcastChange(key, value) {
     if (!this.channel) return;
@@ -85,11 +93,15 @@ class KirilmazlarStorage {
         value,
         timestamp: Date.now(),
         deviceId: this.getDeviceId(),
-        type: 'storage_update'
+        type: 'storage_update',
+        source: 'localStorage'
       };
       
       this.channel.postMessage(message);
-      console.log('📡 Broadcasted change:', key);
+      
+      if (this.isDevelopment) {
+        console.log('📡 Broadcasting localStorage change:', key);
+      }
     } catch (error) {
       console.error('❌ Broadcast failed:', error);
     }
@@ -116,17 +128,24 @@ class KirilmazlarStorage {
     }));
   }
 
-  // Raw localStorage operations
+  // Raw storage operations - always use localStorage
   getRaw(key) {
     return localStorage.getItem(this.prefix + key);
   }
 
   setRaw(key, value) {
     localStorage.setItem(this.prefix + key, value);
+    // Enhanced sync in development
+    if (this.isDevelopment) {
+      this.broadcastChange(key, value);
+    }
   }
 
   removeRaw(key) {
     localStorage.removeItem(this.prefix + key);
+    if (this.isDevelopment) {
+      this.broadcastChange(key, null);
+    }
   }
 
   // JSON operations with error handling
@@ -136,20 +155,40 @@ class KirilmazlarStorage {
       if (raw === null || raw === 'undefined' || raw === 'null') {
         return defaultValue;
       }
+      
+      // Raw string değerler için (data_version, device_id vb.)
+      if (key === 'data_version' || key === 'device_id') {
+        return raw;
+      }
+      
+      // JSON olarak parse et
       return JSON.parse(raw);
     } catch (error) {
       console.error(`Storage get error for key "${key}":`, error);
+      // Parse hatası durumunda raw değeri döndür
+      const raw = this.getRaw(key);
+      if (raw && typeof raw === 'string') {
+        return raw;
+      }
       return defaultValue;
     }
   }
 
   set(key, value) {
     try {
-      const jsonValue = JSON.stringify(value);
-      this.setRaw(key, jsonValue);
+      let finalValue;
+      
+      // Raw string değerler için (data_version, device_id vb.)
+      if (key === 'data_version' || key === 'device_id') {
+        finalValue = value.toString();
+      } else {
+        finalValue = JSON.stringify(value);
+      }
+      
+      this.setRaw(key, finalValue);
       
       // Broadcast to other devices
-      this.broadcastChange(key, jsonValue);
+      this.broadcastChange(key, finalValue);
       
       // Trigger local events
       this.triggerChangeEvent(key, value);
@@ -175,7 +214,12 @@ class KirilmazlarStorage {
   // Cross-tab communication
   triggerChangeEvent(key, value) {
     window.dispatchEvent(new CustomEvent('kirilmazlar_storage_change', {
-      detail: { key, value, timestamp: Date.now() }
+      detail: { 
+        key, 
+        fullKey: this.prefix + key,
+        value, 
+        timestamp: Date.now() 
+      }
     }));
 
     // Also trigger storage event for backward compatibility
@@ -219,9 +263,15 @@ class KirilmazlarStorage {
 
   // Clear all data
   clear() {
+    // Always clear localStorage
     const keys = Object.keys(localStorage).filter(key => key.startsWith(this.prefix));
     keys.forEach(key => localStorage.removeItem(key));
-    console.log(`🧹 Cleared ${keys.length} storage keys`);
+    console.log(`🧹 Cleared ${keys.length} localStorage keys`);
+    
+    // Broadcast clear to other windows
+    if (this.isDevelopment) {
+      this.broadcastChange('storage_cleared', { timestamp: Date.now() });
+    }
   }
 
   // Get all keys
@@ -236,26 +286,67 @@ class KirilmazlarStorage {
     const keys = this.getAllKeys();
     console.log('🔍 KIRILMAZLAR STORAGE DEBUG');
     console.log('============================');
+    console.log('Mode:', this.isDevelopment ? 'LOCALSTORAGE (Enhanced Dev Sync)' : 'LOCALSTORAGE (Production)');
     console.log('Version:', this.version);
     console.log('Keys:', keys.length);
     
     keys.forEach(key => {
-      const value = this.get(key);
-      if (Array.isArray(value)) {
-        console.log(`  ${key}: Array[${value.length}]`);
-      } else if (typeof value === 'object' && value !== null) {
-        console.log(`  ${key}: Object[${Object.keys(value).length} keys]`);
-      } else {
-        console.log(`  ${key}:`, value);
+      const rawValue = this.getRaw(key);
+      
+      // Raw string değerler için
+      if (key === 'data_version' || key === 'device_id') {
+        console.log(`  ${key}:`, rawValue);
+        return;
+      }
+      
+      // JSON değerler için parse etmeye çalış
+      try {
+        const value = JSON.parse(rawValue);
+        if (Array.isArray(value)) {
+          console.log(`  ${key}: Array[${value.length}]`);
+        } else if (typeof value === 'object' && value !== null) {
+          console.log(`  ${key}: Object[${Object.keys(value).length} keys]`);
+        } else {
+          console.log(`  ${key}:`, value);
+        }
+      } catch (error) {
+        console.log(`  ${key}: Raw[${rawValue?.length || 0} chars]`);
       }
     });
   }
+
+  // Subscribe to storage changes for a specific key
+  subscribe(key, callback) {
+    const handler = (event) => {
+      if (event.detail && (event.detail.key === key || event.detail.key === this.prefix + key)) {
+        const data = this.get(key);
+        callback(data);
+      }
+    };
+    
+    window.addEventListener('kirilmazlar_storage_change', handler);
+    
+    return () => {
+      window.removeEventListener('kirilmazlar_storage_change', handler);
+    };
+  }
+
+  // Singleton pattern - getInstance static method
+  static getInstance() {
+    if (!KirilmazlarStorage.instance) {
+      KirilmazlarStorage.instance = new KirilmazlarStorage();
+    }
+    return KirilmazlarStorage.instance;
+  }
 }
 
-// Create singleton instance
-const storage = new KirilmazlarStorage();
+// Create global instance
+const storageInstance = new KirilmazlarStorage();
 
 // Global access for debugging
-window.KirilmazlarStorage = storage;
+if (typeof window !== 'undefined') {
+  window.KirilmazlarStorage = KirilmazlarStorage;
+  window.storage = storageInstance;
+}
 
-export default storage;
+export default storageInstance;

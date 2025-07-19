@@ -31,7 +31,7 @@ function Image({
       </svg>
     `;
     
-    return `data:image/svg+xml;base64,${btoa(svg)}`;
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   };
 
   // Default fallback SVG
@@ -44,7 +44,7 @@ function Image({
         <text x="100" y="175" text-anchor="middle" font-family="Arial" font-size="12" fill="#6B7280">No Image</text>
       </svg>
     `;
-    return `data:image/svg+xml;base64,${btoa(svg)}`;
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   };
 
   // VS Code Simple Browser uyumluluğu için absolute path kontrolü

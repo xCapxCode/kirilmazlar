@@ -1,16 +1,23 @@
 import React from 'react';
 import Icon from '@shared/components/AppIcon';
+import { useNotification } from '../../../../../../contexts/NotificationContext';
 
 const SiparisDetayModali = ({ order, onClose, onStatusUpdate }) => {
+  // Debug: Log order data to understand structure
+  console.log('Order data in modal:', order);
+  const { showSuccess, showError } = useNotification();
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('tr-TR', {
       style: 'currency',
       currency: 'TRY'
-    }).format(amount);
+    }).format(amount || 0);
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'Belirtilmemiş';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Geçersiz tarih';
     return new Intl.DateTimeFormat('tr-TR', {
       day: '2-digit',
       month: '2-digit',
@@ -81,17 +88,19 @@ const SiparisDetayModali = ({ order, onClose, onStatusUpdate }) => {
                   
                   <div className="flex justify-between">
                     <span className="text-gray-600">Sipariş Tarihi:</span>
-                    <span className="font-medium">{formatDate(order.createdAt)}</span>
+                    <span className="font-medium">{formatDate(order.orderDate)}</span>
                   </div>
                   
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Güncelleme:</span>
-                    <span className="font-medium">{formatDate(order.updatedAt)}</span>
-                  </div>
+                  {order.updatedAt && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Güncelleme:</span>
+                      <span className="font-medium">{formatDate(order.updatedAt)}</span>
+                    </div>
+                  )}
                   
                   <div className="flex justify-between">
                     <span className="text-gray-600">Ürün Sayısı:</span>
-                    <span className="font-medium">{order.itemCount} adet</span>
+                    <span className="font-medium">{order.items?.length || 0} adet</span>
                   </div>
                   
                   <div className="flex justify-between text-lg">
@@ -124,10 +133,12 @@ const SiparisDetayModali = ({ order, onClose, onStatusUpdate }) => {
               </div>
 
               {/* Teslimat Adresi */}
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Teslimat Adresi</h3>
-                <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">{order.deliveryAddress}</p>
-              </div>
+              {order.deliveryAddress && (
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Teslimat Adresi</h3>
+                  <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">{order.deliveryAddress}</p>
+                </div>
+              )}
 
               {/* Notlar */}
               {order.notes && (
@@ -143,21 +154,28 @@ const SiparisDetayModali = ({ order, onClose, onStatusUpdate }) => {
               <h3 className="text-lg font-medium text-gray-900 mb-4">Sipariş Ürünleri</h3>
               
               <div className="space-y-3">
-                {order.items.map((item) => (
-                  <div key={item.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">{item.productName}</h4>
-                        <p className="text-sm text-gray-600">
-                          {item.quantity} {item.unit} × {formatCurrency(item.price)}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium text-gray-900">{formatCurrency(item.total)}</p>
+                {order.items && order.items.length > 0 ? (
+                  order.items.map((item, index) => (
+                    <div key={item.id || index} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900">{item.productName || item.name || 'Ürün'}</h4>
+                          <p className="text-sm text-gray-600">
+                            {item.quantity || 1} {item.unit || 'adet'} × {formatCurrency(item.price || 0)}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium text-gray-900">{formatCurrency(item.total || (item.quantity * item.price) || 0)}</p>
+                        </div>
                       </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <Icon name="Package" size={48} className="mx-auto mb-2 text-gray-300" />
+                    <p>Bu siparişte ürün bilgisi bulunamadı</p>
                   </div>
-                ))}
+                )}
                 
                 {/* Toplam */}
                 <div className="border-t border-gray-200 pt-4">

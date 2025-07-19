@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import authService from '../services/authService';
 
 const BusinessContext = createContext();
 
@@ -11,33 +12,20 @@ export const useBusiness = () => {
 };
 
 export const BusinessProvider = ({ children }) => {
-  const [businessInfo, setBusinessInfo] = useState({
-    name: 'Meyve Sebze Marketi',
-    logo: null,
-    address: 'İşletme Adresi',
-    phone: '+90 555 000 00 00',
-    email: 'info@meyvemarket.com',
-    workingHours: '08:00 - 22:00',
-    slogan: 'Taze ve Kaliteli Ürünler'
-  });
+  const [businessInfo, setBusinessInfo] = useState(null);
 
   useEffect(() => {
-    // LocalStorage'dan iş yeri bilgilerini yükle
-    const saved = localStorage.getItem('businessInfo');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setBusinessInfo(prev => ({ ...prev, ...parsed }));
-      } catch (error) {
-        console.error('Business info yüklenemedi:', error);
-      }
-    }
+    // AuthService'den iş yeri bilgilerini yükle
+    const businessData = authService.getBusinessInfo();
+    setBusinessInfo(businessData);
   }, []);
 
   const updateBusinessInfo = (newInfo) => {
-    const updated = { ...businessInfo, ...newInfo };
-    setBusinessInfo(updated);
-    localStorage.setItem('businessInfo', JSON.stringify(updated));
+    const result = authService.updateBusinessInfo(newInfo);
+    if (result.success) {
+      setBusinessInfo(result.data);
+    }
+    return result;
   };
 
   const value = {

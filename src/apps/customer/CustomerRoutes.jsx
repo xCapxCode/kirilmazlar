@@ -1,5 +1,6 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import BottomTabNavigation from "../../shared/components/ui/BottomTabNavigation";
 
 // Customer Pages
 import ProductCatalog from "./pages/catalog";
@@ -9,13 +10,16 @@ import CustomerProfile from "./pages/profile";
 
 const CustomerRoutes = () => {
   return (
-    <Routes>
-      <Route index element={<Navigate to="catalog" replace />} />
-      <Route path="catalog" element={<ProductCatalog />} />
-      <Route path="cart" element={<Cart />} />
-      <Route path="orders" element={<OrderHistory />} />
-      <Route path="profile" element={<CustomerProfile />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route index element={<Navigate to="catalog" replace />} />
+        <Route path="catalog" element={<ProductCatalog />} />
+        <Route path="cart" element={<Cart />} />
+        <Route path="orders" element={<OrderHistory />} />
+        <Route path="profile" element={<CustomerProfile />} />
+      </Routes>
+      <BottomTabNavigation />
+    </>
   );
 };
 

@@ -1,6 +1,6 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import BottomTabNavigation from "@shared/components/ui/BottomTabNavigation";
+import BottomTabNavigation from "../../../shared/components/ui/BottomTabNavigation";
 
 // Seller Pages
 import SellerDashboard from "./pages/dashboard";

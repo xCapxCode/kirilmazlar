@@ -19,8 +19,8 @@ const Login = ({ onClose }) => {
     setLoading(true);
     try {
       const result = await signIn(username, password);
-      if (result.success && result.data && result.data.session) {
-        const role = result.data.session.role;
+      if (result.success && result.data && result.data.user) {
+        const role = result.data.user.role;
         if (role === 'admin' || role === 'seller') {
           navigate('/seller/dashboard');
         } else if (role === 'customer') {
@@ -28,7 +28,7 @@ const Login = ({ onClose }) => {
         } else {
           navigate('/');
         }
-        onClose();
+        if (onClose) onClose();
       } else {
         setError(result.error || 'Giriş başarısız oldu.');
       }
@@ -64,7 +64,7 @@ const Login = ({ onClose }) => {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="admin@test.com veya musteri@test.com"
+                placeholder="satici@test.com veya musteri@test.com"
                 className="w-full bg-gray-900 bg-opacity-50 border border-gray-600 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
                 style={{ boxShadow: 'inset 0 0 0 1000px rgba(31, 41, 55, 0.8)', color: 'white !important' }}
                 autoComplete="email"
@@ -139,9 +139,10 @@ const Login = ({ onClose }) => {
         <div className="mt-6 bg-gray-900 bg-opacity-50 border border-gray-700 rounded-lg p-4 flex items-start space-x-3">
           <Info className="text-gray-400 mt-1" size={20} />
           <div>
-            <h4 className="font-semibold text-gray-200">Giriş bilgileriniz:</h4>
+            <h4 className="font-semibold text-gray-200">Test Hesapları:</h4>
             <p className="text-sm text-gray-400">
-              Yönetici panelinden size atanan kullanıcı adı ve şifre ile giriş yapabilirsiniz.
+              <strong>Satıcı:</strong> satici@test.com / 1234<br/>
+              <strong>Müşteri:</strong> musteri@test.com / 1234
             </p>
           </div>
         </div>

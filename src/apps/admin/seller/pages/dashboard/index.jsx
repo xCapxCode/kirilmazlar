@@ -1,93 +1,98 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@contexts/AuthContext';
-import SaticiHeader from '@shared/components/ui/SaticiHeader';
-import Icon from '@shared/components/AppIcon';
-import KirilmazlarStorage from '@core/storage';
-
-// Dashboard bileşenleri
+import { useAuth } from '../../../../../contexts/AuthContext';
+import Icon from '../../../../../shared/components/AppIcon';
+import SaticiHeader from '../../../../../shared/components/ui/SaticiHeader';
 import GunlukOzet from './components/GunlukOzet';
-import StokUyarilari from './components/StokUyarilari';
-import SonSiparisler from './components/SonSiparisler';
 import HizliIstatistikler from './components/HizliIstatistikler';
+import SonSiparisler from './components/SonSiparisler';
+import StokUyarilari from './components/StokUyarilari';
+import storage from '../../../../../core/storage/index.js';
 
 const SellerDashboard = () => {
   const { user, userProfile, loading: authLoading } = useAuth();
-  const storage = KirilmazlarStorage.getInstance();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const [dashboardData, setDashboardData] = useState({
-    dailyStats: {},
-    weeklyStats: {},
+    dailyStats: { orders: 0, revenue: 0, products: 0 },
+    weeklyStats: { orders: 0, revenue: 0, customers: 0 },
     stockAlerts: [],
     recentOrders: [],
-    quickStats: {}
+    quickStats: { totalProducts: 0, activeOrders: 0, totalCustomers: 0, lowStockItems: 0 }
   });
 
-  // Satıcı değilse yönlendir
   useEffect(() => {
-    if (!authLoading && userProfile && userProfile.role !== 'seller' && userProfile.role !== 'admin') {
-      window.location.href = '/customer/catalog';
-    }
-  }, [authLoading, userProfile]);
-
-  // Dashboard verilerini yükle ve storage değişikliklerini dinle
-  useEffect(() => {
-    if (user?.id && (userProfile?.role === 'seller' || userProfile?.role === 'admin')) {
+    if (user && userProfile) {
       loadDashboardData();
+      
+      // Real-time veri güncellemeleri için subscriptions
+      const unsubscribeProducts = storage.subscribe('products', loadDashboardData);
+      const unsubscribeOrders = storage.subscribe('orders', loadDashboardData);
+      const unsubscribeCustomerOrders = storage.subscribe('customer_orders', loadDashboardData);
+      const unsubscribeCustomers = storage.subscribe('customers', loadDashboardData);
+
+      return () => {
+        unsubscribeProducts();
+        unsubscribeOrders();
+        unsubscribeCustomerOrders();
+        unsubscribeCustomers();
+      };
     }
-    
-    // Unified storage değişikliklerini dinle
-    const handleStorageChange = () => {
-      if (user?.id && (userProfile?.role === 'seller' || userProfile?.role === 'admin')) {
-        console.log('Storage changed, refreshing dashboard...');
-        loadDashboardData();
-      }
-    };
-    
-    // Storage subscribers
-    const unsubscribeProducts = storage.subscribe('products', handleStorageChange);
-    const unsubscribeSellerOrders = storage.subscribe('sellerOrders', handleStorageChange);
-    const unsubscribeCustomerOrders = storage.subscribe('customerOrders', handleStorageChange);
-    
-    return () => {
-      unsubscribeProducts();
-      unsubscribeSellerOrders();
-      unsubscribeCustomerOrders();
-    };
-  }, [user?.id, userProfile?.role, storage]);
+  }, [user, userProfile]);
 
   const loadDashboardData = async () => {
     try {
-      setLoading(true);
       setError(null);
+      console.log('🔄 Dashboard verileri yükleniyor...');
 
-      // Unified storage'dan verileri al
-      const products = storage.get('products', []);
-      const sellerOrders = storage.get('sellerOrders', []);
-      const customerOrders = storage.get('customerOrders', []);
-      
-      // Siparişleri birleştir
-      const orders = [...sellerOrders, ...customerOrders];
-      
-      // Duplicate siparişleri filtrele
-      const uniqueOrders = orders.filter((order, index, self) => 
-        index === self.findIndex(o => o.id === order.id)
-      );
-      
-      console.log('Dashboard veriler yüklendi:', {
-        products: products.length,
-        orders: uniqueOrders.length
+      const [products, orders, customerOrders, customers] = await Promise.all([
+        storage.get('products', []),
+        storage.get('orders', []),
+        storage.get('customer_orders', []),
+        storage.get('customers', [])
+      ]);
+
+      // Siparişleri birleştir - customer_orders öncelikli
+      const allOrders = [...customerOrders];
+      orders.forEach(order => {
+        const exists = allOrders.find(o => o.id === order.id);
+        if (!exists) {
+          allOrders.push(order);
+        }
       });
-      
-      // İstatistikleri hesapla
+
+      console.log('📊 Dashboard veriler alındı:', {
+        productsCount: products.length,
+        ordersCount: orders.length,
+        customerOrdersCount: customerOrders.length,
+        totalOrdersCount: allOrders.length,
+        customersCount: customers.length
+      });
+
+      const dashboardStats = calculateDashboardStats(products, allOrders, customers);
+      setDashboardData(dashboardStats);
+
+    } catch (error) {
+      console.error('❌ Dashboard data loading error:', error);
+      setError('Dashboard verileri yüklenirken hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calculateDashboardStats = (products, orders, customers = []) => {
+    try {
+      // Yeni storage sistemi - tek orders key'i kullanıyoruz
+      const uniqueOrders = orders || [];
+
+      // Temel istatistikler
       const totalProducts = products.length;
       const activeOrders = uniqueOrders.filter(order => 
         ['pending', 'confirmed', 'preparing', 'Beklemede', 'Onaylandı', 'Hazırlanıyor'].includes(order.status)
       ).length;
       const lowStockItems = products.filter(product => product.stock <= (product.min_stock || 5)).length;
-      
-      // Son siparişleri al (son 5 sipariş)
+
+      // Son siparişler (son 5)
       const recentOrders = uniqueOrders
         .sort((a, b) => {
           const dateA = new Date(a.createdAt || a.created_at || 0);
@@ -100,7 +105,7 @@ const SellerDashboard = () => {
           orderNumber: order.orderNumber || order.order_number || `SIP-${order.id}`,
           customerName: order.customerName || order.customer_name || 'Müşteri',
           total: parseFloat(order.total || order.total_amount) || 0,
-          status: order.status === 'pending' || order.status === 'Beklemede' ? 'Beklemede' : 
+          status: order.status === 'pending' || order.status === 'Beklemede' ? 'Beklemede' :
                   order.status === 'confirmed' || order.status === 'Onaylandı' ? 'Onaylandı' :
                   order.status === 'preparing' || order.status === 'Hazırlanıyor' ? 'Hazırlanıyor' :
                   order.status === 'delivered' || order.status === 'Teslim Edildi' ? 'Teslim Edildi' : 'Diğer',
@@ -122,20 +127,20 @@ const SellerDashboard = () => {
       const today = new Date();
       const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const weekStart = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-      
+
       const todayOrders = uniqueOrders.filter(order => {
         const orderDate = new Date(order.createdAt || order.created_at || 0);
         return !isNaN(orderDate.getTime()) && orderDate >= todayStart;
       });
-      
+
       const weekOrders = uniqueOrders.filter(order => {
         const orderDate = new Date(order.createdAt || order.created_at || 0);
         return !isNaN(orderDate.getTime()) && orderDate >= weekStart;
       });
-      
+
       const todayRevenue = todayOrders.reduce((sum, order) => sum + (parseFloat(order.total || order.total_amount) || 0), 0);
       const weekRevenue = weekOrders.reduce((sum, order) => sum + (parseFloat(order.total || order.total_amount) || 0), 0);
-      
+
       const dashboardData = {
         dailyStats: {
           orders: todayOrders.length,
@@ -157,37 +162,19 @@ const SellerDashboard = () => {
         }
       };
 
-      setDashboardData(dashboardData);
+      return dashboardData;
 
     } catch (error) {
-      setError('Dashboard verileri yüklenirken hata oluştu');
-      console.log('Dashboard hatası:', error);
+      console.error('Dashboard istatistik hesaplama hatası:', error);
       
       // Fallback demo verileri
-      const fallbackData = {
-        dailyStats: {
-          orders: 0,
-          revenue: 0,
-          products: 0
-        },
-        weeklyStats: {
-          orders: 0,
-          revenue: 0,
-          customers: 0
-        },
+      return {
+        dailyStats: { orders: 0, revenue: 0, products: 0 },
+        weeklyStats: { orders: 0, revenue: 0, customers: 0 },
         stockAlerts: [],
         recentOrders: [],
-        quickStats: {
-          totalProducts: 0,
-          activeOrders: 0,
-          totalCustomers: 0,
-          lowStockItems: 0
-        }
+        quickStats: { totalProducts: 0, activeOrders: 0, totalCustomers: 0, lowStockItems: 0 }
       };
-      
-      setDashboardData(fallbackData);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -223,7 +210,7 @@ const SellerDashboard = () => {
   return (
     <div className="min-h-screen bg-slate-200">
       <SaticiHeader />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Başlık Bandı */}
         <div className="bg-slate-100 rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
@@ -237,21 +224,21 @@ const SellerDashboard = () => {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-3">
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
                 className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50/50 transition-colors disabled:opacity-50 bg-transparent"
               >
-                <Icon 
-                  name="RefreshCw" 
-                  size={18} 
-                  className={refreshing ? 'animate-spin' : ''} 
+                <Icon
+                  name="RefreshCw"
+                  size={18}
+                  className={refreshing ? 'animate-spin' : ''}
                 />
                 <span>Yenile</span>
               </button>
-              
+
               <button
                 onClick={() => window.location.href = '/seller/orders'}
                 className="border-2 border-green-600 text-green-600 px-4 py-2 rounded-lg hover:bg-green-600/10 transition-colors flex items-center space-x-2 bg-transparent"
@@ -279,8 +266,6 @@ const SellerDashboard = () => {
           )}
         </div>
 
-
-
         {/* Ana İçerik - Dashboard Bileşenleri */}
         <div className="space-y-6">
           {/* Hızlı İstatistikler */}
@@ -291,9 +276,9 @@ const SellerDashboard = () => {
 
           {/* Günlük Özet ve Son Siparişler */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <GunlukOzet 
-              dailyStats={dashboardData.dailyStats} 
-              weeklyStats={dashboardData.weeklyStats} 
+            <GunlukOzet
+              dailyStats={dashboardData.dailyStats}
+              weeklyStats={dashboardData.weeklyStats}
             />
             <SonSiparisler orders={dashboardData.recentOrders} />
           </div>

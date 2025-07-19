@@ -1,144 +1,894 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '@contexts/AuthContext';
-import SaticiHeader from '@shared/components/ui/SaticiHeader';
-import Icon from '@shared/components/AppIcon';
-import MusteriGecmisiModali from './components/MusteriGecmisiModali';
-import { 
-  getAllRegisteredUsers, 
-  createUserByAdmin, 
-  updateUser, 
-  deleteUser, 
-  toggleUserStatus,
-  getCurrentAuthUser
-} from '@shared/utils/realAuthSystem';
+import { useAuth } from '../../../../../contexts/AuthContext';
+import { useModal } from '../../../../../contexts/ModalContext';
+import { useNotification } from '../../../../../contexts/NotificationContext';
+import SaticiHeader from '../../../../../shared/components/ui/SaticiHeader';
+import Icon from '../../../../../shared/components/AppIcon';
+import storage from '../../../../../core/storage/index.js';
+import customerService from '../../../../../services/customerService';
+import CustomerDetailModal from './components/CustomerDetailModal';
+import CustomerStatusModal from './components/CustomerStatusModal';
+
+// Basit Müşteri Ekleme Formu
+const NewCustomerForm = ({ onSave, onCancel, showWarning }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    username: '',
+    password: '',
+    companyName: '',
+    companyTitle: '',
+    address: '',
+    city: '',
+    district: '',
+    postalCode: '',
+    accountType: 'personal',
+    notes: ''
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    // Basit validation
+    if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim()) {
+      showWarning('Ad, email ve telefon alanları zorunludur!');
+      return;
+    }
+    
+    if (!formData.username.trim() || !formData.password.trim()) {
+      showWarning('Kullanıcı adı ve şifre alanları zorunludur!');
+      return;
+    }
+    
+    onSave(formData);
+  };
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Temel Bilgiler */}
+        <div className="space-y-4">
+          <h4 className="font-medium text-gray-900 border-b pb-2">Temel Bilgiler</h4>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ad Soyad *</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Örn: Ahmet Yılmaz"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">E-posta *</label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleChange('email', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Örn: ahmet@email.com"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Telefon *</label>
+            <input
+              type="text"
+              value={formData.phone}
+              onChange={(e) => handleChange('phone', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Örn: 0532 123 4567"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Kullanıcı Adı *</label>
+            <input
+              type="text"
+              value={formData.username}
+              onChange={(e) => handleChange('username', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Örn: ahmet123"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Şifre *</label>
+            <input
+              type="password"
+              value={formData.password}
+              onChange={(e) => handleChange('password', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Müşteri şifresi"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Hesap Türü</label>
+            <select
+              value={formData.accountType}
+              onChange={(e) => handleChange('accountType', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="personal">Bireysel</option>
+              <option value="business">Kurumsal</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Adres ve Şirket Bilgileri */}
+        <div className="space-y-4">
+          <h4 className="font-medium text-gray-900 border-b pb-2">Adres & Şirket Bilgileri</h4>
+          
+          {formData.accountType === 'business' && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Şirket Adı</label>
+                <input
+                  type="text"
+                  value={formData.companyName}
+                  onChange={(e) => handleChange('companyName', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Örn: ABC Ltd. Şti."
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ünvan</label>
+                <input
+                  type="text"
+                  value={formData.companyTitle}
+                  onChange={(e) => handleChange('companyTitle', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Örn: Müdür, CEO"
+                />
+              </div>
+            </>
+          )}
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Adres</label>
+            <textarea
+              value={formData.address}
+              onChange={(e) => handleChange('address', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows="2"
+              placeholder="Örn: Atatürk Cad. No:123"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Şehir</label>
+              <input
+                type="text"
+                value={formData.city}
+                onChange={(e) => handleChange('city', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="İstanbul"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">İlçe</label>
+              <input
+                type="text"
+                value={formData.district}
+                onChange={(e) => handleChange('district', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Kadıköy"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Posta Kodu</label>
+            <input
+              type="text"
+              value={formData.postalCode}
+              onChange={(e) => handleChange('postalCode', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="34000"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Notlar</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => handleChange('notes', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows="3"
+              placeholder="Müşteri hakkında notlar..."
+            />
+          </div>
+        </div>
+      </div>
+      
+      <div className="flex space-x-3 pt-4 border-t">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          İptal
+        </button>
+        <button
+          type="submit"
+          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Müşteri Ekle
+        </button>
+      </div>
+    </form>
+  );
+};
+
+// Müşteri düzenleme formu component'i
+const EditCustomerForm = ({ customer, onSave, onCancel }) => {
+  const [formData, setFormData] = useState({
+    name: customer.name || '',
+    email: customer.email || '',
+    phone: customer.phone || '',
+    username: customer.username || '',
+    companyName: customer.companyName || '',
+    companyTitle: customer.companyTitle || '',
+    address: customer.address || '',
+    city: customer.city || '',
+    district: customer.district || '',
+    postalCode: customer.postalCode || '',
+    accountType: customer.accountType || 'personal'
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      await onSave({
+        ...customer,
+        ...formData,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Müşteri güncellenirken hata:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Ad Soyad *
+          </label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(e) => handleChange('name', e.target.value)}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Kullanıcı Adı *
+          </label>
+          <input
+            type="text"
+            value={formData.username}
+            onChange={(e) => handleChange('username', e.target.value)}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            E-posta
+          </label>
+          <input
+            type="email"
+            value={formData.email}
+            onChange={(e) => handleChange('email', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Telefon *
+          </label>
+          <input
+            type="tel"
+            value={formData.phone}
+            onChange={(e) => handleChange('phone', e.target.value)}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Hesap Türü
+          </label>
+          <select
+            value={formData.accountType}
+            onChange={(e) => handleChange('accountType', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="personal">Bireysel</option>
+            <option value="business">Kurumsal</option>
+          </select>
+        </div>
+
+        {formData.accountType === 'business' && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Şirket Adı
+              </label>
+              <input
+                type="text"
+                value={formData.companyName}
+                onChange={(e) => handleChange('companyName', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Ünvan
+              </label>
+              <input
+                type="text"
+                value={formData.companyTitle}
+                onChange={(e) => handleChange('companyTitle', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </>
+        )}
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Adres
+          </label>
+          <textarea
+            value={formData.address}
+            onChange={(e) => handleChange('address', e.target.value)}
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Şehir
+          </label>
+          <input
+            type="text"
+            value={formData.city}
+            onChange={(e) => handleChange('city', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            İlçe
+          </label>
+          <input
+            type="text"
+            value={formData.district}
+            onChange={(e) => handleChange('district', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+        >
+          İptal
+        </button>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+        >
+          {isSubmitting ? 'Güncelleniyor...' : 'Güncelle'}
+        </button>
+      </div>
+    </form>
+  );
+};
 
 const MusteriYonetimi = () => {
-  const { user, isSellerLoggedIn, authLoading } = useAuth();
-  const [customers, setCustomers] = useState([]);
+  const { user, userProfile, loading: authLoading } = useAuth();
+  const { showConfirm } = useModal();
+  const { showSuccess, showError, showWarning } = useNotification();
   const [loading, setLoading] = useState(true);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [customers, setCustomers] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
+  const [showEditCustomerModal, setShowEditCustomerModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const itemsPerPage = 9;
 
   const [filters, setFilters] = useState({
     search: '',
     status: '',
-    city: '',
-    sortBy: 'name',
-    sortOrder: 'asc'
+    sortBy: 'name'
   });
 
-  // Gerçek kullanıcı sisteminden müşterileri yükle
+  // Veri yükleme
   useEffect(() => {
-    const loadCustomers = () => {
-      try {
-        const allUsers = getAllRegisteredUsers();
-        const customerUsers = allUsers.filter(user => user.role === 'customer');
-        
-        // Müşteri formatına dönüştür
-        const formattedCustomers = customerUsers.map(user => ({
-          id: user.id,
-          name: user.name,
-          fullName: user.fullName,
-          email: user.email,
-          phone: user.phone,
-          username: user.username,
-          password: user.password, // Güvenlik için normal uygulamada gösterilmez
-          status: user.isActive ? 'active' : 'inactive',
-          registeredAt: user.createdAt,
-          lastLoginAt: user.loginTime || user.createdAt,
-          orderCount: 0, // Bu bilgiler siparişlerden hesaplanabilir
-          totalSpent: 0,
-          lastOrderDate: null,
-          lastOrderStatus: 'Henüz sipariş yok',
-          lastOrderAmount: 0,
-          averageOrderValue: 0,
-          companyName: user.customerInfo?.companyName || '',
-          companyTitle: user.customerInfo?.companyTitle || '',
-          taxOffice: user.customerInfo?.taxOffice || '',
-          taxNumber: user.customerInfo?.taxNumber || '',
-          address: user.customerInfo?.address || '',
-          city: user.customerInfo?.city || '',
-          district: user.customerInfo?.district || '',
-          postalCode: user.customerInfo?.postalCode || '',
-          notes: user.customerInfo?.notes || '',
-          accountType: user.customerInfo?.companyName ? 'business' : 'personal',
-          avatar: user.avatar,
-          preferences: user.customerInfo?.preferences || {
-            notifications: true,
-            smsUpdates: true,
-            emailUpdates: true
-          }
-        }));
-        
-        setCustomers(formattedCustomers);
-        setLoading(false);
-      } catch (error) {
-        console.error('Müşteriler yüklenirken hata:', error);
-        setLoading(false);
-      }
-    };
+    loadData();
+    
+    // Real-time subscriptions
+    const unsubscribeCustomers = storage.subscribe('customers', (newCustomers) => {
+      setCustomers(newCustomers || []);
+    });
+    
+    const unsubscribeOrders = storage.subscribe('customer_orders', (newOrders) => {
+      setOrders(newOrders || []);
+    });
 
-    loadCustomers();
+    return () => {
+      unsubscribeCustomers();
+      unsubscribeOrders();
+    };
   }, []);
 
-  // Müşteri listesini yenileme fonksiyonu
-  const refreshCustomers = () => {
-    const allUsers = getAllRegisteredUsers();
-    const customerUsers = allUsers.filter(user => user.role === 'customer');
-    
-    const formattedCustomers = customerUsers.map(user => ({
-      id: user.id,
-      name: user.name,
-      fullName: user.fullName,
-      email: user.email,
-      phone: user.phone,
-      username: user.username,
-      password: user.password,
-      status: user.isActive ? 'active' : 'inactive',
-      registeredAt: user.createdAt,
-      lastLoginAt: user.loginTime || user.createdAt,
-      orderCount: 0,
-      totalSpent: 0,
-      lastOrderDate: null,
-      lastOrderStatus: 'Henüz sipariş yok',
-      lastOrderAmount: 0,
-      averageOrderValue: 0,
-      companyName: user.customerInfo?.companyName || '',
-      companyTitle: user.customerInfo?.companyTitle || '',
-      taxOffice: user.customerInfo?.taxOffice || '',
-      taxNumber: user.customerInfo?.taxNumber || '',
-      address: user.customerInfo?.address || '',
-      city: user.customerInfo?.city || '',
-      district: user.customerInfo?.district || '',
-      postalCode: user.customerInfo?.postalCode || '',
-      notes: user.customerInfo?.notes || '',
-      accountType: user.customerInfo?.companyName ? 'business' : 'personal',
-      avatar: user.avatar,
-      preferences: user.customerInfo?.preferences || {
-        notifications: true,
-        smsUpdates: true,
-        emailUpdates: true
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      
+      // Müşterileri yükle
+      let storedCustomers = await customerService.getAll();
+      if (storedCustomers.length === 0) {
+        console.log('🆕 Demo müşteriler oluşturuluyor...');
+        storedCustomers = createDemoCustomers();
+        
+        // Demo müşterileri kaydet
+        for (const customer of storedCustomers) {
+          await customerService.create(customer);
+        }
+        
+        // Müşterileri yeniden yükle
+        storedCustomers = await customerService.getAll();
       }
-    }));
-    
-    setCustomers(formattedCustomers);
+      
+      // Siparişleri yükle
+      const storedOrders = await storage.get('customer_orders', []);
+      
+      setCustomers(storedCustomers);
+      setOrders(storedOrders);
+      console.log('✅ Müşteri yönetimi verileri yüklendi');
+      
+    } catch (error) {
+      console.error('❌ Müşteri yönetimi veri yükleme hatası:', error);
+      showError('Müşteri verileri yüklenirken bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Filtrelenmiş ve sıralanmış müşteriler
+  // Demo müşteriler oluştur (sadece 10 tane)
+  const createDemoCustomers = () => {
+    const demoCustomers = [
+      {
+        id: 1,
+        name: 'Ahmet Yılmaz',
+        email: 'ahmet@email.com',
+        phone: '0532 123 4567',
+        username: 'ahmet123',
+        status: 'active',
+        registeredAt: '2024-01-15T10:30:00Z',
+        lastLoginAt: '2025-07-15T14:20:00Z',
+        companyName: 'Yılmaz Market',
+        companyTitle: 'Müdür',
+        address: 'Atatürk Cad. No:45',
+        city: 'İstanbul',
+        district: 'Kadıköy',
+        postalCode: '34710',
+        accountType: 'business',
+        avatar: null,
+        notes: 'Düzenli müşteri, hızlı ödeme yapar'
+      },
+      {
+        id: 2,
+        name: 'Fatma Demir',
+        email: 'fatma@email.com',
+        phone: '0545 987 6543',
+        username: 'fatma456',
+        status: 'active',
+        registeredAt: '2024-02-20T09:15:00Z',
+        lastLoginAt: '2025-07-14T11:45:00Z',
+        companyName: '',
+        companyTitle: '',
+        address: 'Cumhuriyet Mah. 123. Sk. No:78',
+        city: 'Ankara',
+        district: 'Çankaya',
+        postalCode: '06690',
+        accountType: 'personal',
+        avatar: null,
+        notes: 'Organik ürünleri tercih ediyor'
+      },
+      {
+        id: 3,
+        name: 'Mehmet Kaya',
+        email: 'mehmet@email.com',
+        phone: '0533 456 7890',
+        username: 'mehmet789',
+        status: 'active',
+        registeredAt: '2024-03-10T16:45:00Z',
+        lastLoginAt: '2025-07-16T08:30:00Z',
+        companyName: 'Kaya Gıda Ltd.',
+        companyTitle: 'Satın Alma Müdürü',
+        address: 'Sanayi Sitesi 4. Blok No:12',
+        city: 'İzmir',
+        district: 'Bornova',
+        postalCode: '35040',
+        accountType: 'business',
+        avatar: null,
+        notes: 'Toplu sipariş veriyor, indirim bekliyor'
+      },
+      {
+        id: 4,
+        name: 'Ayşe Özkan',
+        email: 'ayse@email.com',
+        phone: '0542 111 2233',
+        username: 'ayse321',
+        status: 'active',
+        registeredAt: '2024-04-05T12:20:00Z',
+        lastLoginAt: '2025-07-13T19:15:00Z',
+        companyName: '',
+        companyTitle: '',
+        address: 'Yeni Mah. 567. Cd. No:89',
+        city: 'Bursa',
+        district: 'Nilüfer',
+        postalCode: '16110',
+        accountType: 'personal',
+        avatar: null,
+        notes: 'Hafta sonları sipariş veriyor'
+      },
+      {
+        id: 5,
+        name: 'Emre Şahin',
+        email: 'emre@email.com',
+        phone: '0534 444 5566',
+        username: 'emre555',
+        status: 'inactive',
+        registeredAt: '2024-05-12T14:10:00Z',
+        lastLoginAt: '2025-06-20T10:00:00Z',
+        companyName: 'Şahin Restaurant',
+        companyTitle: 'Chef',
+        address: 'Merkez Mah. Restaurant Sok. No:34',
+        city: 'Antalya',
+        district: 'Muratpaşa',
+        postalCode: '07100',
+        accountType: 'business',
+        avatar: null,
+        notes: 'Uzun süredir pasif'
+      },
+      {
+        id: 6,
+        name: 'Zeynep Kara',
+        email: 'zeynep@email.com',
+        phone: '0546 777 8899',
+        username: 'zeynep99',
+        status: 'active',
+        registeredAt: '2024-06-01T13:25:00Z',
+        lastLoginAt: '2025-07-15T16:40:00Z',
+        companyName: '',
+        companyTitle: '',
+        address: 'Barbaros Bulv. No:156',
+        city: 'İstanbul',
+        district: 'Beşiktaş',
+        postalCode: '34349',
+        accountType: 'personal',
+        avatar: null,
+        notes: 'Hızlı teslimat istiyor'
+      },
+      {
+        id: 7,
+        name: 'Murat Özdemir',
+        email: 'murat@email.com',
+        phone: '0535 333 4455',
+        username: 'murat77',
+        status: 'active',
+        registeredAt: '2024-06-15T11:10:00Z',
+        lastLoginAt: '2025-07-16T09:20:00Z',
+        companyName: 'Özdemir Ticaret',
+        companyTitle: 'Genel Müdür',
+        address: 'İnönü Cad. No:67',
+        city: 'Ankara',
+        district: 'Kızılay',
+        postalCode: '06420',
+        accountType: 'business',
+        avatar: null,
+        notes: 'Aylık düzenli sipariş veriyor'
+      },
+      {
+        id: 8,
+        name: 'Elif Yıldız',
+        email: 'elif@email.com',
+        phone: '0543 666 7788',
+        username: 'elif123',
+        status: 'active',
+        registeredAt: '2024-07-01T14:35:00Z',
+        lastLoginAt: '2025-07-14T18:50:00Z',
+        companyName: '',
+        companyTitle: '',
+        address: 'Alsancak Mah. 456. Sk. No:23',
+        city: 'İzmir',
+        district: 'Konak',
+        postalCode: '35220',
+        accountType: 'personal',
+        avatar: null,
+        notes: 'Yeni müşteri, ilk siparişini verdi'
+      },
+      {
+        id: 9,
+        name: 'Okan Demir',
+        email: 'okan@email.com',
+        phone: '0537 999 1122',
+        username: 'okan456',
+        status: 'active',
+        registeredAt: '2024-07-10T10:15:00Z',
+        lastLoginAt: '2025-07-15T12:30:00Z',
+        companyName: 'Demir Pazarlama',
+        companyTitle: 'Pazarlama Müdürü',
+        address: 'Atatürk Bulv. No:789',
+        city: 'Bursa',
+        district: 'Osmangazi',
+        postalCode: '16200',
+        accountType: 'business',
+        avatar: null,
+        notes: 'Büyük siparişler veriyor'
+      },
+      {
+        id: 10,
+        name: 'Selin Kaya',
+        email: 'selin@email.com',
+        phone: '0544 555 6677',
+        username: 'selin789',
+        status: 'active',
+        registeredAt: '2024-07-15T16:20:00Z',
+        lastLoginAt: '2025-07-16T14:45:00Z',
+        companyName: '',
+        companyTitle: '',
+        address: 'Yenişehir Mah. 123. Cd. No:45',
+        city: 'Antalya',
+        district: 'Aksu',
+        postalCode: '07100',
+        accountType: 'personal',
+        avatar: null,
+        notes: 'En yeni müşterimiz'
+      },
+      {
+        id: 11,
+        name: 'İbrahim Koç',
+        email: 'ibrahim@email.com',
+        phone: '0542 890 1234',
+        username: 'ibrahim567',
+        status: 'active',
+        registeredAt: '2024-01-25T08:40:00Z',
+        lastLoginAt: '2025-07-16T07:20:00Z',
+        companyName: 'Koç Turizm Otel',
+        companyTitle: 'İşletme Müdürü',
+        address: 'Turizm Bölgesi 5. Etap',
+        city: 'Muğla',
+        district: 'Marmaris',
+        postalCode: '48700',
+        accountType: 'business',
+        avatar: null,
+        notes: 'Otel için toplu gıda tedariki'
+      },
+      {
+        id: 12,
+        name: 'Meryem Aydın',
+        email: 'meryem@email.com',
+        phone: '0543 901 2345',
+        username: 'meryem890',
+        status: 'active',
+        registeredAt: '2024-03-15T13:55:00Z',
+        lastLoginAt: '2025-07-12T16:40:00Z',
+        companyName: '',
+        companyTitle: '',
+        address: 'Yeşil Vadi Sitesi B/24',
+        city: 'Denizli',
+        district: 'Pamukkale',
+        postalCode: '20160',
+        accountType: 'personal',
+        avatar: null,
+        notes: 'Sağlıklı beslenme odaklı'
+      },
+      {
+        id: 13,
+        name: 'Ömer Başkan',
+        email: 'omer@email.com',
+        phone: '0544 012 3456',
+        username: 'omer123',
+        status: 'inactive',
+        registeredAt: '2024-04-01T09:30:00Z',
+        lastLoginAt: '2025-06-20T12:00:00Z',
+        companyName: 'Başkan Lokantası',
+        companyTitle: 'Şef',
+        address: 'Eski Çarşı No:45',
+        city: 'Gaziantep',
+        district: 'Şehitkamil',
+        postalCode: '27010',
+        accountType: 'business',
+        avatar: null,
+        notes: 'Geçici olarak pasif, yeniden aktif olabilir'
+      },
+      {
+        id: 14,
+        name: 'Elif Turan',
+        email: 'elif@email.com',
+        phone: '0545 123 4567',
+        username: 'elif456',
+        status: 'active',
+        registeredAt: '2024-02-05T17:15:00Z',
+        lastLoginAt: '2025-07-15T13:25:00Z',
+        companyName: '',
+        companyTitle: '',
+        address: 'Çamlık Mah. 156/7',
+        city: 'Mersin',
+        district: 'Akdeniz',
+        postalCode: '33100',
+        accountType: 'personal',
+        avatar: null,
+        notes: 'Akdeniz bölgesi, mevsimlik tercih'
+      },
+      {
+        id: 15,
+        name: 'Recep Erdem',
+        email: 'recep@email.com',
+        phone: '0546 234 5678',
+        username: 'recep789',
+        status: 'pending',
+        registeredAt: '2024-04-15T19:45:00Z',
+        lastLoginAt: null,
+        companyName: 'Erdem Toptan Gıda',
+        companyTitle: 'Müdür',
+        address: 'Hal Kompleksi 12. Ada',
+        city: 'Konya',
+        district: 'Selçuklu',
+        postalCode: '42250',
+        accountType: 'business',
+        avatar: null,
+        notes: 'Onay bekleyen hesap, büyük potansiyel'
+      }
+    ];
+
+    return demoCustomers;
+  };
+
+  // Müşteri durumu güncelleme
+  const handleUpdateCustomerStatus = async (customerId, status, reason = '') => {
+    try {
+      const updatedCustomer = await customerService.updateStatus(customerId, status);
+      
+      if (!updatedCustomer) {
+        throw new Error('Müşteri bulunamadı');
+      }
+      
+      // Eğer engelleme nedeni varsa, müşteri notlarına ekle
+      if (status === 'blocked' && reason) {
+        await customerService.update(customerId, {
+          notes: `${updatedCustomer.notes ? updatedCustomer.notes + '\n\n' : ''}Engelleme Nedeni (${new Date().toLocaleDateString('tr-TR')}): ${reason}`
+        });
+      }
+      
+      // Müşterileri yeniden yükle
+      await loadData();
+      
+      showSuccess(`Müşteri durumu başarıyla güncellendi: ${getStatusLabel(status)}`);
+      return true;
+    } catch (error) {
+      console.error('Müşteri durumu güncellenirken hata:', error);
+      showError('Müşteri durumu güncellenirken bir hata oluştu');
+      return false;
+    }
+  };
+  
+  // Durum etiketi getir
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'active':
+        return 'Aktif';
+      case 'inactive':
+        return 'Pasif';
+      case 'blocked':
+        return 'Engelli';
+      case 'pending':
+        return 'Onay Bekliyor';
+      default:
+        return 'Bilinmiyor';
+    }
+  };
+
+  // Müşteri istatistikleri
+  const customerStats = useMemo(() => {
+    const total = customers.length;
+    const active = customers.filter(c => c.status === 'active').length;
+    const inactive = customers.filter(c => c.status === 'inactive').length;
+    const business = customers.filter(c => c.accountType === 'business').length;
+    const personal = customers.filter(c => c.accountType === 'personal').length;
+    const blocked = customers.filter(c => c.status === 'blocked').length;
+    const pending = customers.filter(c => c.status === 'pending').length;
+
+    return { total, active, inactive, business, personal, blocked, pending };
+  }, [customers]);
+
+  // Müşteri sipariş istatistikleri
+  const enhancedCustomers = useMemo(() => {
+    return customers.map(customer => {
+      const customerOrders = orders.filter(order => order.customerId === customer.id);
+      const totalSpent = customerOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+      const lastOrder = customerOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+
+      return {
+        ...customer,
+        orderCount: customerOrders.length,
+        totalSpent,
+        lastOrderDate: lastOrder?.createdAt || null,
+        lastOrderStatus: lastOrder?.status || 'Henüz sipariş yok',
+        lastOrderAmount: lastOrder?.total || 0,
+        averageOrderValue: customerOrders.length > 0 ? totalSpent / customerOrders.length : 0
+      };
+    });
+  }, [customers, orders]);
+
+  // Filtreleme
   const filteredCustomers = useMemo(() => {
-    let filtered = [...customers];
+    let filtered = enhancedCustomers;
 
     // Arama filtresi
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filtered = filtered.filter(customer =>
         customer.name.toLowerCase().includes(searchLower) ||
-        customer.phone.includes(filters.search) ||
         customer.email.toLowerCase().includes(searchLower) ||
-        (customer.companyName && customer.companyName.toLowerCase().includes(searchLower))
+        customer.phone.includes(filters.search) ||
+        customer.username.toLowerCase().includes(searchLower) ||
+        customer.companyName.toLowerCase().includes(searchLower) ||
+        customer.city.toLowerCase().includes(searchLower)
       );
     }
 
@@ -147,53 +897,33 @@ const MusteriYonetimi = () => {
       filtered = filtered.filter(customer => customer.status === filters.status);
     }
 
-    // Şehir filtresi
-    if (filters.city) {
-      filtered = filtered.filter(customer => customer.city === filters.city);
-    }
-
     // Sıralama
     filtered.sort((a, b) => {
-      let aValue = a[filters.sortBy];
-      let bValue = b[filters.sortBy];
-
-      if (filters.sortBy === 'registeredAt' || filters.sortBy === 'lastOrderDate') {
-        aValue = new Date(aValue);
-        bValue = new Date(bValue);
+      switch (filters.sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name, 'tr');
+        case 'orders':
+          return b.orderCount - a.orderCount;
+        case 'spent':
+          return b.totalSpent - a.totalSpent;
+        case 'date':
+          return new Date(b.registeredAt) - new Date(a.registeredAt);
+        default:
+          return 0;
       }
-
-      if (typeof aValue === 'string') {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-
-      if (filters.sortOrder === 'desc') {
-        return aValue < bValue ? 1 : -1;
-      }
-      return aValue > bValue ? 1 : -1;
     });
 
     return filtered;
-  }, [customers, filters]);
-
-  // Mevcut müşterilerdeki benzersiz şehirler
-  const availableCities = useMemo(() => {
-    const cities = customers
-      .map(customer => customer.city)
-      .filter(city => city && city.trim() !== '') // Boş şehirleri filtrele
-      .filter((city, index, array) => array.indexOf(city) === index) // Benzersiz şehirler
-      .sort(); // Alfabetik sıralama
-    return cities;
-  }, [customers]);
+  }, [enhancedCustomers, filters]);
 
   // Sayfalama
-  const paginatedCustomers = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredCustomers.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredCustomers, currentPage, itemsPerPage]);
-
   const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+  const currentCustomers = filteredCustomers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
+  // Para formatı
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('tr-TR', {
       style: 'currency',
@@ -201,240 +931,170 @@ const MusteriYonetimi = () => {
     }).format(amount);
   };
 
+  // Tarih formatı
   const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '-';
-    return new Intl.DateTimeFormat('tr-TR', {
+    if (!dateString) return 'Bilinmiyor';
+    return new Date(dateString).toLocaleDateString('tr-TR', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
-    }).format(date);
-  };
-
-  // Şehir adını büyük harfe çeviren fonksiyon
-  const capitalizeCity = (city) => {
-    return city
-      .toLowerCase()
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-
-  const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
-    setCurrentPage(1);
-  };
-
-  const handleResetFilters = () => {
-    setFilters({
-      search: '',
-      status: '',
-      city: '',
-      sortBy: 'name',
-      sortOrder: 'asc'
     });
-    setCurrentPage(1);
   };
 
-  const handleClearLocalStorage = () => {
-    if (window.confirm('TÜM VERİLERİ TEMİZLEMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ?\n\nBu işlem:\n- Tüm kullanıcı hesaplarını\n- Tüm sistem verilerini\n- Tüm cache\'i temizleyecek\n\nBu işlem GERİ ALINAMAZ!')) {
-      // Tüm localStorage verilerini temizle
-      localStorage.clear();
-      
-      // Toast bildirimi (eğer mevcut ise)
-      try {
-        const event = new CustomEvent('showToast', {
-          detail: { 
-            message: 'Tüm veriler temizlendi. Sayfa yenileniyor...', 
-            type: 'warning' 
-          }
-        });
-        window.dispatchEvent(event);
-      } catch (e) {
-        console.log('Toast bildirimi gösterilemedi');
-      }
-      
-      // Sayfayı yenile
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
-    }
+  // Excel export
+  const handleExportToExcel = () => {
+    const data = filteredCustomers.map(customer => ({
+      'Müşteri Adı': customer.name,
+      'E-posta': customer.email,
+      'Telefon': customer.phone,
+      'Şehir': customer.city,
+      'Hesap Türü': customer.accountType === 'business' ? 'Kurumsal' : 'Bireysel',
+      'Durum': customer.status === 'active' ? 'Aktif' : 'Pasif',
+      'Kayıt Tarihi': formatDate(customer.registeredAt),
+      'Sipariş Sayısı': customer.orderCount,
+      'Toplam Harcama': customer.totalSpent,
+      'Son Sipariş': formatDate(customer.lastOrderDate)
+    }));
+
+    const csv = [
+      Object.keys(data[0]).join(','),
+      ...data.map(row => Object.values(row).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `musteriler_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
   };
 
-  const handleEditCustomer = (customer) => {
-    setSelectedCustomer(customer);
-    setShowDetailModal(true);
-  };
-
-  const handleViewHistory = (customer) => {
-    setSelectedCustomer(customer);
-    setShowHistoryModal(true);
-  };
-
-  const handleNewCustomer = () => {
-    setSelectedCustomer(null); // Yeni müşteri için null
-    setShowDetailModal(true);
-  };
-
-  const handleDeleteCustomer = (customerId) => {
-    if (window.confirm('Bu müşteriyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
-      try {
-        deleteUser(customerId);
-        refreshCustomers();
-        
-        // Toast bildirimi (eğer mevcut ise)
-        try {
-          const event = new CustomEvent('showToast', {
-            detail: { 
-              message: 'Müşteri başarıyla silindi', 
-              type: 'success' 
-            }
-          });
-          window.dispatchEvent(event);
-        } catch (e) {
-          console.log('Toast bildirimi gösterilemedi');
-        }
-      } catch (error) {
-        console.error('Müşteri silinirken hata:', error);
-        alert(error.message || 'Müşteri silinirken hata oluştu');
-      }
-    }
-  };
-
-  const handleSaveCustomer = (customerData) => {
+  // Yeni müşteri ekleme
+  const handleAddCustomer = async (customerData) => {
     try {
-      if (customerData.id) {
-        // Müşteri güncelle
-        const updateData = {
-          name: customerData.name,
-          fullName: customerData.fullName || customerData.name,
-          email: customerData.email,
-          phone: customerData.phone,
-          username: customerData.username,
-          isActive: customerData.status === 'active',
-          customerInfo: {
-            companyName: customerData.companyName || '',
-            companyTitle: customerData.companyTitle || '',
-            taxOffice: customerData.taxOffice || '',
-            taxNumber: customerData.taxNumber || '',
-            address: customerData.address || '',
-            city: customerData.city || '',
-            district: customerData.district || '',
-            postalCode: customerData.postalCode || '',
-            notes: customerData.notes || '',
-            preferences: customerData.preferences || {
-              notifications: true,
-              smsUpdates: true,
-              emailUpdates: true
-            }
-          }
-        };
-        
-        // Şifre varsa ekle
-        if (customerData.password) {
-          updateData.password = customerData.password;
-        }
-        
-        updateUser(customerData.id, updateData);
-          // Toast bildirimi
-        try {
-          const event = new CustomEvent('showToast', {
-            detail: {
-              message: 'Müşteri bilgileri başarıyla güncellendi',
-              type: 'success'
-            }
-          });
-          window.dispatchEvent(event);
-        } catch (e) {
-          console.log('Toast bildirimi gösterilemedi');
-        }
-        
-        // Trigger cross-tab communication
-        window.dispatchEvent(new CustomEvent('customersUpdated'));
-        
-      } else {
-        // Yeni müşteri oluştur
-        const newUserData = {
-          name: customerData.name,
-          fullName: customerData.fullName || customerData.name,
-          email: customerData.email,
-          phone: customerData.phone,
-          username: customerData.username,
-          password: customerData.password,
-          role: 'customer',
-          companyName: customerData.companyName || '',
-          companyTitle: customerData.companyTitle || '',
-          taxOffice: customerData.taxOffice || '',
-          taxNumber: customerData.taxNumber || '',
-          address: customerData.address || '',
-          city: customerData.city || '',
-          district: customerData.district || '',
-          postalCode: customerData.postalCode || '',
-          notes: customerData.notes || ''
-        };
-        
-        createUserByAdmin(newUserData);
-        
-        // Toast bildirimi
-        try {
-          const event = new CustomEvent('showToast', {
-            detail: { 
-              message: 'Yeni müşteri başarıyla oluşturuldu', 
-              type: 'success' 
-            }
-          });
-          window.dispatchEvent(event);
-        } catch (e) {
-          console.log('Toast bildirimi gösterilemedi');
-        }
-        
-        // Trigger cross-tab communication
-        window.dispatchEvent(new CustomEvent('customersUpdated'));
-      }
+      const newCustomer = await customerService.create({
+        ...customerData,
+        status: 'active',
+        registeredAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+        avatar: null
+      });
       
-      // Müşteri listesini yenile
-      refreshCustomers();
-      setShowDetailModal(false);
+      // Müşterileri yeniden yükle
+      await loadData();
+      setShowNewCustomerModal(false);
       
+      console.log('✅ Yeni müşteri eklendi:', newCustomer.name);
+      showSuccess(`${newCustomer.name} başarıyla eklendi!`);
     } catch (error) {
-      console.error('Müşteri kaydedilirken hata:', error);
-      alert(error.message || 'Müşteri kaydedilirken hata oluştu');
+      console.error('❌ Müşteri ekleme hatası:', error);
+      showError('Müşteri eklenirken bir hata oluştu');
     }
   };
 
-  // Cross-tab communication for customers
-  useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === 'registeredUsers') {
-        loadCustomers();
-        console.log('🔄 Customers updated from another tab');
-      }
-    };
+  // Müşteri düzenleme
+  const handleEditCustomer = (customer) => {
+    setEditingCustomer(customer);
+    setShowEditCustomerModal(true);
+  };
 
-    const handleCustomersUpdated = () => {
-      loadCustomers();
-      console.log('🔄 Customers updated from same tab');
-    };
-
-    // Listen for storage events (cross-tab)
-    window.addEventListener('storage', handleStorageChange);
+  // Müşteri silme
+  const handleDeleteCustomer = async (customerId) => {
+    const customer = customers.find(c => c.id === customerId);
+    const customerName = customer ? customer.name : 'Bu müşteri';
     
-    // Listen for custom events (same-tab)
-    window.addEventListener('customersUpdated', handleCustomersUpdated);
+    const confirmed = await showConfirm(
+      `${customerName} adlı müşteriyi silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz!`,
+      {
+        title: 'Müşteri Silme',
+        confirmText: 'Evet, Sil',
+        cancelText: 'İptal',
+        type: 'danger'
+      }
+    );
+    
+    if (confirmed) {
+      try {
+        const deleted = await customerService.delete(customerId);
+        
+        if (!deleted) {
+          throw new Error('Müşteri bulunamadı');
+        }
+        
+        // Müşterileri yeniden yükle
+        await loadData();
+        
+        console.log('✅ Müşteri silindi:', customerName);
+        showSuccess(`${customerName} başarıyla silindi.`);
+      } catch (error) {
+        console.error('❌ Müşteri silme hatası:', error);
+        showError('Müşteri silinirken bir hata oluştu');
+      }
+    }
+  };
 
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('customersUpdated', handleCustomersUpdated);
-    };
-  }, []);
+  // Müşteri güncelleme
+  const handleUpdateCustomer = async (customerData) => {
+    try {
+      const updatedCustomer = await customerService.update(editingCustomer.id, customerData);
+      
+      if (!updatedCustomer) {
+        throw new Error('Müşteri bulunamadı');
+      }
+      
+      // Müşterileri yeniden yükle
+      await loadData();
+      setShowEditCustomerModal(false);
+      setEditingCustomer(null);
+      
+      console.log('✅ Müşteri güncellendi:', customerData.name);
+      showSuccess(`${customerData.name} bilgileri başarıyla güncellendi!`);
+    } catch (error) {
+      console.error('❌ Müşteri güncelleme hatası:', error);
+      showError('Müşteri güncellenirken bir hata oluştu');
+    }
+  };
 
-  if (loading) {
+  // Müşteri sipariş detay takibi
+  const handleViewOrders = async (customer) => {
+    try {
+      // Müşterinin siparişlerini servis üzerinden al
+      const customerOrders = await customerService.getCustomerOrders(customer.id);
+      
+      if (customerOrders.length === 0) {
+        showWarning(`${customer.name} adlı müşterinin henüz siparişi bulunmuyor.`);
+        return;
+      }
+      
+      // Müşteri detay modalını aç
+      setSelectedCustomer(customer);
+      setShowDetailModal(true);
+      
+      console.log('Müşteri siparişleri:', customerOrders);
+      showSuccess(`${customer.name} - ${customerOrders.length} sipariş bulundu.`);
+    } catch (error) {
+      console.error('Müşteri siparişleri yüklenirken hata:', error);
+      showError('Müşteri siparişleri yüklenirken bir hata oluştu');
+    }
+  };
+
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Müşteri yönetimi yükleniyor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || !userProfile || (userProfile.role !== 'seller' && userProfile.role !== 'admin')) {
     return (
       <div className="min-h-screen bg-slate-200 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Müşteriler yükleniyor...</p>
+          <Icon name="AlertCircle" size={48} className="text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Erişim Reddedildi</h2>
+          <p className="text-gray-600">Bu panele erişmek için satıcı yetkilerine sahip olmanız gerekir.</p>
         </div>
       </div>
     );
@@ -443,1067 +1103,699 @@ const MusteriYonetimi = () => {
   return (
     <div className="min-h-screen bg-slate-200">
       <SaticiHeader />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Başlık Bandı - Standart Tasarım */}
-        <div className="bg-slate-100 rounded-lg border border-gray-200 p-6 mb-8">
+        {/* Başlık ve Eylemler */}
+        <div className="bg-slate-100 rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Icon name="Users" size={24} className="text-blue-600" />
               <div>
                 <h1 className="text-2xl font-bold text-blue-600">Müşteri Yönetimi</h1>
-                <p className="text-gray-600 mt-1">Müşterilerinizi görüntüleyin ve yönetin</p>
+                <p className="text-gray-600 mt-1">
+                  Toplam {customerStats.total} müşteri • {currentCustomers.length} görüntüleniyor
+                </p>
               </div>
             </div>
-            
-            {/* Hızlı Eylemler */}
+
             <div className="flex items-center space-x-3">
               <button
-                onClick={handleNewCustomer}
-                className="flex items-center space-x-2 px-4 py-2 bg-transparent border-2 border-green-600 text-green-600 rounded-lg hover:bg-green-600/10 transition-colors font-medium"
+                onClick={() => setShowNewCustomerModal(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
               >
                 <Icon name="Plus" size={18} />
                 <span>Yeni Müşteri</span>
               </button>
-              
-              <button 
-                onClick={handleClearLocalStorage}
-                className="flex items-center space-x-2 px-4 py-2 bg-transparent border-2 border-red-600 text-red-600 rounded-lg hover:bg-red-600/10 transition-colors font-medium"
-                title="Tüm verileri sil ve baştan başla"
+              <button
+                onClick={handleExportToExcel}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
               >
-                <Icon name="RotateCcw" size={18} />
-                <span>Sıfırla</span>
-              </button>
-              
-              <button className="flex items-center space-x-2 px-4 py-2 bg-transparent border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600/10 transition-colors font-medium">
                 <Icon name="Download" size={18} />
-                <span>Dışa Aktar</span>
+                <span>Excel İndir</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* İstatistikler - Modern Kartlar */}
+        {/* İstatistikler */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <div className="bg-slate-100 rounded-xl p-6 border border-gray-100 transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">Toplam Müşteri</p>
-                <p className="text-3xl font-bold text-gray-900">{customers.length}</p>
-                <p className="text-xs text-green-600 mt-1 flex items-center">
-                  <Icon name="TrendingUp" size={12} className="mr-1" />
-                  Aktif sistem
-                </p>
+          <div className="bg-slate-100 rounded-lg p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <Icon name="Users" size={24} className="text-blue-600" />
               </div>
-              <div className="p-3">
-                <Icon name="Users" size={28} className="text-blue-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Toplam Müşteri</p>
+                <p className="text-2xl font-bold text-gray-900">{customerStats.total}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-slate-100 rounded-xl p-6 border border-gray-100 transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">Aktif Müşteri</p>
-                <p className="text-3xl font-bold text-green-600">{customers.filter(c => c.status === 'active').length}</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  %{Math.round((customers.filter(c => c.status === 'active').length / customers.length) * 100)} oranında
-                </p>
+          <div className="bg-slate-100 rounded-lg p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <Icon name="CheckCircle" size={24} className="text-green-600" />
               </div>
-              <div className="p-3">
-                <Icon name="CheckCircle" size={28} className="text-green-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Aktif Müşteri</p>
+                <p className="text-2xl font-bold text-gray-900">{customerStats.active}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-slate-100 rounded-xl p-6 border border-gray-100 transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">VIP Müşteri</p>
-                <p className="text-3xl font-bold text-amber-600">{customers.filter(c => c.status === 'vip').length}</p>
-                <p className="text-xs text-amber-600 mt-1 flex items-center">
-                  <Icon name="Crown" size={12} className="mr-1" />
-                  Özel statü
-                </p>
+          <div className="bg-slate-100 rounded-lg p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <Icon name="XCircle" size={24} className="text-red-600" />
               </div>
-              <div className="p-3">
-                <Icon name="Star" size={28} className="text-amber-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Pasif Müşteri</p>
+                <p className="text-2xl font-bold text-gray-900">{customerStats.inactive}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-slate-100 rounded-xl p-6 border border-gray-100 transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">Toplam Gelir</p>
-                <p className="text-2xl font-bold text-emerald-600">{formatCurrency(customers.reduce((sum, c) => sum + c.totalSpent, 0))}</p>
-                <p className="text-xs text-emerald-600 mt-1 flex items-center">
-                  <Icon name="ArrowUp" size={12} className="mr-1" />
-                  Büyüyen trend
-                </p>
+          <div className="bg-slate-100 rounded-lg p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <Icon name="Building" size={24} className="text-purple-600" />
               </div>
-              <div className="p-3">
-                <Icon name="DollarSign" size={28} className="text-emerald-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Kurumsal</p>
+                <p className="text-2xl font-bold text-gray-900">{customerStats.business}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-slate-100 rounded-xl p-6 border border-gray-100 transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">Ort. Sipariş</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  {customers.length > 0 ? formatCurrency(customers.reduce((sum, c) => sum + c.totalSpent, 0) / customers.length) : formatCurrency(0)}
-                </p>
-                <p className="text-xs text-purple-600 mt-1 flex items-center">
-                  <Icon name="BarChart3" size={12} className="mr-1" />
-                  Ortalama değer
-                </p>
+          <div className="bg-slate-100 rounded-lg p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <Icon name="User" size={24} className="text-orange-600" />
               </div>
-              <div className="p-3">
-                <Icon name="ShoppingCart" size={28} className="text-purple-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Bireysel</p>
+                <p className="text-2xl font-bold text-gray-900">{customerStats.personal}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Filtreler - Geliştirilmiş Tasarım */}
-        <div className="bg-slate-100 rounded-2xl border border-gray-100 p-6 mb-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
-              <div className="p-2">
-                <Icon name="Filter" size={20} className="text-blue-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800">Filtreler & Arama</h3>
-            </div>
-            <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-              {filteredCustomers.length} sonuç bulundu
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Arama */}
+        {/* Filtreler */}
+        <div className="bg-slate-100 rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
-                <Icon name="Search" size={16} className="inline mr-2 text-gray-500" />
-                Genel Arama
-              </label>
-              <div className="relative">
-                <Icon name="Search" size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  value={filters.search}
-                  onChange={(e) => handleFilterChange({ ...filters, search: e.target.value })}
-                  placeholder="Ad, telefon, e-posta, şirket..."
-                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                />
-                {filters.search && (
-                  <button
-                    onClick={() => handleFilterChange({ ...filters, search: '' })}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    <Icon name="X" size={16} />
-                  </button>
-                )}
-              </div>
+              <input
+                type="text"
+                placeholder="Müşteri ara (ad, email, telefon, şehir...)"
+                value={filters.search}
+                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
-
-            {/* Durum */}
+            
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
-                <Icon name="Users" size={16} className="inline mr-2 text-gray-500" />
-                Müşteri Durumu
-              </label>
               <select
                 value={filters.status}
-                onChange={(e) => handleFilterChange({ ...filters, status: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Tüm Durumlar</option>
-                <option value="active">✅ Aktif</option>
-                <option value="vip">⭐ VIP</option>
-                <option value="inactive">⏸️ Pasif</option>
+                <option value="active">Aktif</option>
+                <option value="inactive">Pasif</option>
               </select>
             </div>
 
-            {/* Şehir */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
-                <Icon name="MapPin" size={16} className="inline mr-2 text-gray-500" />
-                Şehir
-              </label>
               <select
-                value={filters.city}
-                onChange={(e) => handleFilterChange({ ...filters, city: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                value={filters.sortBy}
+                onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Tüm Şehirler</option>
-                {availableCities.map((city) => (
-                  <option key={city} value={city}>📍 {capitalizeCity(city)}</option>
-                ))}
+                <option value="name">İsme Göre</option>
+                <option value="orders">Sipariş Sayısına Göre</option>
+                <option value="spent">Harcamaya Göre</option>
+                <option value="date">Kayıt Tarihine Göre</option>
               </select>
             </div>
-
-            {/* Sıralama */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
-                <Icon name="ArrowUpDown" size={16} className="inline mr-2 text-gray-500" />
-                Sıralama
-              </label>
-              <div className="flex space-x-2">
-                <select
-                  value={filters.sortBy}
-                  onChange={(e) => handleFilterChange({ ...filters, sortBy: e.target.value })}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                >
-                  <option value="name">Ad Soyad</option>
-                  <option value="orderCount">Sipariş Sayısı</option>
-                  <option value="totalSpent">Toplam Harcama</option>
-                  <option value="lastOrderDate">Son Sipariş</option>
-                  <option value="registeredAt">Kayıt Tarihi</option>
-                </select>
-                <button
-                  onClick={() => handleFilterChange({ 
-                    ...filters, 
-                    sortOrder: filters.sortOrder === 'asc' ? 'desc' : 'asc' 
-                  })}
-                  className="px-3 py-3 border border-gray-300 rounded-xl hover:bg-gray-100 transition-colors"
-                  title={filters.sortOrder === 'asc' ? 'Artan sıralama' : 'Azalan sıralama'}
-                >
-                  <Icon name={filters.sortOrder === 'asc' ? 'ArrowUp' : 'ArrowDown'} size={16} className="text-gray-600" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Filtre Butonları */}
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-gray-200">
-            <div className="flex items-center space-x-4">
-              <div className="text-sm font-medium text-gray-700">
-                Toplam <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{filteredCustomers.length}</span> müşteri listelendi
-              </div>
-              {(filters.search || filters.status || filters.city) && (
-                <div className="text-xs text-gray-500">
-                  Aktif filtre var
-                </div>
-              )}
-            </div>
-            
-            <div className="flex space-x-3">
-              <button
-                onClick={handleResetFilters}
-                className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-all duration-200 border border-gray-300"
-              >
-                <Icon name="RotateCcw" size={16} />
-                <span>Filtreleri Sıfırla</span>
-              </button>
-              
-              <button className="flex items-center space-x-2 px-4 py-2 text-gray-700 rounded-xl transition-all duration-200">
-                <Icon name="Download" size={16} />
-                <span>Listeyi İndir</span>
-              </button>
-            </div>
           </div>
         </div>
 
-        {/* Müşteri Listesi - Tek Sıra Kartlar */}
-        <div className="space-y-4 mb-6">
-          {paginatedCustomers.map((customer) => (
-            <CustomerCard
-              key={customer.id}
-              customer={customer}
-              onEdit={handleEditCustomer}
-              onDelete={handleDeleteCustomer}
-              onViewHistory={() => {
-                setSelectedCustomer(customer);
-                setShowHistoryModal(true);
-              }}
-            />
-          ))}
-        </div>
+        {/* Müşteri Kartları */}
+        <div className="bg-slate-100 rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          {currentCustomers.length === 0 ? (
+            <div className="text-center py-12">
+              <Icon name="Users" size={48} className="text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Müşteri bulunamadı</h3>
+              <p className="text-gray-600">Arama kriterlerinizi değiştirmeyi deneyin.</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+                {currentCustomers.map(customer => (
+                  <div key={customer.id} className="bg-slate-100 border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 text-sm truncate">{customer.name}</h3>
+                        <p className="text-xs text-gray-600 truncate">{customer.email}</p>
+                        <p className="text-xs text-gray-600">{customer.phone}</p>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                          customer.status === 'active' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {customer.status === 'active' ? 'Aktif' : 'Pasif'}
+                        </span>
+                        <button
+                          onClick={() => handleEditCustomer(customer)}
+                          className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                          title="Müşteriyi düzenle"
+                        >
+                          <Icon name="Edit" size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCustomer(customer.id)}
+                          className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                          title="Müşteriyi sil"
+                        >
+                          <Icon name="Trash2" size={14} />
+                        </button>
+                      </div>
+                    </div>
 
-        {/* Sayfalama - Modern Tasarım */}
-        {totalPages > 1 && (
-          <div className="bg-slate-100 rounded-xl border border-gray-100 p-6 mb-6">
-            <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
-              {/* Sol taraf - Sayfa bilgisi */}
-              <div className="flex items-center space-x-4 text-sm text-gray-600">
-                <div className="flex items-center space-x-2">
-                  <Icon name="FileText" size={16} className="text-gray-400" />
-                  <span>
-                    Sayfa <span className="font-semibold text-gray-800">{currentPage}</span> / 
-                    <span className="font-semibold text-gray-800">{totalPages}</span>
-                  </span>
-                </div>
-                <div className="w-px h-4 bg-gray-300"></div>
-                <div className="flex items-center space-x-2">
-                  <Icon name="Users" size={16} className="text-gray-400" />
-                  <span>
-                    Toplam <span className="font-semibold text-gray-800">{filteredCustomers.length}</span> müşteri
-                  </span>
-                </div>
-              </div>
+                    <div className="space-y-2 mb-3">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-600">Hesap:</span>
+                        <span className={`px-2 py-1 rounded-full ${
+                          customer.accountType === 'business' 
+                            ? 'bg-purple-100 text-purple-800' 
+                            : 'bg-orange-100 text-orange-800'
+                        }`}>
+                          {customer.accountType === 'business' ? 'Kurumsal' : 'Bireysel'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-600">Sipariş:</span>
+                        <span className="font-medium">{customer.orderCount} adet</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-600">Harcama:</span>
+                        <span className="font-medium text-green-600">{formatCurrency(customer.totalSpent)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-600">Şehir:</span>
+                        <span className="font-medium">{customer.city}</span>
+                      </div>
+                    </div>
 
-              {/* Orta - Sayfalama butonları */}
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage === 1}
-                  className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
-                  title="İlk sayfa"
-                >
-                  <Icon name="ChevronsLeft" size={16} />
-                </button>
-                
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
-                  title="Önceki sayfa"
-                >
-                  <Icon name="ChevronLeft" size={16} />
-                </button>
-
-                {/* Sayfa numaraları */}
-                <div className="flex items-center space-x-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    
-                    return (
+                    <div className="flex space-x-2">
                       <button
-                        key={pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          currentPage === pageNum
-                            ? 'bg-blue-600 text-white'
-                            : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-                        }`}
+                        onClick={() => {
+                          setSelectedCustomer(customer);
+                          setShowDetailModal(true);
+                        }}
+                        className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 bg-transparent border border-blue-600 text-blue-600 text-xs rounded hover:bg-blue-600/10 transition-colors font-medium"
                       >
-                        {pageNum}
+                        <Icon name="User" size={12} />
+                        <span>Detay</span>
                       </button>
-                    );
-                  })}
-                </div>
-                
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
-                  title="Sonraki sayfa"
-                >
-                  <Icon name="ChevronRight" size={16} />
-                </button>
-                
-                <button
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage === totalPages}
-                  className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
-                  title="Son sayfa"
-                >
-                  <Icon name="ChevronsRight" size={16} />
-                </button>
+                      <button
+                        onClick={() => {
+                          setSelectedCustomer(customer);
+                          setShowStatusModal(true);
+                        }}
+                        className="flex items-center justify-center px-3 py-2 bg-transparent border border-purple-600 text-purple-600 text-xs rounded hover:bg-purple-600/10 transition-colors font-medium"
+                        title="Müşteri durumunu güncelle"
+                      >
+                        <Icon name="UserCheck" size={12} />
+                        <span>Durum</span>
+                      </button>
+                      <button
+                        onClick={() => handleViewOrders(customer)}
+                        className="flex items-center justify-center px-3 py-2 bg-transparent border border-green-600 text-green-600 text-xs rounded hover:bg-green-600/10 transition-colors font-medium"
+                        title="Sipariş geçmişini görüntüle"
+                      >
+                        <Icon name="ShoppingBag" size={12} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              {/* Sağ taraf - Sayfa başına öğe seçimi */}
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <span>Sayfa başına:</span>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    // Bu özellik şimdilik static, ileride geliştirilebir
-                  }}
-                  className="px-2 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Modal */}
-      {showDetailModal && (
-        <CustomerDetailModal
-          customer={selectedCustomer}
-          isOpen={showDetailModal}
-          onClose={() => setShowDetailModal(false)}
-          onSave={handleSaveCustomer}
-          availableCities={availableCities}
-        />
-      )}
-
-      {showHistoryModal && (
-        <MusteriGecmisiModali
-          customer={selectedCustomer}
-          isOpen={showHistoryModal}
-          onClose={() => setShowHistoryModal(false)}
-        />
-      )}
-    </div>
-  );
-};
-
-// Müşteri Kartı Component - Modern ve İyileştirilmiş Tasarım
-const CustomerCard = ({ customer, onEdit, onDelete, onViewHistory }) => {
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('tr-TR', {
-      style: 'currency',
-      currency: 'TRY'
-    }).format(amount);
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '-';
-    return new Intl.DateTimeFormat('tr-TR', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    }).format(date);
-  };
-
-  const formatDateShort = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '-';
-    return new Intl.DateTimeFormat('tr-TR', {
-      month: 'short',
-      day: 'numeric'
-    }).format(date);
-  };
-
-  const getInitials = (name) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
-
-  const getStatusConfig = (status) => {
-    switch(status) {
-      case 'active': 
-        return { 
-          color: 'text-green-700 bg-green-100 border-green-200', 
-          text: 'Aktif',
-          icon: 'CheckCircle'
-        };
-      case 'inactive': 
-        return { 
-          color: 'text-gray-700 bg-gray-100 border-gray-200', 
-          text: 'Pasif',
-          icon: 'XCircle'
-        };
-      case 'vip': 
-        return { 
-          color: 'text-amber-700 bg-amber-100 border-amber-200', 
-          text: 'VIP',
-          icon: 'Crown'
-        };
-      default: 
-        return { 
-          color: 'text-gray-700 bg-gray-100 border-gray-200', 
-          text: 'Bilinmiyor',
-          icon: 'AlertCircle'
-        };
-    }
-  };
-
-  const getAccountTypeConfig = (type) => {
-    return type === 'business' 
-      ? { text: 'Kurumsal', icon: 'Building2', color: 'text-blue-600' }
-      : { text: 'Bireysel', icon: 'User', color: 'text-purple-600' };
-  };
-
-  const getOrderStatusConfig = (status) => {
-    switch(status) {
-      case 'Teslim Edildi': return 'bg-green-100 text-green-800 border-green-200';
-      case 'Hazırlanıyor': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'Onaylandı': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'İptal Edildi': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const statusConfig = getStatusConfig(customer.status);
-  const accountTypeConfig = getAccountTypeConfig(customer.accountType);
-
-  return (
-    <div className="bg-slate-100 rounded-xl border border-gray-200 p-6">
-      {/* ÜST KISIM - Profil, Durum ve Hızlı Eylemler */}
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex items-center space-x-4">
-          {/* Avatar */}
-          <div className="relative">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 flex items-center justify-center text-white text-lg font-bold">
-              {getInitials(customer.name)}
-            </div>
-            {customer.status === 'vip' && (
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-amber-400 rounded-full flex items-center justify-center">
-                <Icon name="Crown" size={12} className="text-amber-800" />
-              </div>
-            )}
-          </div>
-          
-          {/* İsim, Şirket ve Temel Bilgiler */}
-          <div className="flex-1">
-            <div className="flex items-center space-x-3 mb-2">
-              <h3 className="text-xl font-bold text-gray-900">
-                {customer.name}
-              </h3>
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${statusConfig.color}`}>
-                <Icon name={statusConfig.icon} size={12} className="inline mr-1" />
-                {statusConfig.text}
-              </span>
-            </div>
-            
-            {customer.companyName && (
-              <div className="flex items-center text-sm text-gray-600 mb-1">
-                <Icon name={accountTypeConfig.icon} size={14} className={`mr-2 ${accountTypeConfig.color}`} />
-                <span className="font-medium">{customer.companyName}</span>
-                <span className="ml-2 text-xs bg-gray-100 px-2 py-1 rounded-full">{accountTypeConfig.text}</span>
-              </div>
-            )}
-            
-            <div className="flex items-center space-x-4 text-sm text-gray-500">
-              <div className="flex items-center">
-                <Icon name="Phone" size={12} className="mr-1" />
-                <span>{customer.phone}</span>
-              </div>
-              {customer.city && (
-                <div className="flex items-center">
-                  <Icon name="MapPin" size={12} className="mr-1" />
-                  <span>{customer.city}</span>
+              {/* Sayfalama */}
+              {totalPages > 1 && (
+                <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-gray-700">
+                      Sayfa {currentPage} / {totalPages} ({filteredCustomers.length} müşteri)
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 text-sm bg-white/80 border border-gray-300 rounded hover:bg-gray-50/80 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Önceki
+                      </button>
+                      <button
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 text-sm bg-white/80 border border-gray-300 rounded hover:bg-gray-50/80 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Sonraki
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-        
-        {/* Hızlı Eylem Butonları */}
-        <div className="flex space-x-2">
-          <button
-            onClick={() => onEdit(customer)}
-            className="p-2 text-blue-600 rounded-lg bg-transparent"
-            title="Düzenle"
-          >
-            <Icon name="Edit2" size={18} />
-          </button>
-          
-          <button 
-            className="p-2 text-green-600 rounded-lg bg-transparent"
-            title="Mesaj Gönder"
-          >
-            <Icon name="MessageCircle" size={18} />
-          </button>
-          
-          <button 
-            className="p-2 text-purple-600 rounded-lg bg-transparent"
-            title="Arama Yap"
-          >
-            <Icon name="Phone" size={18} />
-          </button>
-        </div>
-      </div>
-
-      {/* ORTA KISIM - Gelişmiş İstatistik Kartları */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        
-        {/* Hesap Bilgileri Kartı */}
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-semibold text-blue-800 flex items-center">
-              <Icon name="User" size={16} className="mr-2" />
-              Hesap Detayları
-            </h4>
-            <Icon name="Info" size={14} className="text-blue-600" />
-          </div>
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-blue-600">Kullanıcı:</span>
-              <span className="text-xs font-semibold text-blue-800 bg-blue-200 px-2 py-1 rounded">{customer.username}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-blue-600">Kayıt:</span>
-              <span className="text-xs text-blue-700">{formatDateShort(customer.registeredAt)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-blue-600">Son Giriş:</span>
-              <span className="text-xs text-blue-700">{formatDateShort(customer.lastLoginAt)}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Sipariş İstatistikleri Kartı */}
-        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-semibold text-green-800 flex items-center">
-              <Icon name="ShoppingCart" size={16} className="mr-2" />
-              Sipariş Özeti
-            </h4>
-            <Icon name="TrendingUp" size={14} className="text-green-600" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="text-center bg-slate-100 rounded-lg p-2">
-              <div className="text-lg font-bold text-green-700">{customer.orderCount}</div>
-              <div className="text-xs text-green-600">Toplam Sipariş</div>
-            </div>
-            <div className="text-center bg-slate-100 rounded-lg p-2">
-              <div className="text-lg font-bold text-green-700">{formatCurrency(customer.averageOrderValue)}</div>
-              <div className="text-xs text-green-600">Ortalama</div>
-            </div>
-          </div>
-        </div>
-
-
-      </div>
-
-      {/* SON SİPARİŞ BİLGİSİ - Gelişmiş */}
-      {customer.lastOrderDate && (
-        <div className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-semibold text-gray-700 flex items-center">
-              <Icon name="Package" size={16} className="mr-2 text-gray-600" />
-              Son Sipariş Detayı
-            </h4>
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getOrderStatusConfig(customer.lastOrderStatus)}`}>
-              {customer.lastOrderStatus}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="text-center">
-                <div className="text-lg font-bold text-gray-800">{formatCurrency(customer.lastOrderAmount)}</div>
-                <div className="text-xs text-gray-500">Sipariş Tutarı</div>
-              </div>
-              <div className="w-px h-8 bg-gray-300"></div>
-              <div className="text-center">
-                <div className="text-sm font-semibold text-gray-700">{formatDateShort(customer.lastOrderDate)}</div>
-                <div className="text-xs text-gray-500">Tarih</div>
-              </div>
-            </div>
-            <button className="text-blue-600 text-sm font-medium bg-transparent">
-              Detayları Gör
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ALT KISIM - Notlar ve Ana Eylemler */}
-      <div className="flex items-center justify-between">
-        {/* Sol taraf - Notlar */}
-        <div className="flex-1 mr-4">
-          {customer.notes && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-              <div className="flex items-start space-x-2">
-                <Icon name="StickyNote" size={14} className="text-amber-600 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-amber-800 line-clamp-2 font-medium">{customer.notes}</p>
-              </div>
-            </div>
+            </>
           )}
         </div>
-        
-        {/* Sağ taraf - Ana Eylem Butonları */}
-        <div className="flex space-x-3 flex-shrink-0">
-          <button
-            onClick={() => onEdit(customer)}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600/80 text-white rounded-lg border border-blue-600"
-          >
-            <Icon name="Edit2" size={16} />
-            <span className="font-medium">Düzenle</span>
-          </button>
-          
-          <button 
-            onClick={() => onDelete(customer.id)}
-            className="flex items-center space-x-2 px-4 py-2 bg-red-600/80 text-white rounded-lg border border-red-600"
-          >
-            <Icon name="Trash2" size={16} />
-            <span className="font-medium">Sil</span>
-          </button>
-          
-          <button className="flex items-center space-x-2 px-4 py-2 bg-green-600/80 text-white rounded-lg border border-green-600">
-            <Icon name="MessageCircle" size={16} />
-            <span className="font-medium">İletişim</span>
-          </button>
-        </div>
       </div>
-    </div>
-  );
-};
 
-// Müşteri Detay Modal Component
-const CustomerDetailModal = ({ customer, isOpen, onClose, onSave, availableCities }) => {
-  const [showPassword, setShowPassword] = useState(false);
-  const [changePasswordChecked, setChangePasswordChecked] = useState(false);
-  const [formData, setFormData] = useState({
-    name: customer?.name || '',
-    companyName: customer?.companyName || '',
-    phone: customer?.phone || '',
-    email: customer?.email || '',
-    username: customer?.username || '',
-    password: customer?.password || '',
-    accountType: customer?.accountType || 'personal',
-    status: customer?.status || 'active',
-    address: customer?.address || '',
-    city: customer?.city || '',
-    district: customer?.district || '',
-    postalCode: customer?.postalCode || '',
-    taxOffice: customer?.taxOffice || '',
-    taxNumber: customer?.taxNumber || '',
-    companyTitle: customer?.companyTitle || '',
-    notes: customer?.notes || ''
-  });
-
-  // Şehir adını büyük harfe çeviren fonksiyon
-  const capitalizeCity = (city) => {
-    return city
-      .toLowerCase()
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-
-  // Customer prop değiştiğinde formData'yı güncelle
-  useEffect(() => {
-    if (customer) {
-      setFormData({
-        name: customer.name || '',
-        companyName: customer.companyName || '',
-        phone: customer.phone || '',
-        email: customer.email || '',
-        username: customer.username || '',
-        password: customer.password || '',
-        accountType: customer.accountType || 'personal',
-        status: customer.status || 'active',
-        address: customer.address || '',
-        city: customer.city || '',
-        district: customer.district || '',
-        postalCode: customer.postalCode || '',
-        taxOffice: customer.taxOffice || '',
-        taxNumber: customer.taxNumber || '',
-        companyTitle: customer.companyTitle || '',
-        notes: customer.notes || ''
-      });
-    } else {
-      // Yeni müşteri için boş form
-      setFormData({
-        name: '',
-        companyName: '',
-        phone: '',
-        email: '',
-        username: '',
-        password: '',
-        accountType: 'personal',
-        status: 'active',
-        address: '',
-        city: '',
-        district: '',
-        postalCode: '',
-        taxOffice: '',
-        taxNumber: '',
-        companyTitle: '',
-        notes: ''
-      });
-    }
-  }, [customer]);
-
-  // Şehir değişikliğini handle eden fonksiyon
-  const handleCityChange = (e) => {
-    const cityValue = e.target.value;
-    const capitalizedCity = capitalizeCity(cityValue);
-    setFormData({ ...formData, city: capitalizedCity });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave({ ...customer, ...formData });
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-slate-100 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto relative">
-        <div className="sticky top-0 bg-slate-100 z-10 flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">
-            {customer ? 'Müşteri Düzenle' : 'Yeni Müşteri'}
-          </h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
-            <Icon name="X" size={20} />
-          </button>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Kişisel Bilgiler */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Kişisel Bilgiler</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ad Soyad <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Telefon <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  E-posta <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Kullanıcı Adı <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Şifre <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 bg-transparent"
-                  >
-                    <Icon name={showPassword ? "EyeOff" : "Eye"} size={16} />
-                  </button>
-                </div>
-                <div className="mt-2 flex items-center">
-                  <input
-                    type="checkbox"
-                    id="changePassword"
-                    checked={changePasswordChecked}
-                    onChange={(e) => setChangePasswordChecked(e.target.checked)}
-                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="changePassword" className="ml-2 block text-sm text-gray-700">
-                    Şifreyi değiştir
-                  </label>
-                </div>
-                <p className="mt-1 text-xs text-gray-500">
-                  Mevcut şifre: {customer?.password ? (showPassword ? customer.password : '••••••••') : 'Belirtilmemiş'}
-                  {changePasswordChecked && ' (Şifre değiştirilecek)'}
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Hesap Tipi
-                </label>
-                <select
-                  value={formData.accountType}
-                  onChange={(e) => setFormData({ ...formData, accountType: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                >
-                  <option value="personal">Bireysel</option>
-                  <option value="business">Kurumsal</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Durum
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                >
-                  <option value="active">Aktif</option>
-                  <option value="inactive">Pasif</option>
-                  <option value="vip">VIP</option>
-                </select>
-              </div>
+      {/* Yeni Müşteri Modal */}
+      {showNewCustomerModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+          <div className="bg-slate-100 rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Yeni Müşteri Ekle</h3>
+              <button
+                onClick={() => setShowNewCustomerModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <Icon name="X" size={24} />
+              </button>
             </div>
-          </div>
-
-          {/* Firma Bilgileri */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Firma Bilgileri</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Firma Adı
-                </label>
-                <input
-                  type="text"
-                  value={formData.companyName}
-                  onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Firma Ünvanı
-                </label>
-                <input
-                  type="text"
-                  value={formData.companyTitle}
-                  onChange={(e) => setFormData({ ...formData, companyTitle: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Vergi Dairesi
-                </label>
-                <input
-                  type="text"
-                  value={formData.taxOffice}
-                  onChange={(e) => setFormData({ ...formData, taxOffice: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Vergi Numarası
-                </label>
-                <input
-                  type="text"
-                  value={formData.taxNumber}
-                  onChange={(e) => setFormData({ ...formData, taxNumber: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Adres Bilgileri */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Adres Bilgileri</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Adres
-                </label>
-                <textarea
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    İl
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.city}
-                    onChange={handleCityChange}
-                    placeholder="Şehir adı yazın"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                    list="cities"
-                  />
-                  <datalist id="cities">
-                    {availableCities.map((city) => (
-                      <option key={city} value={city} />
-                    ))}
-                  </datalist>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    İlçe
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.district}
-                    onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Posta Kodu
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.postalCode}
-                    onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Notlar */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Notlar</h3>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Müşteri hakkında notlar..."
+            
+            <NewCustomerForm 
+              onSave={handleAddCustomer}
+              onCancel={() => setShowNewCustomerModal(false)}
+              showWarning={showWarning}
             />
           </div>
+        </div>
+      )}
 
-          <div className="sticky bottom-0 bg-slate-100 pt-6 border-t border-gray-200">
-            <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg bg-transparent"
-              >
-                İptal
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-green-600/80 text-white rounded-lg border border-green-600"
-              >
-                Kaydet
-              </button>
+      {/* Müşteri Detay Modal */}
+      {showDetailModal && selectedCustomer && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full p-0 max-h-[90vh] overflow-hidden shadow-2xl">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <Icon name="User" size={24} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold">{selectedCustomer.name}</h3>
+                    <p className="text-blue-100 text-sm">{selectedCustomer.email}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="text-white hover:text-blue-200 transition-colors"
+                >
+                  <Icon name="X" size={24} />
+                </button>
+              </div>
+            </div>
+            
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Sol Sütun - Temel Bilgiler */}
+                <div className="lg:col-span-1 space-y-6">
+                  {/* Durum Kartı */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                      <Icon name="Info" size={16} className="mr-2 text-blue-600" />
+                      Durum Bilgileri
+                    </h4>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Hesap Durumu:</span>
+                        <span className={`px-3 py-1 text-sm rounded-full font-medium ${
+                          selectedCustomer.status === 'active' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {selectedCustomer.status === 'active' ? 'Aktif' : 'Pasif'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Hesap Türü:</span>
+                        <span className={`px-3 py-1 text-sm rounded-full font-medium ${
+                          selectedCustomer.accountType === 'business' 
+                            ? 'bg-purple-100 text-purple-800' 
+                            : 'bg-orange-100 text-orange-800'
+                        }`}>
+                          {selectedCustomer.accountType === 'business' ? 'Kurumsal' : 'Bireysel'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Kayıt Tarihi:</span>
+                        <span className="font-medium text-gray-900">{formatDate(selectedCustomer.registeredAt)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Son Giriş:</span>
+                        <span className="font-medium text-gray-900">{formatDate(selectedCustomer.lastLoginAt)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* İletişim Kartı */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                      <Icon name="Phone" size={16} className="mr-2 text-green-600" />
+                      İletişim Bilgileri
+                    </h4>
+                    <div className="space-y-3">
+                      <div>
+                        <span className="text-gray-600 text-sm">Telefon:</span>
+                        <p className="font-medium text-gray-900">{selectedCustomer.phone}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 text-sm">E-posta:</span>
+                        <p className="font-medium text-gray-900">{selectedCustomer.email}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 text-sm">Kullanıcı Adı:</span>
+                        <p className="font-medium text-gray-900">{selectedCustomer.username}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sipariş İstatistikleri Kartı */}
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
+                    <h4 className="font-semibold text-green-900 mb-3 flex items-center">
+                      <Icon name="ShoppingBag" size={16} className="mr-2 text-green-600" />
+                      Sipariş İstatistikleri
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-green-700">{selectedCustomer.orderCount}</p>
+                        <p className="text-xs text-green-600">Toplam Sipariş</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-green-700">{formatCurrency(selectedCustomer.totalSpent)}</p>
+                        <p className="text-xs text-green-600">Toplam Harcama</p>
+                      </div>
+                      <div className="text-center col-span-2">
+                        <p className="text-lg font-bold text-green-700">{formatCurrency(selectedCustomer.averageOrderValue)}</p>
+                        <p className="text-xs text-green-600">Ortalama Sipariş Değeri</p>
+                      </div>
+                      <div className="text-center col-span-2">
+                        <p className="text-sm font-medium text-green-700">{formatDate(selectedCustomer.lastOrderDate)}</p>
+                        <p className="text-xs text-green-600">Son Sipariş Tarihi</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sağ Sütun - Adres ve Şirket Bilgileri */}
+                <div className="lg:col-span-2 space-y-6">
+                  {/* Adres Bilgileri */}
+                  <div className="bg-gray-50 rounded-lg p-6">
+                    <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
+                      <Icon name="MapPin" size={16} className="mr-2 text-red-600" />
+                      Adres Bilgileri
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <span className="text-gray-600 text-sm">Adres:</span>
+                        <p className="font-medium text-gray-900 mt-1">{selectedCustomer.address || 'Belirtilmemiş'}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 text-sm">Şehir:</span>
+                        <p className="font-medium text-gray-900 mt-1">{selectedCustomer.city || 'Belirtilmemiş'}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 text-sm">İlçe:</span>
+                        <p className="font-medium text-gray-900 mt-1">{selectedCustomer.district || 'Belirtilmemiş'}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 text-sm">Posta Kodu:</span>
+                        <p className="font-medium text-gray-900 mt-1">{selectedCustomer.postalCode || 'Belirtilmemiş'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Şirket Bilgileri (Kurumsal hesaplar için) */}
+                  {selectedCustomer.accountType === 'business' && (
+                    <div className="bg-purple-50 rounded-lg p-6 border border-purple-200">
+                      <h4 className="font-semibold text-purple-900 mb-4 flex items-center">
+                        <Icon name="Building" size={16} className="mr-2 text-purple-600" />
+                        Şirket Bilgileri
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <span className="text-purple-700 text-sm">Şirket Adı:</span>
+                          <p className="font-medium text-purple-900 mt-1">{selectedCustomer.companyName || 'Belirtilmemiş'}</p>
+                        </div>
+                        <div>
+                          <span className="text-purple-700 text-sm">Ünvan:</span>
+                          <p className="font-medium text-purple-900 mt-1">{selectedCustomer.companyTitle || 'Belirtilmemiş'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notlar */}
+                  {selectedCustomer.notes && (
+                    <div className="bg-yellow-50 rounded-lg p-6 border border-yellow-200">
+                      <h4 className="font-semibold text-yellow-900 mb-3 flex items-center">
+                        <Icon name="FileText" size={16} className="mr-2 text-yellow-600" />
+                        Notlar
+                      </h4>
+                      <p className="text-yellow-800 leading-relaxed">{selectedCustomer.notes}</p>
+                    </div>
+                  )}
+
+                  {/* İşlem Butonları */}
+                  <div className="flex space-x-3 pt-4 border-t border-gray-200">
+                    <button
+                      onClick={() => {
+                        setShowDetailModal(false);
+                        handleEditCustomer(selectedCustomer);
+                      }}
+                      className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 font-medium"
+                    >
+                      <Icon name="Edit" size={18} />
+                      <span>Düzenle</span>
+                    </button>
+                    <button
+                      onClick={() => handleViewOrders(selectedCustomer)}
+                      className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2 font-medium"
+                    >
+                      <Icon name="ShoppingBag" size={18} />
+                      <span>Siparişleri Görüntüle</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </form>
-      </div>
+        </div>
+      )}
+
+      {/* Yeni Müşteri Modal */}
+      {showNewCustomerModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+          <div className="bg-slate-100 rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Yeni Müşteri Ekle</h3>
+              <button
+                onClick={() => setShowNewCustomerModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <Icon name="X" size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ad Soyad</label>
+                <input
+                  type="text"
+                  placeholder="Müşteri adı soyadı"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  id="newCustomerName"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">E-posta</label>
+                <input
+                  type="email"
+                  placeholder="Müşteri e-postası"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  id="newCustomerEmail"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
+                <input
+                  type="text"
+                  placeholder="Müşteri telefonu"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  id="newCustomerPhone"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kullanıcı Adı</label>
+                <input
+                  type="text"
+                  placeholder="Müşteri kullanıcı adı"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  id="newCustomerUsername"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Şifre</label>
+                <input
+                  type="password"
+                  placeholder="Müşteri şifresi"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  id="newCustomerPassword"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Adres</label>
+                <input
+                  type="text"
+                  placeholder="Müşteri adresi"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  id="newCustomerAddress"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Şehir</label>
+                <input
+                  type="text"
+                  placeholder="Müşteri şehri"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  id="newCustomerCity"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">İlçe</label>
+                <input
+                  type="text"
+                  placeholder="Müşteri ilçesi"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  id="newCustomerDistrict"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Posta Kodu</label>
+                <input
+                  type="text"
+                  placeholder="Müşteri posta kodu"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  id="newCustomerPostalCode"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <button
+                  onClick={() => setShowNewCustomerModal(false)}
+                  className="px-4 py-2 text-sm bg-gray-300 rounded-lg hover:bg-gray-300/80 transition-colors"
+                >
+                  İptal
+                </button>
+                <button
+                  onClick={() => {
+                    const customerData = {
+                      name: document.getElementById('newCustomerName').value,
+                      email: document.getElementById('newCustomerEmail').value,
+                      phone: document.getElementById('newCustomerPhone').value,
+                      username: document.getElementById('newCustomerUsername').value,
+                      password: document.getElementById('newCustomerPassword').value,
+                      address: document.getElementById('newCustomerAddress').value,
+                      city: document.getElementById('newCustomerCity').value,
+                      district: document.getElementById('newCustomerDistrict').value,
+                      postalCode: document.getElementById('newCustomerPostalCode').value,
+                    };
+
+                    // Müşteri verilerini doğrula
+                    if (!customerData.name || !customerData.email || !customerData.phone) {
+                      showWarning('Ad, e-posta ve telefon alanları zorunludur.');
+                      return;
+                    }
+
+                    // Yeni müşteri ekle
+                    handleAddCustomer(customerData);
+                  }}
+                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Ekle
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Müşteri Düzenleme Modal */}
+      {showEditCustomerModal && editingCustomer && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+          <div className="bg-slate-100 rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Müşteri Düzenle</h3>
+              <button
+                onClick={() => {
+                  setShowEditCustomerModal(false);
+                  setEditingCustomer(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <Icon name="X" size={24} />
+              </button>
+            </div>
+            
+            <EditCustomerForm 
+              customer={editingCustomer}
+              onSave={handleUpdateCustomer}
+              onCancel={() => {
+                setShowEditCustomerModal(false);
+                setEditingCustomer(null);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Müşteri Detay Modal */}
+      {showDetailModal && selectedCustomer && (
+        <CustomerDetailModal
+          customer={selectedCustomer}
+          onClose={() => {
+            setShowDetailModal(false);
+            setSelectedCustomer(null);
+          }}
+        />
+      )}
+
+      {/* Müşteri Durum Güncelleme Modal */}
+      {showStatusModal && selectedCustomer && (
+        <CustomerStatusModal
+          customer={selectedCustomer}
+          onClose={() => {
+            setShowStatusModal(false);
+            setSelectedCustomer(null);
+          }}
+          onUpdateStatus={handleUpdateCustomerStatus}
+        />
+      )}
     </div>
   );
 };

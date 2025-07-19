@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import authService from "../shared/utils/authService";
+import authService from "../services/authService";
 
 const AuthContext = createContext();
 
@@ -18,17 +18,19 @@ export function AuthProvider({ children }) {
         setLoading(true);
         setAuthError(null);
 
-        // Demo mode - check localStorage for demo user
-        const storedUser = localStorage.getItem('currentUser');
-        if (storedUser && isMounted) {
-          const parsedUser = JSON.parse(storedUser);
-          setUser({
-            id: parsedUser.id,
-            email: parsedUser.email,
-            created_at: parsedUser.created_at || parsedUser.loginTime
-          });
-          setUserProfile(parsedUser);
+        // Check if user is authenticated
+        if (authService.isAuthenticated()) {
+          const currentUser = authService.getCurrentUser();
+          if (currentUser && isMounted) {
+            setUser({
+              id: currentUser.id,
+              email: currentUser.email,
+              created_at: currentUser.createdAt
+            });
+            setUserProfile(currentUser);
+          }
         }
+        
         if (isMounted) {
           setLoading(false);
         }
@@ -36,6 +38,7 @@ export function AuthProvider({ children }) {
         if (isMounted) {
           setAuthError("Kimlik doğrulama başlatılamadı");
           console.error("Auth initialization error:", error);
+          setLoading(false);
         }
       }
     };
@@ -70,22 +73,22 @@ export function AuthProvider({ children }) {
   }, []);
 
   // Sign in function
-  const signIn = async (username, password) => {
+  const signIn = async (email, password) => {
     setLoading(true);
     setAuthError(null);
 
-    const result = await authService.signIn(username, password);
+    const result = await authService.login(email, password);
 
-    if (result.success && result.data && result.data.session) {
-      const session = result.data.session;
+    if (result.success) {
+      const userData = result.user;
       setUser({
-        id: session.id,
-        email: session.email,
-        created_at: session.loginTime,
+        id: userData.id,
+        email: userData.email,
+        created_at: userData.createdAt,
       });
-      setUserProfile(session);
+      setUserProfile(userData);
       setLoading(false);
-      return { success: true, data: result.data };
+      return { success: true, data: { user: userData } };
     } else {
       setAuthError(result.error);
       setLoading(false);
@@ -115,7 +118,7 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setAuthError(null);
 
-    const result = await authService.signOut();
+    const result = await authService.logout();
 
     if (result.success) {
       setUser(null);

@@ -1,4 +1,3 @@
-import { withRetry } from './retryUtils';
 import storage from '../../core/storage/index.js';
 
 const demoProducts = [
@@ -13,7 +12,7 @@ const demoProducts = [
 ];
 
 const productsService = {
-  getAll: async (sellerId = null) => {
+  getAll: async () => {
     const products = storage.get('products', []);
     return { success: true, data: products };
   },
@@ -55,7 +54,7 @@ const productsService = {
 };
 
 const ordersService = {
-  getAll: async (sellerId = null) => {
+  getAll: async () => {
     const orders = storage.get('orders', []);
     return { success: true, data: orders };
   },
@@ -93,7 +92,7 @@ const categoriesService = {
     ];
     return { success: true, data: categories };
   },
-  create: async (categoryData) => {
+  create: async () => {
     return { success: false, error: 'Demo modda kategori ekleme desteklenmiyor.' };
   }
 };
@@ -111,23 +110,23 @@ const unitsService = {
     ];
     return { success: true, data: units };
   },
-  create: async (unitData) => {
+  create: async () => {
     return { success: false, error: 'Demo modda birim ekleme desteklenmiyor.' };
   },
-  update: async (id, updates) => {
+  update: async () => {
     return { success: true };
   },
-  delete: async (id) => {
+  delete: async () => {
     return { success: true };
   }
 };
 
 const settingsService = {
-  get: async (sellerId, key) => {
+  get: async (key) => {
     const settings = JSON.parse(localStorage.getItem(`settings_${key}`) || '{}');
     return { success: true, data: settings };
   },
-  set: async (sellerId, key, value) => {
+  set: async (key, value) => {
     localStorage.setItem(`settings_${key}`, JSON.stringify(value));
     return { success: true };
   }

@@ -14,7 +14,7 @@ const sellerService = {
     };
   },
 
-  getCreditTransactions: async (sellerId, limit = 50) => {
+  getCreditTransactions: async (sellerId) => {
     return {
       success: true,
       data: [
@@ -35,7 +35,7 @@ const sellerService = {
     };
   },
 
-  getSellerAnalytics: async (sellerId, startDate, endDate) => {
+  getSellerAnalytics: async () => {
     return {
       success: true,
       data: [
@@ -45,7 +45,7 @@ const sellerService = {
     };
   },
 
-  updateSubscription: async (sellerId, updates) => {
+  updateSubscription: async () => {
     return { success: true };
   },
 
@@ -56,7 +56,7 @@ const sellerService = {
         id: `txn-${Math.random().toString(36).substr(2, 9)}`,
         seller_id: sellerId,
         type: 'purchase',
-        amount: amount,
+        amount,
         description: `Credits purchase - ${planName}`,
         created_at: new Date().toISOString()
       }
@@ -70,20 +70,20 @@ const sellerService = {
         id: `txn-${Math.random().toString(36).substr(2, 9)}`,
         seller_id: sellerId,
         type: 'usage',
-        amount: amount,
-        description: description,
+        amount,
+        description,
         reference_id: referenceId,
         created_at: new Date().toISOString()
       }
     };
   },
 
-  subscribeToSubscriptionChanges: (sellerId, callback) => {
+  subscribeToSubscriptionChanges: () => {
     // Mock subscription, does nothing
     return { unsubscribe: () => {} };
   },
 
-  subscribeToCreditTransactions: (sellerId, callback) => {
+  subscribeToCreditTransactions: () => {
     // Mock subscription, does nothing
     return { unsubscribe: () => {} };
   }

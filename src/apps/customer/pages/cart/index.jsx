@@ -172,7 +172,7 @@ const ShoppingCartCheckout = () => {
           {/* Aksiyonlar */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Link
-              to="/musteri-siparis-gecmisi"
+              to="/customer/orders"
               className="bg-green-600 text-white py-4 px-6 rounded-lg font-medium text-center hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
             >
               <Icon name="Package" size={20} />
@@ -180,7 +180,7 @@ const ShoppingCartCheckout = () => {
             </Link>
             
             <Link
-              to="/musteri-urun-katalogu"
+              to="/customer/catalog"
               className="bg-white border-2 border-green-600 text-green-600 py-4 px-6 rounded-lg font-medium text-center hover:bg-green-50 transition-colors flex items-center justify-center space-x-2"
             >
               <Icon name="ShoppingCart" size={20} />
@@ -221,7 +221,7 @@ const ShoppingCartCheckout = () => {
             <p className="text-gray-600 mb-8">Başlamak için taze ürünler ekleyin</p>
             
             <Link
-              to="/musteri-urun-katalogu"
+              to="/customer/catalog"
               className="inline-flex items-center justify-center space-x-2 bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 transition-all"
             >
               <Icon name="ArrowLeft" size={20} />
@@ -266,7 +266,7 @@ const ShoppingCartCheckout = () => {
                 Alışverişe başlamak için ürün kataloğuna göz atın.
               </p>
               <Link
-                to="/musteri-urun-katalogu"
+                to="/customer/catalog"
                 className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors inline-flex items-center space-x-2"
               >
                 <Icon name="Package" size={20} />
@@ -313,7 +313,7 @@ const ShoppingCartCheckout = () => {
                         <div className="flex items-center space-x-3">
                           <button
                             onClick={() => handleQuantityChange(validItem.id, validItem.quantity - 1)}
-                            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors"
+                            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-green-100 hover:text-green-600 transition-colors"
                           >
                             <Icon name="Minus" size={16} />
                           </button>
@@ -324,7 +324,7 @@ const ShoppingCartCheckout = () => {
                           
                           <button
                             onClick={() => handleQuantityChange(validItem.id, validItem.quantity + 1)}
-                            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors"
+                            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-green-100 hover:text-green-600 transition-colors"
                           >
                             <Icon name="Plus" size={16} />
                           </button>
@@ -402,7 +402,7 @@ const ShoppingCartCheckout = () => {
                 <button
                   onClick={handleCheckout}
                   disabled={!isMinimumMet || isLoading}
-                  className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+                  className={`w-full py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 ${
                     isMinimumMet && !isLoading
                       ? 'bg-green-600 text-white hover:bg-green-700'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -414,7 +414,10 @@ const ShoppingCartCheckout = () => {
                       <span>Sipariş Veriliyor...</span>
                     </div>
                   ) : (
-                    'Siparişi Tamamla'
+                    <>
+                      <Icon name="ShoppingBag" size={20} />
+                      <span>Siparişi Tamamla</span>
+                    </>
                   )}
                 </button>
 

@@ -8,13 +8,23 @@ const __dirname = path.dirname(__filename)
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react({
+    include: "**/*.{jsx,tsx,js,ts}",
+  })],
+  publicDir: 'public',
   server: {
-    port: 5500, // Live Server uyumlu port
+    port: 5500,
     strictPort: true,
-    host: true
+    host: true,
+    fs: {
+      allow: ['..']
+    }
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom']
   },
   resolve: {
+    extensions: ['.mjs', '.js', '.jsx', '.ts', '.tsx', '.json'],
     alias: {
       '@': path.resolve(__dirname, 'src'),
       '@shared': path.resolve(__dirname, 'src/shared'),
@@ -27,9 +37,14 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: process.env.NODE_ENV !== 'production',
+    minify: 'esbuild',
     rollupOptions: {
-      external: [], // Live Server için external dependencies yok
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom']
+        }
+      }
     }
   }
 })

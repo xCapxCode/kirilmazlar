@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { useCart } from '../../../../contexts/CartContext';
-import { demoProductImages } from '../../../../utils/demoImages';
-import { switchUserRole, getCurrentUser } from '@shared/utils/userManager';
+import storage from '../../../../core/storage/index.js';
 
 import Header from '@shared/components/ui/Header';
 import BottomTabNavigation from '@shared/components/ui/BottomTabNavigation';
@@ -37,118 +36,6 @@ const CustomerProductCatalog = () => {
     { id: 'all', name: 'Tüm Ürünler', icon: 'Grid3X3', count: 0 }
   ]);
 
-  // Demo ürünler - sadece localStorage'da ürün yoksa kullanılacak
-  const fallbackProducts = [
-    {
-      id: 1,
-      name: 'Taze Domates',
-      price: 15.00,
-      unit: 'kg',
-      image: demoProductImages.tomato,
-      category: 'Sebzeler',
-      subcategory: 'Mevsim Sebzeleri',
-      stock: 45,
-      isAvailable: true,
-      isOrganic: true,
-      discount: 10,
-      rating: 4.5,
-      status: 'active',
-      description: `Yerel çiftliklerden gelmiş taze, sulu domatesler. Salata, yemek pişirme ve taze sos yapımı için mükemmel.
-
-C ve K vitamini, folat ve potasyum açısından zengin. Bu domatesler maksimum lezzet ve besin değeri için asma üzerinde olgunlaştırılmıştır.`,
-      gallery: [demoProductImages.tomato]
-    },
-    {
-      id: 2,
-      name: 'Yeşil Elma',
-      price: 12.00,
-      unit: 'kg',
-      image: demoProductImages.apple,
-      category: 'Meyveler',
-      subcategory: 'Çekirdekli Meyveler',
-      stock: 32,
-      isAvailable: true,
-      isOrganic: false,
-      discount: 0,
-      rating: 4.3,
-      status: 'active',
-      description: `Gevrek ve ekşimsi yeşil elmalar, atıştırmak veya fırında pişirmek için mükemmel. Bu elmalar ferahlatıcı tatları ve sert dokuları ile bilinir.
-
-Lif ve C vitamini açısından yüksek, bu elmalar sindirim sağlığını destekler ve bağışıklığı güçlendirir.`,
-      gallery: [demoProductImages.apple]
-    },
-    {
-      id: 3,
-      name: 'Taze Ispanak',
-      price: 8.50,
-      unit: 'demet',
-      image: demoProductImages.spinach,
-      category: 'Sebzeler',
-      subcategory: 'Yeşil Yapraklılar',
-      stock: 28,
-      isAvailable: true,
-      isOrganic: true,
-      discount: 5,
-      rating: 4.7,
-      status: 'active',
-      description: `Salata, smoothie veya yemek pişirme için mükemmel taze, yumuşak ıspanak yaprakları. Maksimum tazelik için günlük hasat edilir.
-
-Demir, A, C ve K vitamini ve folat bakımından zengin. Mükemmel bir antioksidan ve besin kaynağı.`,
-      gallery: [demoProductImages.spinach]
-    },
-    {
-      id: 4,
-      name: 'Organik Havuç',
-      price: 9.75,
-      unit: 'kg',
-      image: demoProductImages.tomato, // Placeholder olarak
-      category: 'Sebzeler',
-      subcategory: 'Kök Sebzeler',
-      stock: 35,
-      isAvailable: true,
-      isOrganic: true,
-      discount: 15,
-      rating: 4.6,
-      status: 'active',
-      description: 'Tatlı ve gevrek organik havuçlar. A vitamini bakımından çok zengin.',
-      gallery: [demoProductImages.tomato]
-    },
-    {
-      id: 5,
-      name: 'Kırmızı Biber',
-      price: 18.50,
-      unit: 'kg',
-      image: demoProductImages.apple, // Placeholder olarak
-      category: 'Sebzeler',
-      subcategory: 'Mevsim Sebzeleri',
-      stock: 22,
-      isAvailable: true,
-      isOrganic: false,
-      discount: 0,
-      rating: 4.4,
-      status: 'active',
-      description: 'Tatlı ve renkli kırmızı biberler. Salata ve yemeklerinize renk katın.',
-      gallery: [demoProductImages.apple]
-    },
-    {
-      id: 6,
-      name: 'Organik Muz',
-      price: 14.00,
-      unit: 'kg',
-      image: demoProductImages.spinach, // Placeholder olarak
-      category: 'Meyveler',
-      subcategory: 'Tropik Meyveler',
-      stock: 40,
-      isAvailable: true,
-      isOrganic: true,
-      discount: 8,
-      rating: 4.8,
-      status: 'active',
-      description: 'Doğal ve tatlı organik muzlar. Potasyum deposu.',
-      gallery: [demoProductImages.spinach]
-    }
-  ];
-
   useEffect(() => {
     console.log('🚀 Initial useEffect - Loading products and categories');
     // State'leri reset et
@@ -165,22 +52,14 @@ Demir, A, C ve K vitamini ve folat bakımından zengin. Mükemmel bir antioksida
 
   // Ürünleri periyodik olarak yenile
   useEffect(() => {
-    // localStorage değişikliklerini dinle
-    const handleStorageChange = (e) => {
-      if (e.key === 'products') {
-        console.log('📢 Ürünler değişti, yeniden yükleniyor...');
-        loadProducts();
-      }
-    };
-
-    // Custom event listener ekle (aynı tab içinde değişiklikleri dinlemek için)
-    const handleProductsUpdate = () => {
+    // Storage değişikliklerini dinle (unified storage events)
+    const handleProductsUpdate = (data) => {
       console.log('📢 Ürünler güncellendi event alındı');
       loadProducts();
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('productsUpdated', handleProductsUpdate);
+    // Unified storage events dinle
+    const unsubscribeProducts = storage.subscribe('products', handleProductsUpdate);
     
     // Her 30 saniyede bir ürünleri yenile (fallback)
     const interval = setInterval(() => {
@@ -188,14 +67,14 @@ Demir, A, C ve K vitamini ve folat bakımından zengin. Mükemmel bir antioksida
     }, 30000);
     
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('productsUpdated', handleProductsUpdate);
+      unsubscribeProducts();
       clearInterval(interval);
     };
   }, []);
 
-  useEffect(() => {
-    console.log('🔄 Filter useEffect triggered', {
+  // Memoized filtered products
+  const filteredProductsMemo = useMemo(() => {
+    console.log('🔄 Filter useMemo triggered', {
       productsLength: products.length,
       selectedCategory,
       sortBy,
@@ -203,7 +82,7 @@ Demir, A, C ve K vitamini ve folat bakımından zengin. Mükemmel bir antioksida
       showAvailableOnly
     });
     
-    // Filter products directly in useEffect
+    // Filter products
     let filtered = [...products];
 
     // Category filter
@@ -252,8 +131,13 @@ Demir, A, C ve K vitamini ve folat bakımından zengin. Mükemmel bir antioksida
     }
 
     console.log('✅ Filtered products:', filtered.length, 'items');
-    setFilteredProducts(filtered);
+    return filtered;
   }, [products, selectedCategory, sortBy, priceRange, showAvailableOnly, categories]);
+  
+  // Update filteredProducts state when memoized value changes
+  useEffect(() => {
+    setFilteredProducts(filteredProductsMemo);
+  }, [filteredProductsMemo]);
 
   useEffect(() => {
     console.log('🔗 URL params useEffect');
@@ -274,84 +158,70 @@ Demir, A, C ve K vitamini ve folat bakımından zengin. Mükemmel bir antioksida
 
   const loadProducts = async () => {
     console.log('🔄 loadProducts called');
+    console.log('📊 DEBUG - Customer Storage durumu:');
+    console.log('Storage mode:', storage.isDevelopment ? 'MEMORY' : 'LOCALSTORAGE');
+    storage.debug();
+    
     setIsLoading(true);
     
     try {
       let loadedProducts = [];
       
-      // Önce localStorage'dan ürünleri yükle (satıcının eklediği ürünler)
-      const savedProducts = localStorage.getItem('products');
-      if (savedProducts) {
-        try {
-          const parsedProducts = JSON.parse(savedProducts);
-          // Sadece aktif ve stokta olan ürünleri müşteriye göster
-          loadedProducts = parsedProducts
-            .filter(product => product.status === 'active' && product.stock > 0)
-            .map(product => ({
-              id: product.id,
-              name: product.name,
-              price: parseFloat(product.price) || 0,
-              unit: product.unit || 'adet',
-              image: product.image || demoProductImages.tomato,
-              category: product.category || 'Genel',
-              subcategory: product.subcategory || '',
-              stock: parseInt(product.stock) || 0,
-              isAvailable: product.stock > 0,
-              isOrganic: product.description?.toLowerCase().includes('organik') || false,
-              discount: 0, // Gelecekte indirim sistemi eklenebilir
-              rating: 4.5, // Gelecekte değerlendirme sistemi eklenebilir
-              status: product.status,
-              seller_id: product.seller_id,
-              description: product.description || `${product.name} - Taze ve kaliteli`,
-              gallery: [product.image || demoProductImages.tomato]
-            }));
-          
-          console.log('📦 localStorage\'dan ürünler yüklendi:', loadedProducts.length, 'adet');
-        } catch (e) {
-          console.error('localStorage parse hatası:', e);
-        }
-      }
+      // Storage'dan ürünleri yükle (unified storage kullan)
+      const savedProducts = storage.get('products', []);
+      console.log('📦 Storage\'dan ürünler alındı:', savedProducts.length, 'adet');
       
-      // Eğer localStorage'da ürün yoksa, dataService'den dene
-      if (loadedProducts.length === 0) {
-          try {
-const { productsService } = await import('@shared/utils/dataService');
-          const result = await productsService.getAll();
-          
-          if (result.success && result.data && result.data.length > 0) {
-            // Gerçek ürünleri müşteri formatına çevir
-            loadedProducts = result.data
-              .filter(product => product.status === 'active' && product.stock > 0)
-              .map(product => ({
-                id: product.id,
-                name: product.name,
-                price: parseFloat(product.price) || 0,
-                unit: product.units?.display_name || product.unit || 'adet',
-                image: product.image_url || demoProductImages.tomato,
-                category: product.categories?.display_name || product.category || 'Genel',
-                subcategory: product.subcategory || '',
-                stock: parseInt(product.stock) || 0,
-                isAvailable: product.stock > 0,
-                isOrganic: product.description?.toLowerCase().includes('organik') || false,
-                discount: 0,
-                rating: 4.5,
-                status: product.status,
-                seller_id: product.seller_id,
-                description: product.description || `${product.name} - Taze ve kaliteli`,
-                gallery: [product.image_url || demoProductImages.tomato]
-              }));
+      if (savedProducts && savedProducts.length > 0) {
+        // Aktif ürünleri müşteriye göster - daha esnek filtreleme
+        loadedProducts = savedProducts
+          .filter(product => {
+            // Ürün aktif mi kontrolü - birden fazla alan kontrol et
+            const isActive = product.isActive === true || 
+                            product.status === 'active' || 
+                            product.status === 'available' ||
+                            (!product.hasOwnProperty('isActive') && !product.hasOwnProperty('status')); // Varsayılan aktif
             
-            console.log('📦 dataService\'den ürünler yüklendi:', loadedProducts.length, 'adet');
-          }
-        } catch (dbError) {
-          console.log('📦 dataService kullanılamıyor, demo modda çalışıyor');
+            // Stok kontrolü - 0 stok da göster ama "stokta yok" olarak işaretle
+            const hasValidStock = product.stock >= 0; // Negatif stok hariç
+            
+            console.log(`Ürün ${product.name}: isActive=${isActive}, stock=${product.stock}, hasValidStock=${hasValidStock}`);
+            
+            return isActive && hasValidStock;
+          })
+          .map(product => ({
+            id: product.id,
+            name: product.name,
+            price: parseFloat(product.price) || 0,
+            unit: product.unit || 'adet',
+            image: product.image || '/assets/images/products/Elma.png',
+            category: product.category || 'Genel',
+            subcategory: product.subcategory || '',
+            stock: parseInt(product.stock) || 0,
+            isAvailable: product.stock > 0,
+            isOrganic: product.description?.toLowerCase().includes('organik') || false,
+            discount: 0, // Gelecekte indirim sistemi eklenebilir
+            rating: 4.5, // Gelecekte değerlendirme sistemi eklenebilir
+            status: product.status,
+            seller_id: product.seller_id,
+            description: product.description || `${product.name} - Taze ve kaliteli`,
+            gallery: [product.image || '/assets/images/products/Elma.png']
+          }));
+        
+        console.log('📦 Müşteri ürünleri hazırlandı:', loadedProducts.length, 'adet');
+        
+        // Image path kontrolü
+        if (loadedProducts.length > 0) {
+          console.log('🖼️ Müşteri - İlk ürün image:', loadedProducts[0].image);
+          console.log('🖼️ Müşteri - İlk 3 ürün:', loadedProducts.slice(0, 3).map(p => ({ name: p.name, image: p.image })));
         }
       }
       
-      // Eğer hiç ürün yoksa fallback ürünleri kullan
+      // Bu kod bloğu artık gereksiz - yukarıda zaten storage'dan yüklüyoruz
+      
+      // Eğer hiç ürün yoksa boş array kullan
       if (loadedProducts.length === 0) {
-        loadedProducts = fallbackProducts;
-        console.log('📦 Fallback ürünler kullanılıyor (hiç ürün yok):', loadedProducts.length, 'adet');
+        console.log('📦 Hiç ürün bulunamadı - satıcı henüz ürün eklememiş');
+        loadedProducts = [];
       }
       
       setProducts(loadedProducts);
@@ -379,29 +249,12 @@ const { productsService } = await import('@shared/utils/dataService');
     } catch (error) {
       console.error('Ürünler yüklenirken hata:', error);
       
-      // Fallback ürünleri yükle
-      setProducts(fallbackProducts);
+      // Hata durumunda boş array kullan
+      setProducts([]);
       
-      // Kategorileri ayarla
-      const allCategory = { id: 'all', name: 'Tüm Ürünler', icon: 'Grid3X3', count: fallbackProducts.length };
-      const categoryMap = new Map([['all', allCategory]]);
-      
-      fallbackProducts.forEach(product => {
-        const categoryId = product.category.toLowerCase().replace(/\s+/g, '-');
-        if (!categoryMap.has(categoryId)) {
-          categoryMap.set(categoryId, {
-            id: categoryId,
-            name: product.category,
-            icon: getCategoryIcon(product.category),
-            count: 0
-          });
-        }
-        categoryMap.get(categoryId).count++;
-      });
-      
-      const finalCategories = Array.from(categoryMap.values());
-      setDynamicCategories(finalCategories);
-      setCategories(finalCategories);
+      // Boş kategoriler
+      setCategories([{ id: 'all', name: 'Tüm Ürünler', icon: 'Grid3X3', count: 0 }]);
+      setDynamicCategories([{ id: 'all', name: 'Tüm Ürünler', icon: 'Grid3X3', count: 0 }]);
     }
     
     setIsLoading(false);
@@ -537,9 +390,10 @@ const { productsService } = await import('@shared/utils/dataService');
         <div className="mb-6">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="flex items-center space-x-3">
-                <Icon name="RefreshCw" size={24} className="text-green-600 animate-spin" />
-                <span className="text-gray-600">Ürünler yükleniyor...</span>
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 border-4 border-green-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <span className="text-gray-600 font-medium">Ürünler yükleniyor...</span>
+                <p className="text-gray-500 text-sm mt-2">Lütfen bekleyin, ürünler hazırlanıyor</p>
               </div>
             </div>
           ) : filteredProducts.length === 0 ? (
@@ -564,8 +418,8 @@ const { productsService } = await import('@shared/utils/dataService');
             </div>
           ) : (
             <>
-              {/* Ürün Listesi - Her ürün tek satırda, tam genişlikte */}
-              <div className="space-y-4">
+              {/* Ürün Listesi - Responsive grid layout */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredProducts.map((product) => (
                   <ProductCard
                     key={product.id}
@@ -573,7 +427,7 @@ const { productsService } = await import('@shared/utils/dataService');
                     onQuickAdd={(quantity) => handleQuickAdd(product, quantity)}
                     onProductClick={() => handleProductClick(product)}
                     showPrices={true} // Müşteri tarafında her zaman fiyat göster
-                    layout="horizontal" // Horizontal layout için prop
+                    layout="vertical" // Vertical layout için prop
                   />
                 ))}
               </div>

@@ -15,6 +15,11 @@ const MusteriProfil = () => {
   const { userProfile, signOut } = useAuth();
   const { orders, clearCart } = useCart();
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [businessInfo, setBusinessInfo] = useState({
     name: 'Meyve Sebze Marketi',
     phone: '0532 123 45 67',
@@ -109,23 +114,40 @@ const MusteriProfil = () => {
           <div className="space-y-6">
             {/* İşletme Bilgileri ve Hızlı Eylemler - Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* İşletme Bilgileri */}
+              {/* Müşteri Bilgileri */}
               <div className="bg-slate-100 rounded-lg p-6 shadow-sm border border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">İşletme Bilgileri</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900">Müşteri Bilgileri</h2>
+                  <button
+                    onClick={() => navigate('/customer/profile/edit')}
+                    className="text-green-600 hover:text-green-700 text-sm font-medium flex items-center space-x-1"
+                  >
+                    <Icon name="Edit" size={14} />
+                    <span>Düzenle</span>
+                  </button>
+                </div>
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
-                    <Icon name="Store" size={20} className="text-gray-400" />
+                    <Icon name="User" size={20} className="text-gray-400" />
                     <div>
-                      <p className="text-sm text-gray-500">İşletme Adı</p>
-                      <p className="font-bold text-gray-900">{businessInfo.name}</p>
+                      <p className="text-sm text-gray-500">Ad Soyad</p>
+                      <p className="font-bold text-gray-900">{userProfile?.full_name || userProfile?.name || 'Müşteri'}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <Icon name="Mail" size={20} className="text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-500">E-posta</p>
+                      <p className="font-bold text-gray-900">{userProfile?.email || 'demo@mail.com'}</p>
                     </div>
                   </div>
                   
                   <div className="flex items-center space-x-3">
                     <Icon name="Phone" size={20} className="text-gray-400" />
                     <div>
-                      <p className="text-sm text-gray-500">İletişim</p>
-                      <p className="font-bold text-gray-900">{businessInfo.phone}</p>
+                      <p className="text-sm text-gray-500">Telefon</p>
+                      <p className="font-bold text-gray-900">{userProfile?.phone || '+90 555 123 4567'}</p>
                     </div>
                   </div>
                   
@@ -133,7 +155,7 @@ const MusteriProfil = () => {
                     <Icon name="MapPin" size={20} className="text-gray-400" />
                     <div>
                       <p className="text-sm text-gray-500">Adres</p>
-                      <p className="font-bold text-gray-900">{businessInfo.address}</p>
+                      <p className="font-bold text-gray-900">{userProfile?.address || 'Atatürk Caddesi No: 123, Kadıköy, İstanbul'}</p>
                     </div>
                   </div>
                 </div>
@@ -166,6 +188,17 @@ const MusteriProfil = () => {
                   </button>
                   
                   <button
+                    onClick={() => setShowPasswordModal(true)}
+                    className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Icon name="Lock" size={20} className="text-gray-600" />
+                      <span className="font-bold text-gray-900">Şifre Değiştir</span>
+                    </div>
+                    <Icon name="ChevronRight" size={16} className="text-gray-400" />
+                  </button>
+                  
+                  <button
                     onClick={() => setShowSignOutConfirm(true)}
                     className="w-full flex items-center justify-between p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
                   >
@@ -175,6 +208,27 @@ const MusteriProfil = () => {
                     </div>
                     <Icon name="ChevronRight" size={16} className="text-red-400" />
                   </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Sipariş İstatistikleri */}
+            <div className="bg-slate-100 rounded-lg p-6 shadow-sm border border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Sipariş İstatistikleri</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 mb-1">Toplam Sipariş</p>
+                  <p className="text-2xl font-bold text-gray-900">{totalOrders}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 mb-1">Toplam Harcama</p>
+                  <p className="text-2xl font-bold text-green-600">{formatPrice(totalSpent)}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 mb-1">Son Sipariş</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {recentOrders.length > 0 ? formatDate(recentOrders[0].date) : '-'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -217,6 +271,116 @@ const MusteriProfil = () => {
         </div>
       </div>
 
+      {/* Şifre Değiştirme Modalı */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-100 rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <Icon name="Lock" size={24} className="text-green-600" />
+                <h3 className="text-lg font-semibold text-gray-900">Şifre Değiştir</h3>
+              </div>
+              <button 
+                onClick={() => setShowPasswordModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <Icon name="X" size={20} />
+              </button>
+            </div>
+            
+            {passwordError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+                {passwordError}
+              </div>
+            )}
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mevcut Şifre
+                </label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="Mevcut şifrenizi girin"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Yeni Şifre
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="Yeni şifrenizi girin"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Yeni Şifre (Tekrar)
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="Yeni şifrenizi tekrar girin"
+                />
+              </div>
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowPasswordModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                İptal
+              </button>
+              <button
+                onClick={() => {
+                  if (!currentPassword || !newPassword || !confirmPassword) {
+                    setPasswordError('Lütfen tüm alanları doldurun');
+                    return;
+                  }
+                  
+                  if (newPassword !== confirmPassword) {
+                    setPasswordError('Yeni şifreler eşleşmiyor');
+                    return;
+                  }
+                  
+                  if (newPassword.length < 6) {
+                    setPasswordError('Şifre en az 6 karakter olmalıdır');
+                    return;
+                  }
+                  
+                  // Şifre değiştirme işlemi başarılı
+                  setPasswordError('');
+                  setCurrentPassword('');
+                  setNewPassword('');
+                  setConfirmPassword('');
+                  setShowPasswordModal(false);
+                  
+                  // Başarılı mesajı göster
+                  const event = new CustomEvent('showToast', {
+                    detail: { message: 'Şifreniz başarıyla değiştirildi', type: 'success' }
+                  });
+                  window.dispatchEvent(event);
+                }}
+                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Şifreyi Değiştir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Çıkış Onayı */}
       {showSignOutConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

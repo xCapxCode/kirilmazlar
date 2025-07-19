@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import Icon from '../AppIcon';
+import NotificationDropdown from './NotificationDropdown';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -75,10 +76,7 @@ const Header = () => {
             <div className="flex items-center space-x-3">
 
               {/* Bildirimler */}
-              <button className="relative p-2 text-gray-600 hover:text-gray-900 transition-smooth">
-                <Icon name="Bell" size={20} />
-                <span className="absolute -top-1 -right-1 bg-red-500 w-2 h-2 rounded-full"></span>
-              </button>
+              <NotificationDropdown />
 
               {/* Kullanıcı Profil Dropdown */}
               <div className="relative" ref={userMenuRef}>
@@ -120,14 +118,7 @@ const Header = () => {
                       <span>Profil Ayarları</span>
                     </button>
 
-                    <Link
-                      to="/customer/catalog"
-                      onClick={() => setIsUserMenuOpen(false)}
-                      className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 transition-smooth"
-                    >
-                      <Icon name="Package" size={16} />
-                      <span>Ürün Kataloğu</span>
-                    </Link>
+
 
                     <div className="border-t border-gray-200 mt-2 pt-2">
                       <button
@@ -154,15 +145,15 @@ const Header = () => {
                   key={item.id}
                   to={item.path}
                   className={`relative flex items-center space-x-2 px-4 py-2 text-sm font-medium transition-smooth ${isActive(item.path)
-                      ? 'text-blue-600'
-                      : 'text-gray-700 hover:text-blue-600'
+                      ? 'text-green-600'
+                      : 'text-gray-700 hover:text-green-600'
                     }`}
                 >
                   <Icon name={item.icon} size={16} strokeWidth={isActive(item.path) ? 2.5 : 2} />
                   <span>{item.label}</span>
                   {/* Aktif sayfa için alt çizgi */}
                   {isActive(item.path) && (
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600" style={{ bottom: '-12px' }}></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-green-600" style={{ bottom: '-12px' }}></div>
                   )}
                 </Link>
               ))}

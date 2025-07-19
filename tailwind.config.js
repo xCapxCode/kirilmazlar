@@ -3,7 +3,6 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
-    "./src/apps/admin/seller/pages/settings/index.jsx", // Renk değişikliği için eklendi
   ],
   theme: {
     extend: {

@@ -27,16 +27,16 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
   // Toplam fiyat hesaplama
   const totalPrice = quantity * discountedPrice;
 
-  // Horizontal layout için farklý yapý
+  // Horizontal layout iï¿½in farklï¿½ yapï¿½
   if (layout === 'horizontal') {
     return (
       <div className="bg-slate-100 rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 group">
         <div className="p-4">
-          {/* Üst Kýsým: Resim + Bilgiler + Fiyat + Sepet */}
+          {/* ï¿½st Kï¿½sï¿½m: Resim + Bilgiler + Fiyat + Sepet */}
           <div className="flex items-center justify-between mb-4">
-            {/* Sol Kýsým: Resim + Bilgiler */}
+            {/* Sol Kï¿½sï¿½m: Resim + Bilgiler */}
             <div className="flex items-center space-x-4 flex-1">
-              {/* Ürün Resmi */}
+              {/* ï¿½rï¿½n Resmi */}
               <div 
                 className="relative w-20 h-16 aspect-[5/4] flex-shrink-0 overflow-hidden cursor-pointer rounded-lg bg-gray-50"
                 onClick={() => onProductClick(product)}
@@ -71,7 +71,7 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
                 )}
               </div>
 
-              {/* Ürün Bilgileri */}
+              {/* ï¿½rï¿½n Bilgileri */}
               <div className="flex-1 min-w-0">
                 <h3 
                   className="font-semibold text-gray-900 text-base mb-1 cursor-pointer hover:text-green-600 transition-colors truncate"
@@ -103,7 +103,7 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
               </div>
             </div>
 
-            {/* Sað Kýsým: Birim Fiyat + Sepet Butonu */}
+            {/* Saï¿½ Kï¿½sï¿½m: Birim Fiyat + Sepet Butonu */}
             <div className="flex items-center space-x-3">
               {/* Birim Fiyat */}
               <div className="text-right">
@@ -131,7 +131,7 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
                 onClick={(e) => {
                   e.stopPropagation();
                   if (quantity > 0) {
-                    onQuickAdd(quantity); // Sadece quantity parametresini gönder
+                    onQuickAdd(quantity); // Sadece quantity parametresini gï¿½nder
                   }
                 }}
                 disabled={!product.isAvailable || quantity === 0}
@@ -146,10 +146,10 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
             </div>
           </div>
 
-          {/* Alt Kýsým: Miktar Seçici Sol - Stok Bilgisi Orta - Fiyat Sað */}
+          {/* Alt Kï¿½sï¿½m: Miktar Seï¿½ici Sol - Stok Bilgisi Orta - Fiyat Saï¿½ */}
           <div className="border-t border-gray-100 pt-3">
             <div className="flex items-center justify-between">
-              {/* Miktar Seçici - Sol taraf */}
+              {/* Miktar Seï¿½ici - Sol taraf */}
               <div className="flex items-center space-x-3">
                 <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
                   <button
@@ -177,18 +177,18 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
                   </button>
                 </div>
                 
-                {/* Stok Bilgisi - Miktar seçicinin yanýnda */}
+                {/* Stok Bilgisi - Miktar seï¿½icinin yanï¿½nda */}
                 <div className="flex items-center space-x-1">
                   <span className="text-xs text-gray-600">
                     Stok: {product.stock}
                   </span>
                   {product.stock <= 10 && product.stock > 0 && (
-                    <span className="text-xs text-orange-500 font-medium">Az Kaldý</span>
+                    <span className="text-xs text-orange-500 font-medium">Az Kaldï¿½</span>
                   )}
                 </div>
               </div>
 
-              {/* Toplam Fiyat - Sað taraf */}
+              {/* Toplam Fiyat - Saï¿½ taraf */}
               <div className="text-right">
                 <div className="text-lg font-bold text-green-600">
                   {quantity > 0 ? formatPrice(totalPrice) : formatPrice(0)}
@@ -206,12 +206,12 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
     );
   }
 
-  // Vertical layout (eski tasarým) - geriye dönük uyumluluk için
+  // Vertical layout - responsive tasarÄ±m iÃ§in optimize edilmiÅŸ
   return (
-    <div className="bg-slate-100 rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 group">
-      {/* Ürün Resmi */}
+    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 group h-full flex flex-col">
+      {/* ÃœrÃ¼n Resmi - 15px kÃ¼Ã§Ã¼ltÃ¼ldÃ¼ */}
       <div 
-        className="relative aspect-[5/4] overflow-hidden cursor-pointer bg-gray-50"
+        className="relative aspect-[5/4.3] overflow-hidden cursor-pointer bg-gray-50"
         onClick={() => onProductClick(product)}
       >
         <Image
@@ -242,23 +242,10 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
             </span>
           </div>
         )}
-
-        {/* Quick Add Button */}
-        {product.isAvailable && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onQuickAdd(product);
-            }}
-            className="absolute bottom-2 right-2 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-green-700"
-          >
-            <Icon name="Plus" size={16} strokeWidth={2.5} />
-          </button>
-        )}
       </div>
 
-      {/* Ürün Bilgileri */}
-      <div className="p-4">
+      {/* ÃœrÃ¼n Bilgileri */}
+      <div className="p-4 flex flex-col flex-grow">
         <h3 
           className="font-bold text-gray-900 mb-2 cursor-pointer hover:text-green-600 transition-colors"
           onClick={() => onProductClick(product)}
@@ -312,25 +299,81 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
         <div className="flex items-center justify-between text-xs text-gray-600 mb-3">
           <span>Stok: {product.stock} {product.unit}</span>
           {product.stock <= 10 && product.stock > 0 && (
-            <span className="text-orange-500 font-medium">Az Kaldý</span>
+            <span className="text-orange-500 font-medium">Az Kaldï¿½</span>
           )}
         </div>
 
-        {/* Add to Cart Button */}
-        <button
-          onClick={() => onQuickAdd(product)}
-          disabled={!product.isAvailable}
-          className={`w-full py-2 px-3 rounded-lg text-sm font-bold transition-colors ${
-            product.isAvailable
-              ? 'bg-green-600 text-white hover:bg-green-700' 
-              : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-          }`}
-        >
-          {product.isAvailable ? 'Sepete Ekle' : 'Stokta Yok'}
-        </button>
+        {/* Bottom Section - Quantity + Price + Cart */}
+        <div className="mt-auto">
+          <div className="flex items-center justify-between gap-2">
+            {/* Sol: Miktar SeÃ§ici */}
+            <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-white flex-shrink-0">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleQuantityDecrease();
+                }}
+                className="p-2 hover:bg-gray-50 transition-colors"
+              >
+                <Icon name="Minus" size={16} />
+              </button>
+              
+              <span className="px-3 py-2 text-sm font-bold text-gray-900 border-x border-gray-200 min-w-[60px] text-center">
+                {quantity}
+              </span>
+              
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleQuantityIncrease();
+                }}
+                className="p-2 hover:bg-gray-50 transition-colors"
+              >
+                <Icon name="Plus" size={16} />
+              </button>
+            </div>
+
+            {/* Orta: Toplam Fiyat */}
+            {quantity > 0 && (
+              <div className="flex-1 text-center">
+                <div className="text-base font-bold text-green-600">
+                  {formatPrice(totalPrice)}
+                </div>
+              </div>
+            )}
+
+            {/* SaÄŸ: Sepet Butonu - Her zaman yeÅŸil */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (quantity > 0) {
+                  onQuickAdd(quantity);
+                }
+              }}
+              disabled={!product.isAvailable}
+              className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors flex-shrink-0 ${
+                product.isAvailable
+                  ? 'bg-green-600 text-white hover:bg-green-700' 
+                  : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              <Icon name="ShoppingCart" size={20} />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-export default ProductCard;
+// Memoize the component to prevent unnecessary re-renders
+export default React.memo(ProductCard, (prevProps, nextProps) => {
+  // Only re-render if these props change
+  return (
+    prevProps.product.id === nextProps.product.id &&
+    prevProps.product.price === nextProps.product.price &&
+    prevProps.product.stock === nextProps.product.stock &&
+    prevProps.product.isAvailable === nextProps.product.isAvailable &&
+    prevProps.layout === nextProps.layout
+  );
+});

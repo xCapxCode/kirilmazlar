@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import Icon from '@shared/components/AppIcon';
+import { useNotification } from '../../../../../../contexts/NotificationContext';
+import Icon from '../../../../../../shared/components/AppIcon';
 
 const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) => {
+  const { showSuccess, showError } = useNotification();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -70,7 +72,7 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
     // Dosya boyutu kontrolü (2MB = 2 * 1024 * 1024 bytes)
     const maxSize = 2 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert('Dosya boyutu 2MB\'dan büyük olamaz. Lütfen daha küçük bir dosya seçin.');
+      showError('Dosya boyutu 2MB\'dan büyük olamaz. Lütfen daha küçük bir dosya seçin.');
       return;
     }
     
@@ -85,7 +87,7 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
       reader.readAsDataURL(file);
     } else {
       console.log('Geçersiz dosya tipi:', file?.type);
-      alert('Lütfen geçerli bir resim dosyası seçiniz (PNG, JPG, JPEG)');
+      showError('Lütfen geçerli bir resim dosyası seçiniz (PNG, JPG, JPEG)');
     }
   };
 
@@ -193,8 +195,7 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
     if (!validateForm()) {
       console.log('Form validation başarısız');
       console.log('Hatalar:', errors);
-      // Show error toast
-      window.showToast && window.showToast('Lütfen tüm gerekli alanları doldurun.', 'error');
+      showError('Lütfen tüm gerekli alanları doldurun.');
       return;
     }
 
@@ -213,18 +214,10 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
       await onSave(productData);
       console.log('Ürün başarıyla kaydedildi');
       
-      // Show success toast
-      window.showToast && window.showToast(
-        product ? 'Ürün başarıyla güncellendi!' : 'Ürün başarıyla eklendi!', 
-        'success'
-      );
+      showSuccess(product ? 'Ürün başarıyla güncellendi!' : 'Ürün başarıyla eklendi!');
     } catch (error) {
       console.error('Ürün kaydetme hatası:', error);
-      // Show error toast
-      window.showToast && window.showToast(
-        'Ürün kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.', 
-        'error'
-      );
+      showError('Ürün kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setIsSubmitting(false);
     }
@@ -409,11 +402,11 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
                   }`}
                 >
                   <option value="">Alt kategori seçiniz</option>
-                  {selectedCategory?.subcategories.map(subcategory => (
+                  {selectedCategory?.subcategories?.map(subcategory => (
                     <option key={subcategory} value={subcategory}>
                       {subcategory}
                     </option>
-                  ))}
+                  )) || []}
                 </select>
                 {errors.subcategory && (
                   <p className="mt-1 text-sm text-red-600">{errors.subcategory}</p>

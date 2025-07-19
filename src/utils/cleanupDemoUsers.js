@@ -4,17 +4,17 @@ const cleanupDemoUsers = () => {
     // localStorage'dan tüm Bülent Üner ile ilgili verileri temizle
     const keysToClean = [
       'currentUser',
-      'freshmarket_users', 
-      'freshmarket_customers',
-      'freshmarket_products',
-      'freshmarket_orders'
+      'kirilmazlar_users', 
+      'kirilmazlar_customers',
+      'kirilmazlar_products',
+      'kirilmazlar_orders'
     ];
 
     keysToClean.forEach(key => {
       const data = localStorage.getItem(key);
       if (data) {
         try {
-          let parsedData = JSON.parse(data);
+          const parsedData = JSON.parse(data);
           
           if (key === 'currentUser') {
             // Mevcut kullanıcı Bülent Üner ise temizle

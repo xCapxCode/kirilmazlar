@@ -1,16 +1,38 @@
-# Kırılmazlar Monorepo
+# KIRILMAZLAR - Gıda Yönetim Sistemi
 
-Bu proje, Kırılmazlar platformunun tüm uygulamalarını içeren monorepo yapısıdır.
+Bu proje, KIRILMAZLAR gıda yönetim sisteminin tüm uygulamalarını içeren monorepo yapısıdır.
 
-## Başlarken
+## Özellikler
 
-Projeyi yerel makinenizde çalıştırmak için aşağıdaki adımları izleyin:
+- 🏪 **Satıcı Paneli**: Ürün, sipariş ve müşteri yönetimi
+- 🛒 **Müşteri Uygulaması**: Ürün katalog, sepet ve sipariş takibi
+- 📱 **Responsive Tasarım**: Mobil ve masaüstü uyumlu
+- 💾 **Yerel Depolama**: LocalStorage tabanlı veri yönetimi
+- 🔐 **Kimlik Doğrulama**: Rol tabanlı erişim kontrolü
 
-1.  Bağımlılıkları yükleyin:
-    ```bash
-    npm install
-    ```
+## Test Hesapları
 
-2.  Geliştirme sunucusunu başlatın:
-    ```bash
-    npm run dev
+- **Satıcı**: `satici@test.com` / `1234`
+- **Müşteri**: `musteri@test.com` / `1234`
+
+## Kurulum
+
+1. Bağımlılıkları yükleyin:
+   ```bash
+   npm install
+   ```
+
+2. Geliştirme sunucusunu başlatın:
+   ```bash
+   npm run dev
+   ```
+
+3. Tarayıcınızda `http://localhost:5500` adresini açın
+
+## Teknolojiler
+
+- **Frontend**: React 18, Vite, TailwindCSS
+- **Routing**: React Router DOM
+- **Icons**: Lucide React
+- **Storage**: LocalStorage API
+- **Build**: Vite
