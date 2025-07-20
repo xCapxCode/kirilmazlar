@@ -4,7 +4,7 @@ import { useNotification } from '../../../../../contexts/NotificationContext';
 import { useModal } from '../../../../../contexts/ModalContext';
 import orderService from '../../../../../services/orderService';
 import orderSyncUtil from '../../../../../utils/orderSyncUtil';
-import storage from '../../../../../core/storage';
+import storage from '@core/storage';
 import SiparisIptalModali from './SiparisIptalModali';
 import SiparisDetayModali from './SiparisDetayModali';
 

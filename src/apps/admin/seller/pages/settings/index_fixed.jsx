@@ -4,7 +4,7 @@ import { useModal } from '../../../../../contexts/ModalContext';
 import { useNotification } from '../../../../../contexts/NotificationContext';
 import SaticiHeader from '../../../../../shared/components/ui/SaticiHeader';
 import Icon from '../../../../../shared/components/AppIcon';
-import storage from '../../../../../core/storage/index.js';
+import storage from '@core/storage';
 
 const GenelAyarlar = () => {
   const { user, userProfile, loading: authLoading } = useAuth();

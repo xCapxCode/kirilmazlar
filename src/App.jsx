@@ -5,23 +5,16 @@ import { CartProvider } from "./contexts/CartContext";
 import { BusinessProvider } from "./contexts/BusinessContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { ModalProvider } from "./contexts/ModalContext";
-import ToastContainer from "./shared/components/ui/ToastContainer";
-import NotificationContainer from "./shared/components/ui/NotificationContainer";
-import NotificationSystem from "./shared/components/ui/NotificationSystem";
 import NetworkStatus from "./shared/components/NetworkStatus";
 import Routes from "./Routes";
-import cleanupDemoUsers from "./utils/cleanupDemoUsers";
 import { migrationManager } from "./core/migration";
 import { backupManager } from "./core/backup";
 
 function App() {
-  // Tek seferlik localStorage temizliği, demo kullanıcı temizliği ve veri migrasyonu
+  // Tek seferlik localStorage temizliği ve veri migrasyonu
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Demo kullanıcıları temizle
-        cleanupDemoUsers();
-        
         // Mevcut sepet verisi temizliği
         const cartData = localStorage.getItem('cart');
         if (cartData) {
@@ -68,9 +61,6 @@ function App() {
             <CartProvider>
               <NetworkStatus />
               <Routes />
-              <ToastContainer />
-              <NotificationContainer />
-              <NotificationSystem />
             </CartProvider>
           </AuthProvider>
         </BusinessProvider>

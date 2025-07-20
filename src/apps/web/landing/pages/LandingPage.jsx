@@ -4,7 +4,6 @@ import Icon from '../../../../shared/components/AppIcon';
 import Login from '../../../../shared/components/auth/Login';
 import LandingHeader from '../components/LandingHeader';
 import Footer from '../components/Footer'; // Footer bileşenini import et
-import dataService from '../../../../shared/utils/dataService';
 
 const LandingPage = () => {
   const [businessInfo, setBusinessInfo] = useState({
@@ -50,7 +49,6 @@ const LandingPage = () => {
 
     const loadPopularProducts = async () => {
       try {
-        dataService.productsService.initializeDemoProducts();
         const savedProducts = localStorage.getItem('products');
         if (savedProducts) {
           const products = JSON.parse(savedProducts);

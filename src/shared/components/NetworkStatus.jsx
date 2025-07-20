@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '@shared/components/AppIcon';
+import { useNotification } from '../../contexts/NotificationContext';
 
 const NetworkStatus = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showOfflineMessage, setShowOfflineMessage] = useState(false);
+  const { showSuccess, showError } = useNotification();
 
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
       setShowOfflineMessage(false);
-      window.showToast && window.showToast('İnternet bağlantısı geri yüklendi', 'success');
+      showSuccess('İnternet bağlantısı geri yüklendi');
     };
 
     const handleOffline = () => {
       setIsOnline(false);
       setShowOfflineMessage(true);
-      window.showToast && window.showToast('İnternet bağlantısı kesildi', 'error');
+      showError('İnternet bağlantısı kesildi');
     };
 
     window.addEventListener('online', handleOnline);

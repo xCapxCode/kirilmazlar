@@ -1,5 +1,5 @@
 // Veri Doğrulama ve Tutarlılık Kontrolü
-import storage from '../core/storage/index.js';
+import storage from '@core/storage';
 import logger from './logger.js';
 
 class DataValidator {

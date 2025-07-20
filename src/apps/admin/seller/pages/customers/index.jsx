@@ -11,6 +11,7 @@ import CustomerStatusModal from './components/CustomerStatusModal';
 
 // Basit Müşteri Ekleme Formu
 const NewCustomerForm = ({ onSave, onCancel, showWarning }) => {
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -105,14 +106,23 @@ const NewCustomerForm = ({ onSave, onCancel, showWarning }) => {
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Şifre *</label>
-            <input
-              type="password"
-              value={formData.password}
-              onChange={(e) => handleChange('password', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Müşteri şifresi"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={(e) => handleChange('password', e.target.value)}
+                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Müşteri şifresi"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+              >
+                <Icon name={showPassword ? "EyeOff" : "Eye"} size={16} />
+              </button>
+            </div>
           </div>
           
           <div>
@@ -238,11 +248,13 @@ const NewCustomerForm = ({ onSave, onCancel, showWarning }) => {
 
 // Müşteri düzenleme formu component'i
 const EditCustomerForm = ({ customer, onSave, onCancel }) => {
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: customer.name || '',
     email: customer.email || '',
     phone: customer.phone || '',
     username: customer.username || '',
+    password: '', // Yeni şifre için boş başla
     companyName: customer.companyName || '',
     companyTitle: customer.companyTitle || '',
     address: customer.address || '',
@@ -266,9 +278,17 @@ const EditCustomerForm = ({ customer, onSave, onCancel }) => {
     setIsSubmitting(true);
 
     try {
+      // Sadece dolu olan alanları gönder
+      const updateData = { ...formData };
+      
+      // Şifre boşsa update data'dan çıkar
+      if (!updateData.password || updateData.password.trim() === '') {
+        delete updateData.password;
+      }
+      
       await onSave({
         ...customer,
-        ...formData,
+        ...updateData,
         updatedAt: new Date().toISOString()
       });
     } catch (error) {
@@ -305,6 +325,29 @@ const EditCustomerForm = ({ customer, onSave, onCancel }) => {
             required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Şifre
+          </label>
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={formData.password}
+              onChange={(e) => handleChange('password', e.target.value)}
+              placeholder="Boş bırakılırsa değişmez"
+              className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+            >
+              <Icon name={showPassword ? "EyeOff" : "Eye"} size={16} />
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">Şifreyi değiştirmek için yeni şifreyi girin</p>
         </div>
 
         <div>
@@ -453,6 +496,8 @@ const MusteriYonetimi = () => {
     sortBy: 'name'
   });
 
+  const [showPasswords, setShowPasswords] = useState({});
+
   // Veri yükleme
   useEffect(() => {
     loadData();
@@ -477,19 +522,7 @@ const MusteriYonetimi = () => {
       setLoading(true);
       
       // Müşterileri yükle
-      let storedCustomers = await customerService.getAll();
-      if (storedCustomers.length === 0) {
-        console.log('🆕 Demo müşteriler oluşturuluyor...');
-        storedCustomers = createDemoCustomers();
-        
-        // Demo müşterileri kaydet
-        for (const customer of storedCustomers) {
-          await customerService.create(customer);
-        }
-        
-        // Müşterileri yeniden yükle
-        storedCustomers = await customerService.getAll();
-      }
+      const storedCustomers = await customerService.getAll();
       
       // Siparişleri yükle
       const storedOrders = await storage.get('customer_orders', []);
@@ -505,300 +538,6 @@ const MusteriYonetimi = () => {
       setLoading(false);
     }
   };
-
-  // Demo müşteriler oluştur (sadece 10 tane)
-  const createDemoCustomers = () => {
-    const demoCustomers = [
-      {
-        id: 1,
-        name: 'Ahmet Yılmaz',
-        email: 'ahmet@email.com',
-        phone: '0532 123 4567',
-        username: 'ahmet123',
-        status: 'active',
-        registeredAt: '2024-01-15T10:30:00Z',
-        lastLoginAt: '2025-07-15T14:20:00Z',
-        companyName: 'Yılmaz Market',
-        companyTitle: 'Müdür',
-        address: 'Atatürk Cad. No:45',
-        city: 'İstanbul',
-        district: 'Kadıköy',
-        postalCode: '34710',
-        accountType: 'business',
-        avatar: null,
-        notes: 'Düzenli müşteri, hızlı ödeme yapar'
-      },
-      {
-        id: 2,
-        name: 'Fatma Demir',
-        email: 'fatma@email.com',
-        phone: '0545 987 6543',
-        username: 'fatma456',
-        status: 'active',
-        registeredAt: '2024-02-20T09:15:00Z',
-        lastLoginAt: '2025-07-14T11:45:00Z',
-        companyName: '',
-        companyTitle: '',
-        address: 'Cumhuriyet Mah. 123. Sk. No:78',
-        city: 'Ankara',
-        district: 'Çankaya',
-        postalCode: '06690',
-        accountType: 'personal',
-        avatar: null,
-        notes: 'Organik ürünleri tercih ediyor'
-      },
-      {
-        id: 3,
-        name: 'Mehmet Kaya',
-        email: 'mehmet@email.com',
-        phone: '0533 456 7890',
-        username: 'mehmet789',
-        status: 'active',
-        registeredAt: '2024-03-10T16:45:00Z',
-        lastLoginAt: '2025-07-16T08:30:00Z',
-        companyName: 'Kaya Gıda Ltd.',
-        companyTitle: 'Satın Alma Müdürü',
-        address: 'Sanayi Sitesi 4. Blok No:12',
-        city: 'İzmir',
-        district: 'Bornova',
-        postalCode: '35040',
-        accountType: 'business',
-        avatar: null,
-        notes: 'Toplu sipariş veriyor, indirim bekliyor'
-      },
-      {
-        id: 4,
-        name: 'Ayşe Özkan',
-        email: 'ayse@email.com',
-        phone: '0542 111 2233',
-        username: 'ayse321',
-        status: 'active',
-        registeredAt: '2024-04-05T12:20:00Z',
-        lastLoginAt: '2025-07-13T19:15:00Z',
-        companyName: '',
-        companyTitle: '',
-        address: 'Yeni Mah. 567. Cd. No:89',
-        city: 'Bursa',
-        district: 'Nilüfer',
-        postalCode: '16110',
-        accountType: 'personal',
-        avatar: null,
-        notes: 'Hafta sonları sipariş veriyor'
-      },
-      {
-        id: 5,
-        name: 'Emre Şahin',
-        email: 'emre@email.com',
-        phone: '0534 444 5566',
-        username: 'emre555',
-        status: 'inactive',
-        registeredAt: '2024-05-12T14:10:00Z',
-        lastLoginAt: '2025-06-20T10:00:00Z',
-        companyName: 'Şahin Restaurant',
-        companyTitle: 'Chef',
-        address: 'Merkez Mah. Restaurant Sok. No:34',
-        city: 'Antalya',
-        district: 'Muratpaşa',
-        postalCode: '07100',
-        accountType: 'business',
-        avatar: null,
-        notes: 'Uzun süredir pasif'
-      },
-      {
-        id: 6,
-        name: 'Zeynep Kara',
-        email: 'zeynep@email.com',
-        phone: '0546 777 8899',
-        username: 'zeynep99',
-        status: 'active',
-        registeredAt: '2024-06-01T13:25:00Z',
-        lastLoginAt: '2025-07-15T16:40:00Z',
-        companyName: '',
-        companyTitle: '',
-        address: 'Barbaros Bulv. No:156',
-        city: 'İstanbul',
-        district: 'Beşiktaş',
-        postalCode: '34349',
-        accountType: 'personal',
-        avatar: null,
-        notes: 'Hızlı teslimat istiyor'
-      },
-      {
-        id: 7,
-        name: 'Murat Özdemir',
-        email: 'murat@email.com',
-        phone: '0535 333 4455',
-        username: 'murat77',
-        status: 'active',
-        registeredAt: '2024-06-15T11:10:00Z',
-        lastLoginAt: '2025-07-16T09:20:00Z',
-        companyName: 'Özdemir Ticaret',
-        companyTitle: 'Genel Müdür',
-        address: 'İnönü Cad. No:67',
-        city: 'Ankara',
-        district: 'Kızılay',
-        postalCode: '06420',
-        accountType: 'business',
-        avatar: null,
-        notes: 'Aylık düzenli sipariş veriyor'
-      },
-      {
-        id: 8,
-        name: 'Elif Yıldız',
-        email: 'elif@email.com',
-        phone: '0543 666 7788',
-        username: 'elif123',
-        status: 'active',
-        registeredAt: '2024-07-01T14:35:00Z',
-        lastLoginAt: '2025-07-14T18:50:00Z',
-        companyName: '',
-        companyTitle: '',
-        address: 'Alsancak Mah. 456. Sk. No:23',
-        city: 'İzmir',
-        district: 'Konak',
-        postalCode: '35220',
-        accountType: 'personal',
-        avatar: null,
-        notes: 'Yeni müşteri, ilk siparişini verdi'
-      },
-      {
-        id: 9,
-        name: 'Okan Demir',
-        email: 'okan@email.com',
-        phone: '0537 999 1122',
-        username: 'okan456',
-        status: 'active',
-        registeredAt: '2024-07-10T10:15:00Z',
-        lastLoginAt: '2025-07-15T12:30:00Z',
-        companyName: 'Demir Pazarlama',
-        companyTitle: 'Pazarlama Müdürü',
-        address: 'Atatürk Bulv. No:789',
-        city: 'Bursa',
-        district: 'Osmangazi',
-        postalCode: '16200',
-        accountType: 'business',
-        avatar: null,
-        notes: 'Büyük siparişler veriyor'
-      },
-      {
-        id: 10,
-        name: 'Selin Kaya',
-        email: 'selin@email.com',
-        phone: '0544 555 6677',
-        username: 'selin789',
-        status: 'active',
-        registeredAt: '2024-07-15T16:20:00Z',
-        lastLoginAt: '2025-07-16T14:45:00Z',
-        companyName: '',
-        companyTitle: '',
-        address: 'Yenişehir Mah. 123. Cd. No:45',
-        city: 'Antalya',
-        district: 'Aksu',
-        postalCode: '07100',
-        accountType: 'personal',
-        avatar: null,
-        notes: 'En yeni müşterimiz'
-      },
-      {
-        id: 11,
-        name: 'İbrahim Koç',
-        email: 'ibrahim@email.com',
-        phone: '0542 890 1234',
-        username: 'ibrahim567',
-        status: 'active',
-        registeredAt: '2024-01-25T08:40:00Z',
-        lastLoginAt: '2025-07-16T07:20:00Z',
-        companyName: 'Koç Turizm Otel',
-        companyTitle: 'İşletme Müdürü',
-        address: 'Turizm Bölgesi 5. Etap',
-        city: 'Muğla',
-        district: 'Marmaris',
-        postalCode: '48700',
-        accountType: 'business',
-        avatar: null,
-        notes: 'Otel için toplu gıda tedariki'
-      },
-      {
-        id: 12,
-        name: 'Meryem Aydın',
-        email: 'meryem@email.com',
-        phone: '0543 901 2345',
-        username: 'meryem890',
-        status: 'active',
-        registeredAt: '2024-03-15T13:55:00Z',
-        lastLoginAt: '2025-07-12T16:40:00Z',
-        companyName: '',
-        companyTitle: '',
-        address: 'Yeşil Vadi Sitesi B/24',
-        city: 'Denizli',
-        district: 'Pamukkale',
-        postalCode: '20160',
-        accountType: 'personal',
-        avatar: null,
-        notes: 'Sağlıklı beslenme odaklı'
-      },
-      {
-        id: 13,
-        name: 'Ömer Başkan',
-        email: 'omer@email.com',
-        phone: '0544 012 3456',
-        username: 'omer123',
-        status: 'inactive',
-        registeredAt: '2024-04-01T09:30:00Z',
-        lastLoginAt: '2025-06-20T12:00:00Z',
-        companyName: 'Başkan Lokantası',
-        companyTitle: 'Şef',
-        address: 'Eski Çarşı No:45',
-        city: 'Gaziantep',
-        district: 'Şehitkamil',
-        postalCode: '27010',
-        accountType: 'business',
-        avatar: null,
-        notes: 'Geçici olarak pasif, yeniden aktif olabilir'
-      },
-      {
-        id: 14,
-        name: 'Elif Turan',
-        email: 'elif@email.com',
-        phone: '0545 123 4567',
-        username: 'elif456',
-        status: 'active',
-        registeredAt: '2024-02-05T17:15:00Z',
-        lastLoginAt: '2025-07-15T13:25:00Z',
-        companyName: '',
-        companyTitle: '',
-        address: 'Çamlık Mah. 156/7',
-        city: 'Mersin',
-        district: 'Akdeniz',
-        postalCode: '33100',
-        accountType: 'personal',
-        avatar: null,
-        notes: 'Akdeniz bölgesi, mevsimlik tercih'
-      },
-      {
-        id: 15,
-        name: 'Recep Erdem',
-        email: 'recep@email.com',
-        phone: '0546 234 5678',
-        username: 'recep789',
-        status: 'pending',
-        registeredAt: '2024-04-15T19:45:00Z',
-        lastLoginAt: null,
-        companyName: 'Erdem Toptan Gıda',
-        companyTitle: 'Müdür',
-        address: 'Hal Kompleksi 12. Ada',
-        city: 'Konya',
-        district: 'Selçuklu',
-        postalCode: '42250',
-        accountType: 'business',
-        avatar: null,
-        notes: 'Onay bekleyen hesap, büyük potansiyel'
-      }
-    ];
-
-    return demoCustomers;
-  };
-
   // Müşteri durumu güncelleme
   const handleUpdateCustomerStatus = async (customerId, status, reason = '') => {
     try {
@@ -883,12 +622,12 @@ const MusteriYonetimi = () => {
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filtered = filtered.filter(customer =>
-        customer.name.toLowerCase().includes(searchLower) ||
-        customer.email.toLowerCase().includes(searchLower) ||
-        customer.phone.includes(filters.search) ||
-        customer.username.toLowerCase().includes(searchLower) ||
-        customer.companyName.toLowerCase().includes(searchLower) ||
-        customer.city.toLowerCase().includes(searchLower)
+        (customer.name || '').toLowerCase().includes(searchLower) ||
+        (customer.email || '').toLowerCase().includes(searchLower) ||
+        (customer.phone || '').includes(filters.search) ||
+        (customer.username || '').toLowerCase().includes(searchLower) ||
+        (customer.companyName || '').toLowerCase().includes(searchLower) ||
+        (customer.city || '').toLowerCase().includes(searchLower)
       );
     }
 
@@ -901,7 +640,7 @@ const MusteriYonetimi = () => {
     filtered.sort((a, b) => {
       switch (filters.sortBy) {
         case 'name':
-          return a.name.localeCompare(b.name, 'tr');
+          return (a.name || '').localeCompare((b.name || ''), 'tr');
         case 'orders':
           return b.orderCount - a.orderCount;
         case 'spent':
@@ -1024,7 +763,13 @@ const MusteriYonetimi = () => {
         await loadData();
         
         console.log('✅ Müşteri silindi:', customerName);
-        showSuccess(`${customerName} başarıyla silindi.`);
+        
+        // Notification debounce - aynı mesajı tekrar gösterme
+        const now = Date.now();
+        if (!window.lastDeleteNotification || now - window.lastDeleteNotification > 2000) {
+          showSuccess(`${customerName} başarıyla silindi.`);
+          window.lastDeleteNotification = now;
+        }
       } catch (error) {
         console.error('❌ Müşteri silme hatası:', error);
         showError('Müşteri silinirken bir hata oluştu');
@@ -1294,6 +1039,22 @@ const MusteriYonetimi = () => {
                         }`}>
                           {customer.accountType === 'business' ? 'Kurumsal' : 'Bireysel'}
                         </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-600">Şifre:</span>
+                        <div className="flex items-center space-x-1">
+                          <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs">
+                            {showPasswords[customer.id] ? customer.password : '•'.repeat(customer.password?.length || 8)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setShowPasswords(prev => ({ ...prev, [customer.id]: !prev[customer.id] }))}
+                            className="text-gray-400 hover:text-gray-600 p-1"
+                            title={showPasswords[customer.id] ? "Şifreyi Gizle" : "Şifreyi Göster"}
+                          >
+                            <Icon name={showPasswords[customer.id] ? "EyeOff" : "Eye"} size={12} />
+                          </button>
+                        </div>
                       </div>
                       <div className="flex justify-between text-xs">
                         <span className="text-gray-600">Sipariş:</span>
@@ -1594,151 +1355,6 @@ const MusteriYonetimi = () => {
                     </button>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Yeni Müşteri Modal */}
-      {showNewCustomerModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-          <div className="bg-slate-100 rounded-lg max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Yeni Müşteri Ekle</h3>
-              <button
-                onClick={() => setShowNewCustomerModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <Icon name="X" size={24} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ad Soyad</label>
-                <input
-                  type="text"
-                  placeholder="Müşteri adı soyadı"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  id="newCustomerName"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">E-posta</label>
-                <input
-                  type="email"
-                  placeholder="Müşteri e-postası"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  id="newCustomerEmail"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
-                <input
-                  type="text"
-                  placeholder="Müşteri telefonu"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  id="newCustomerPhone"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Kullanıcı Adı</label>
-                <input
-                  type="text"
-                  placeholder="Müşteri kullanıcı adı"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  id="newCustomerUsername"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Şifre</label>
-                <input
-                  type="password"
-                  placeholder="Müşteri şifresi"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  id="newCustomerPassword"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Adres</label>
-                <input
-                  type="text"
-                  placeholder="Müşteri adresi"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  id="newCustomerAddress"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Şehir</label>
-                <input
-                  type="text"
-                  placeholder="Müşteri şehri"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  id="newCustomerCity"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">İlçe</label>
-                <input
-                  type="text"
-                  placeholder="Müşteri ilçesi"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  id="newCustomerDistrict"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Posta Kodu</label>
-                <input
-                  type="text"
-                  placeholder="Müşteri posta kodu"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  id="newCustomerPostalCode"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <button
-                  onClick={() => setShowNewCustomerModal(false)}
-                  className="px-4 py-2 text-sm bg-gray-300 rounded-lg hover:bg-gray-300/80 transition-colors"
-                >
-                  İptal
-                </button>
-                <button
-                  onClick={() => {
-                    const customerData = {
-                      name: document.getElementById('newCustomerName').value,
-                      email: document.getElementById('newCustomerEmail').value,
-                      phone: document.getElementById('newCustomerPhone').value,
-                      username: document.getElementById('newCustomerUsername').value,
-                      password: document.getElementById('newCustomerPassword').value,
-                      address: document.getElementById('newCustomerAddress').value,
-                      city: document.getElementById('newCustomerCity').value,
-                      district: document.getElementById('newCustomerDistrict').value,
-                      postalCode: document.getElementById('newCustomerPostalCode').value,
-                    };
-
-                    // Müşteri verilerini doğrula
-                    if (!customerData.name || !customerData.email || !customerData.phone) {
-                      showWarning('Ad, e-posta ve telefon alanları zorunludur.');
-                      return;
-                    }
-
-                    // Yeni müşteri ekle
-                    handleAddCustomer(customerData);
-                  }}
-                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Ekle
-                </button>
               </div>
             </div>
           </div>

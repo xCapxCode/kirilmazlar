@@ -1,5 +1,5 @@
 // Sipariş senkronizasyon yardımcı fonksiyonları
-import storage from '../../core/storage/index.js';
+import storage from '@core/storage';
 
 // Yeni storage sistemi ile uyumlu - tek orders key'i kullanıyoruz
 const STORAGE_KEYS = {

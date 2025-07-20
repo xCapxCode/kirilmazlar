@@ -1,6 +1,6 @@
 // Yerel Authentication Service
 import { TEST_BUSINESS } from '../data/testUsers.js';
-import storage from '../core/storage/index.js';
+import storage from '@core/storage';
 import logger from '../utils/logger.js';
 
 class AuthService {

@@ -28,7 +28,6 @@ export const addOrder = (orderData) => {
     canCancel: true,
     canReorder: true,
     notes: orderData.notes || "",
-    isDemo: false
   };
 
   // Add to customer orders
@@ -51,8 +50,7 @@ export const addOrder = (orderData) => {
     items: newOrder.items,
     timeline: newOrder.timeline,
     canCancel: newOrder.canCancel,
-    notes: newOrder.notes,
-    isDemo: false
+    notes: newOrder.notes
   };
 
   const sellerOrders = JSON.parse(localStorage.getItem('sellerOrders') || '[]');
@@ -116,9 +114,6 @@ export const deleteOrder = (orderId) => {
 
 // Clear all orders from both storages
 export const clearAllOrders = () => {
-  // Set demo orders disabled flag
-  localStorage.setItem('demoOrdersDisabled', 'true');
-  
   // Clear customer orders
   localStorage.setItem('customerOrders', JSON.stringify([]));
   
@@ -133,13 +128,4 @@ export const clearAllOrders = () => {
   console.log('All orders cleared from both panels');
 };
 
-// Get demo orders disabled status
-export const isDemoOrdersDisabled = () => {
-  return localStorage.getItem('demoOrdersDisabled') === 'true';
-};
 
-// Reset demo orders disabled status
-export const enableDemoOrders = () => {
-  localStorage.removeItem('demoOrdersDisabled');
-  console.log('Demo orders enabled');
-};

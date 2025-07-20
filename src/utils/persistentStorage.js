@@ -3,7 +3,7 @@
  * KirilmazlarStorage abstraction layer'ını kullanarak güvenli veri yönetimi
  */
 
-import storage from '../core/storage/index.js';
+import storage from '@core/storage';
 
 // Veri versiyonu (schema değişikliklerini takip etmek için)
 const DATA_VERSION = '1.0.0';

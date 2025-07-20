@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { useCart } from '../../../../contexts/CartContext';
-import storage from '../../../../core/storage/index.js';
+import storage from '@core/storage';
 
 import Header from '@shared/components/ui/Header';
 import BottomTabNavigation from '@shared/components/ui/BottomTabNavigation';
@@ -12,7 +12,6 @@ import CategoryChips from './components/CategoryChips';
 import FilterPanel from './components/FilterPanel';
 import ProductDetailModal from './components/ProductDetailModal';
 import QuickAddModal from './components/QuickAddModal';
-import ToastContainer from '../../../../shared/components/ui/ToastContainer';
 
 const CustomerProductCatalog = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -341,7 +340,6 @@ const CustomerProductCatalog = () => {
     <div className="min-h-screen bg-slate-200">
       <Header />
       <BottomTabNavigation />
-      <ToastContainer />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Başlık Bandı */}

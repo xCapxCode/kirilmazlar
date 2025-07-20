@@ -1,6 +1,5 @@
 // Merkezi Veri Yönetim Servisi
-import storage from '../core/storage/index.js';
-import { DEMO_CATEGORIES, DEMO_PRODUCTS, DEMO_ORDERS } from '../data/demoData.js';
+import storage from '@core/storage';
 import { TEST_USERS, TEST_BUSINESS } from '../data/testUsers.js';
 import logger from '../utils/logger.js';
 import dataValidator from '../utils/dataValidator.js';
@@ -68,20 +67,20 @@ class DataService {
 
         // Kategoriler
         if (!storage.get('categories') || storage.get('categories').length === 0) {
-            storage.set('categories', DEMO_CATEGORIES);
-            logger.log('📂 Demo kategoriler yüklendi');
+            storage.set('categories', []);
+            logger.log('📂 Kategoriler başlatıldı');
         }
 
         // Ürünler
         if (!storage.get('products') || storage.get('products').length === 0) {
-            storage.set('products', DEMO_PRODUCTS);
-            logger.log('📦 Demo ürünler yüklendi');
+            storage.set('products', []);
+            logger.log('📦 Ürünler başlatıldı');
         }
 
         // Siparişler
         if (!storage.get('orders')) {
-            storage.set('orders', DEMO_ORDERS);
-            logger.log('📋 Demo siparişler yüklendi');
+            storage.set('orders', []);
+            logger.log('📋 Siparişler başlatıldı');
         }
 
         // Sepet

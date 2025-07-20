@@ -83,13 +83,21 @@ const NotificationContainer = ({ notifications, onClose }) => {
   if (notifications.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2">
-      {notifications.map((notification) => (
-        <ToastNotification
+    <div className="fixed top-4 right-4 z-[9999] space-y-4 max-w-sm pointer-events-none">
+      {notifications.map((notification, index) => (
+        <div 
           key={notification.id}
-          notification={notification}
-          onClose={onClose}
-        />
+          className="pointer-events-auto"
+          style={{ 
+            transform: `translateY(${index * 4}px)`,
+            zIndex: 9999 - index
+          }}
+        >
+          <ToastNotification
+            notification={notification}
+            onClose={onClose}
+          />
+        </div>
       ))}
     </div>
   );
@@ -105,7 +113,7 @@ export const NotificationProvider = ({ children }) => {
       message,
       type,
       title: options.title,
-      duration: options.duration || 5000,
+      duration: options.duration || 3000,
       persistent: options.persistent || false
     };
 
@@ -129,17 +137,31 @@ export const NotificationProvider = ({ children }) => {
     setNotifications([]);
   }, []);
 
-  // Convenience methods
-  const showSuccess = useCallback((message, options = {}) => {
-    return showNotification(message, 'success', options);
+  const showSuccess = useCallback((titleOrMessage, messageOrOptions = {}) => {
+    // Eğer ikinci parametre string ise, title + message formatı
+    if (typeof messageOrOptions === 'string') {
+      return showNotification(messageOrOptions, 'success', { title: titleOrMessage });
+    }
+    // Değilse, sadece message + options formatı
+    return showNotification(titleOrMessage, 'success', messageOrOptions);
   }, [showNotification]);
 
-  const showError = useCallback((message, options = {}) => {
-    return showNotification(message, 'error', options);
+  const showError = useCallback((titleOrMessage, messageOrOptions = {}) => {
+    // Eğer ikinci parametre string ise, title + message formatı
+    if (typeof messageOrOptions === 'string') {
+      return showNotification(messageOrOptions, 'error', { title: titleOrMessage });
+    }
+    // Değilse, sadece message + options formatı
+    return showNotification(titleOrMessage, 'error', messageOrOptions);
   }, [showNotification]);
 
-  const showWarning = useCallback((message, options = {}) => {
-    return showNotification(message, 'warning', options);
+  const showWarning = useCallback((titleOrMessage, messageOrOptions = {}) => {
+    // Eğer ikinci parametre string ise, title + message formatı
+    if (typeof messageOrOptions === 'string') {
+      return showNotification(messageOrOptions, 'warning', { title: titleOrMessage });
+    }
+    // Değilse, sadece message + options formatı
+    return showNotification(titleOrMessage, 'warning', messageOrOptions);
   }, [showNotification]);
 
   const showInfo = useCallback((message, options = {}) => {

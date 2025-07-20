@@ -10,7 +10,7 @@ import SiparisDetayModali from './components/SiparisDetayModali';
 import ArsivlenmisModali from './components/ArsivlenmisModali';
 import orderService from '../../../../services/orderService';
 import orderCleanupUtil from '../../../../utils/orderCleanupUtil';
-import storage from '../../../../core/storage';
+import storage from '@core/storage';
 
 const CustomerOrders = () => {
   const { user, userProfile, loading: authLoading } = useAuth();

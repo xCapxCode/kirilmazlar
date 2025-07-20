@@ -340,13 +340,25 @@ class KirilmazlarStorage {
   }
 }
 
-// Create global instance
-const storageInstance = new KirilmazlarStorage();
+// TRUE SINGLETON - Only one instance allowed across all imports
+let globalStorageInstance = null;
+
+function getStorageInstance() {
+  if (!globalStorageInstance) {
+    globalStorageInstance = new KirilmazlarStorage();
+    console.log('🔧 Created SINGLETON storage instance');
+  }
+  return globalStorageInstance;
+}
+
+// Export the singleton instance
+const storageInstance = getStorageInstance();
 
 // Global access for debugging
 if (typeof window !== 'undefined') {
   window.KirilmazlarStorage = KirilmazlarStorage;
   window.storage = storageInstance;
+  window.getStorageInstance = getStorageInstance;
 }
 
 export default storageInstance;

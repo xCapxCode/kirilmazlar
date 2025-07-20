@@ -1,4 +1,4 @@
-import storage from '../core/storage/index.js';
+import storage from '@core/storage';
 
 /**
  * Sipariş durumu senkronizasyonu için utility

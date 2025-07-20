@@ -1,5 +1,5 @@
 // Storage Senkronizasyon Utility
-import storage from '../core/storage/index.js';
+import storage from '@core/storage';
 import logger from './logger.js';
 
 class StorageSync {
