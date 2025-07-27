@@ -1,6 +1,4 @@
-import React from 'react';
-import * as LucideIcons from 'lucide-react';
-import { HelpCircle } from 'lucide-react';
+import { getIconComponent } from '@utils/selectiveIcons';
 
 function Icon({
     name,
@@ -10,11 +8,7 @@ function Icon({
     strokeWidth = 2,
     ...props
 }) {
-    const IconComponent = LucideIcons[name];
-
-    if (!IconComponent) {
-        return <HelpCircle size={size} color="gray" strokeWidth={strokeWidth} className={className} {...props} />;
-    }
+    const IconComponent = getIconComponent(name);
 
     return <IconComponent
         size={size}

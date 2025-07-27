@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import storage from '@core/storage';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../../../../contexts/AuthContext';
 import { useModal } from '../../../../../contexts/ModalContext';
 import { useNotification } from '../../../../../contexts/NotificationContext';
-import SaticiHeader from '../../../../../shared/components/ui/SaticiHeader';
-import Icon from '../../../../../shared/components/AppIcon';
-import storage from '../../../../../core/storage/index.js';
 import orderService from '../../../../../services/orderService';
+import Icon from '../../../../../shared/components/AppIcon';
+import SaticiHeader from '../../../../../shared/components/ui/SaticiHeader';
 
 // Bileşenler
-import SiparisDetayModali from './components/SiparisDetayModali';
 import DurumGuncellemeModali from './components/DurumGuncellemeModali';
+import SiparisDetayModali from './components/SiparisDetayModali';
 
 const SiparisYonetimi = () => {
   const { user, userProfile, loading: authLoading } = useAuth();
@@ -35,7 +35,7 @@ const SiparisYonetimi = () => {
   useEffect(() => {
     if (user && userProfile) {
       loadOrders();
-      
+
       // Müşteri siparişlerini dinle - customer_orders ana veri kaynağı
       const unsubscribeCustomerOrders = storage.subscribe('customer_orders', (newOrders) => {
         console.log('🔄 Customer orders updated:', newOrders?.length || 0);
@@ -55,15 +55,15 @@ const SiparisYonetimi = () => {
   const loadOrders = async () => {
     try {
       console.log('🔄 Sipariş verileri yükleniyor...');
-      
+
       // OrderService kullanarak siparişleri yükle
       const loadedOrders = await orderService.getAll({
         sortBy: 'newest'
       });
-      
+
       console.log('✅ Sipariş verileri yüklendi:', loadedOrders.length);
       setOrders(loadedOrders);
-      
+
     } catch (error) {
       console.error('❌ Sipariş yükleme hatası:', error);
       setError('Siparişler yüklenirken hata oluştu');
@@ -82,31 +82,31 @@ const SiparisYonetimi = () => {
       'delivered': 'Teslim Edildi',
       'cancelled': 'İptal Edildi'
     };
-    
+
     return statusMap[status] || status || 'Beklemede';
   };
 
   const handleUpdateOrderStatus = async (orderId, newStatus, notes = '') => {
     try {
       console.log('🔄 Sipariş durumu güncelleniyor:', orderId, newStatus);
-      
+
       // OrderService kullanarak sipariş durumunu güncelle
       const updatedOrder = await orderService.updateStatus(orderId, newStatus, notes);
-      
+
       if (!updatedOrder) {
         throw new Error('Sipariş bulunamadı');
       }
-      
+
       // Local state'i güncelle - sipariş kaybolmasın, sadece durumu güncellensin
-      setOrders(prevOrders => 
-        prevOrders.map(order => 
-          order.id === orderId 
-            ? { 
-                ...order, 
-                status: updatedOrder.status,
-                statusNotes: notes,
-                updatedAt: new Date().toISOString()
-              }
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.id === orderId
+            ? {
+              ...order,
+              status: updatedOrder.status,
+              statusNotes: notes,
+              updatedAt: new Date().toISOString()
+            }
             : order
         )
       );
@@ -115,7 +115,7 @@ const SiparisYonetimi = () => {
       showSuccess('Sipariş durumu başarıyla güncellendi');
       setShowStatusUpdate(false);
       setSelectedOrder(null);
-      
+
     } catch (error) {
       console.error('❌ Sipariş durumu güncelleme hatası:', error);
       setError('Sipariş durumu güncellenirken hata oluştu');
@@ -137,10 +137,10 @@ const SiparisYonetimi = () => {
     if (confirmed) {
       try {
         console.log('🗑️ Sipariş siliniyor:', orderId);
-        
+
         // OrderService kullanarak siparişi sil
         const success = await orderService.delete(orderId);
-        
+
         if (!success) {
           throw new Error('Sipariş bulunamadı veya silinemedi');
         }
@@ -150,7 +150,7 @@ const SiparisYonetimi = () => {
 
         console.log('✅ Sipariş silindi');
         showSuccess('Sipariş başarıyla silindi');
-        
+
       } catch (error) {
         console.error('❌ Sipariş silme hatası:', error);
         showError('Sipariş silinirken hata oluştu');
@@ -172,16 +172,16 @@ const SiparisYonetimi = () => {
     if (confirmed) {
       try {
         console.log('🧹 Tüm test siparişleri temizleniyor...');
-        
+
         // OrderService kullanarak test siparişlerini temizle
         const deletedCount = await orderService.clearTestOrders();
-        
+
         // Siparişleri yeniden yükle
         await loadOrders();
-        
+
         console.log(`✅ ${deletedCount} test siparişi temizlendi, gerçek siparişler korundu`);
         showSuccess(`${deletedCount} test siparişi başarıyla temizlendi`);
-        
+
       } catch (error) {
         console.error('❌ Sipariş temizleme hatası:', error);
         showError('Siparişler temizlenirken hata oluştu');
@@ -191,16 +191,16 @@ const SiparisYonetimi = () => {
 
   // Filtreleme ve sayfalama
   const filteredOrders = orders.filter(order => {
-    const matchesSearch = 
+    const matchesSearch =
       order.orderNumber.toLowerCase().includes(filters.search.toLowerCase()) ||
       order.customerName.toLowerCase().includes(filters.search.toLowerCase());
-    
+
     const matchesStatus = !filters.status || order.status === filters.status;
-    
+
     const matchesDateRange = filters.dateRange === 'all' || (() => {
       const orderDate = new Date(order.orderDate);
       const now = new Date();
-      
+
       switch (filters.dateRange) {
         case 'today':
           return orderDate.toDateString() === now.toDateString();
@@ -214,7 +214,7 @@ const SiparisYonetimi = () => {
           return true;
       }
     })();
-    
+
     return matchesSearch && matchesStatus && matchesDateRange;
   });
 
@@ -249,7 +249,7 @@ const SiparisYonetimi = () => {
       'Teslim Edildi': 'bg-gray-100 text-gray-800',
       'İptal Edildi': 'bg-red-100 text-red-800'
     };
-    
+
     return statusColors[status] || 'bg-gray-100 text-gray-800';
   };
 
@@ -264,7 +264,7 @@ const SiparisYonetimi = () => {
     );
   }
 
-  if (!user || !userProfile || (userProfile.role !== 'seller' && userProfile.role !== 'admin')) {
+  if (!user || !userProfile || (userProfile.role !== 'seller' && userProfile.role !== 'admin' && userProfile.role !== 'owner')) {
     return (
       <div className="min-h-screen bg-slate-200 flex items-center justify-center">
         <div className="text-center">
@@ -302,7 +302,7 @@ const SiparisYonetimi = () => {
                 <Icon name="Trash2" size={18} />
                 <span>Test Siparişlerini Temizle</span>
               </button>
-              
+
               <button
                 onClick={loadOrders}
                 className="border-2 border-green-600 text-green-600 px-4 py-2 rounded-lg hover:bg-green-600/10 transition-colors flex items-center space-x-2"
@@ -342,7 +342,7 @@ const SiparisYonetimi = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
             </div>
-            
+
             <div>
               <select
                 value={filters.status}
@@ -394,7 +394,7 @@ const SiparisYonetimi = () => {
               <Icon name="ShoppingCart" size={48} className="text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">Sipariş bulunamadı</h3>
               <p className="text-gray-600">
-                {orders.length === 0 
+                {orders.length === 0
                   ? 'Henüz sipariş yok. Müşteriler sipariş verdiğinde burada görünecek.'
                   : 'Aradığınız kriterlere uygun sipariş bulunmuyor.'
                 }
@@ -430,9 +430,9 @@ const SiparisYonetimi = () => {
                             {new Date(order.orderDate).toLocaleDateString('tr-TR')}
                           </div>
                           <div className="text-sm text-gray-600">
-                            {new Date(order.orderDate).toLocaleTimeString('tr-TR', { 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
+                            {new Date(order.orderDate).toLocaleTimeString('tr-TR', {
+                              hour: '2-digit',
+                              minute: '2-digit'
                             })}
                           </div>
                         </td>
@@ -493,11 +493,11 @@ const SiparisYonetimi = () => {
                   >
                     Önceki
                   </button>
-                  
+
                   <span className="px-3 py-2 text-sm text-gray-700">
                     Sayfa {currentPage} / {totalPages}
                   </span>
-                  
+
                   <button
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}

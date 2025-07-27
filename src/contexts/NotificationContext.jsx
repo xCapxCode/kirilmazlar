@@ -1,5 +1,21 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import Icon from '@shared/components/AppIcon';
+/**
+ * Enhanced Notification Context
+ * P2.3.4: UI/UX Enhancement - Toast notification system enhancement
+ * 
+ * @description Modern notification system with enhanced toast functionality
+ * @author KırılmazlarPanel Development Team
+ * @date July 24, 2025
+ */
+
+import { createContext, useCallback, useContext, useState } from 'react';
+import {
+  EnhancedNotificationProvider,
+  TOAST_DURATIONS,
+  TOAST_POSITIONS,
+  TOAST_TYPES,
+  useEnhancedNotification
+} from '../components/ui/EnhancedNotifications';
+import Icon from '../shared/components/AppIcon';
 
 const NotificationContext = createContext();
 
@@ -11,7 +27,7 @@ export const useNotification = () => {
   return context;
 };
 
-// Toast Notification Component
+// Legacy Toast Notification Component (Backward Compatibility)
 const ToastNotification = ({ notification, onClose }) => {
   const getTypeStyles = () => {
     switch (notification.type) {
@@ -78,17 +94,17 @@ const ToastNotification = ({ notification, onClose }) => {
   );
 };
 
-// Notification Container Component
+// Legacy Notification Container Component
 const NotificationContainer = ({ notifications, onClose }) => {
   if (notifications.length === 0) return null;
 
   return (
     <div className="fixed top-4 right-4 z-[9999] space-y-4 max-w-sm pointer-events-none">
       {notifications.map((notification, index) => (
-        <div 
+        <div
           key={notification.id}
           className="pointer-events-auto"
-          style={{ 
+          style={{
             transform: `translateY(${index * 4}px)`,
             zIndex: 9999 - index
           }}
@@ -103,89 +119,132 @@ const NotificationContainer = ({ notifications, onClose }) => {
   );
 };
 
+// Enhanced Notification Provider with backward compatibility
 export const NotificationProvider = ({ children }) => {
-  const [notifications, setNotifications] = useState([]);
+  // Legacy state for backward compatibility
+  const [legacyNotifications, setLegacyNotifications] = useState([]);
 
-  const showNotification = useCallback((message, type = 'info', options = {}) => {
-    const id = Date.now() + Math.random();
+  // Legacy notification methods
+  const addNotification = useCallback((message, type = 'info', title = null, duration = 5000) => {
+    const id = Date.now().toString(36) + Math.random().toString(36).substr(2);
     const notification = {
       id,
       message,
       type,
-      title: options.title,
-      duration: options.duration || 3000,
-      persistent: options.persistent || false
+      title,
+      timestamp: Date.now()
     };
 
-    setNotifications(prev => [...prev, notification]);
+    setLegacyNotifications(prev => [...prev, notification]);
 
-    // Auto-remove notification after duration (unless persistent)
-    if (!notification.persistent) {
+    if (duration > 0) {
       setTimeout(() => {
         removeNotification(id);
-      }, notification.duration);
+      }, duration);
     }
 
     return id;
   }, []);
 
   const removeNotification = useCallback((id) => {
-    setNotifications(prev => prev.filter(notification => notification.id !== id));
+    setLegacyNotifications(prev => prev.filter(n => n.id !== id));
   }, []);
 
-  const clearAllNotifications = useCallback(() => {
-    setNotifications([]);
+  // Convenience methods (backward compatibility)
+  const showSuccess = useCallback((message, title = 'Başarılı!') => {
+    return addNotification(message, 'success', title, 3000);
+  }, [addNotification]);
+
+  const showError = useCallback((message, title = 'Hata!') => {
+    return addNotification(message, 'error', title, 6000);
+  }, [addNotification]);
+
+  const showWarning = useCallback((message, title = 'Uyarı!') => {
+    return addNotification(message, 'warning', title, 4000);
+  }, [addNotification]);
+
+  const showInfo = useCallback((message, title = 'Bilgi') => {
+    return addNotification(message, 'info', title, 4000);
+  }, [addNotification]);
+
+  const clearAll = useCallback(() => {
+    setLegacyNotifications([]);
   }, []);
 
-  const showSuccess = useCallback((titleOrMessage, messageOrOptions = {}) => {
-    // Eğer ikinci parametre string ise, title + message formatı
-    if (typeof messageOrOptions === 'string') {
-      return showNotification(messageOrOptions, 'success', { title: titleOrMessage });
-    }
-    // Değilse, sadece message + options formatı
-    return showNotification(titleOrMessage, 'success', messageOrOptions);
-  }, [showNotification]);
-
-  const showError = useCallback((titleOrMessage, messageOrOptions = {}) => {
-    // Eğer ikinci parametre string ise, title + message formatı
-    if (typeof messageOrOptions === 'string') {
-      return showNotification(messageOrOptions, 'error', { title: titleOrMessage });
-    }
-    // Değilse, sadece message + options formatı
-    return showNotification(titleOrMessage, 'error', messageOrOptions);
-  }, [showNotification]);
-
-  const showWarning = useCallback((titleOrMessage, messageOrOptions = {}) => {
-    // Eğer ikinci parametre string ise, title + message formatı
-    if (typeof messageOrOptions === 'string') {
-      return showNotification(messageOrOptions, 'warning', { title: titleOrMessage });
-    }
-    // Değilse, sadece message + options formatı
-    return showNotification(titleOrMessage, 'warning', messageOrOptions);
-  }, [showNotification]);
-
-  const showInfo = useCallback((message, options = {}) => {
-    return showNotification(message, 'info', options);
-  }, [showNotification]);
-
-  const value = {
-    notifications,
-    showNotification,
+  const contextValue = {
+    // Legacy methods
+    notifications: legacyNotifications,
+    addNotification,
+    removeNotification,
     showSuccess,
     showError,
     showWarning,
     showInfo,
-    removeNotification,
-    clearAllNotifications
+    clearAllNotifications: clearAll,
+    // Enhanced methods available
+    TOAST_TYPES,
+    TOAST_POSITIONS,
+    TOAST_DURATIONS
   };
 
   return (
-    <NotificationContext.Provider value={value}>
-      {children}
-      <NotificationContainer 
-        notifications={notifications} 
-        onClose={removeNotification} 
-      />
-    </NotificationContext.Provider>
+    <EnhancedNotificationProvider position={TOAST_POSITIONS.TOP_RIGHT}>
+      <NotificationContext.Provider value={contextValue}>
+        {children}
+        {/* Legacy notifications container */}
+        <NotificationContainer
+          notifications={legacyNotifications}
+          onClose={removeNotification}
+        />
+      </NotificationContext.Provider>
+    </EnhancedNotificationProvider>
   );
 };
+
+// Hook for enhanced notifications (new API)
+export const useEnhancedNotifications = () => {
+  try {
+    return useEnhancedNotification();
+  } catch {
+    // Fallback to legacy if enhanced not available
+    return useNotification();
+  }
+};
+
+// Migration utility
+export const migrateToEnhancedNotifications = (legacyNotification) => {
+  const notification = useEnhancedNotifications();
+
+  return {
+    showSuccess: (message, title, options = {}) => {
+      if (typeof title === 'object') {
+        options = title;
+        title = options.title || 'Başarılı!';
+      }
+      return notification.showSuccess(title || 'Başarılı!', message, options);
+    },
+    showError: (message, title, options = {}) => {
+      if (typeof title === 'object') {
+        options = title;
+        title = options.title || 'Hata!';
+      }
+      return notification.showError(title || 'Hata!', message, options);
+    },
+    showWarning: (message, title, options = {}) => {
+      if (typeof title === 'object') {
+        options = title;
+        title = options.title || 'Uyarı!';
+      }
+      return notification.showWarning(title || 'Uyarı!', message, options);
+    },
+    showInfo: (message, title, options = {}) => {
+      if (typeof title === 'object') {
+        options = title;
+        title = options.title || 'Bilgi';
+      }
+      return notification.showInfo(title || 'Bilgi', message, options);
+    }
+  };
+};
+
+export default NotificationContext;

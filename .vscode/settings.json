@@ -1,0 +1,109 @@
+{
+    "cursor.windowSwitcher.sidebarHoverCollapsed": false,
+    "21st-extension.telemetry.enabled": false,
+    "CodeGPT.apiKey": "CodeGPT Plus Beta",
+    "livePreview.defaultPreviewPath": "http://localhost:5500",
+    "liveServer.settings.CustomBrowser": "msedge",
+    "fiveServer.port": 5501,
+    "fiveServer.host": "localhost",
+    // GitHub Copilot Configuration for GeniusCoder (Gen) System - AUTONOMOUS MODE
+    "github.copilot.enable": {
+        "*": true,
+        "plaintext": false,
+        "markdown": true,
+        "scminput": false
+    },
+    "github.copilot.editor.enableAutoCompletions": true,
+    "github.copilot.chat.followUp": "always",
+    "github.copilot.chat.localeOverride": "tr",
+    "github.copilot.chat.useProjectInstructions": true,
+    "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+    "github.copilot.chat.executeSlashCommands": true,
+    "github.copilot.advanced": {
+        "secret_key": "github.copilot.enable",
+        "length": 500,
+        "temperature": 0.1,
+        "top_p": 1,
+        "stop": [
+            "\n\n"
+        ]
+    },
+    "github.copilot.preferredAccount": "github",
+    // File Associations for Instructions
+    "files.associations": {
+        "*.md": "markdown",
+        ".instructions.md": "markdown",
+        "copilot-instructions.md": "markdown"
+    },
+    // Markdown Configuration
+    "markdown.preview.breaks": true,
+    "markdown.preview.linkify": true,
+    // Editor Configuration for Production-Ready Development
+    "editor.wordWrap": "on",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "explicit",
+        "source.organizeImports": "explicit"
+    },
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": true,
+    // Language Configuration
+    "emmet.includeLanguages": {
+        "javascript": "javascriptreact",
+        "typescript": "typescriptreact"
+    },
+    "typescript.preferences.includePackageJsonAutoImports": "auto",
+    "javascript.preferences.includePackageJsonAutoImports": "auto",
+    // Search and File Exclusions
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/build": true,
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/coverage": true
+    },
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/build": true
+    },
+    // Explorer and Navigation
+    "explorer.compactFolders": false,
+    "breadcrumbs.enabled": true,
+    "outline.showFiles": true,
+    "outline.showModules": true,
+    "problems.showCurrentInStatus": true,
+    "workbench.editor.enablePreview": false,
+    "workbench.editor.enablePreviewFromQuickOpen": false,
+    // Git Configuration
+    "git.autofetch": true,
+    "git.confirmSync": false,
+    "git.enableSmartCommit": true,
+    // Terminal Configuration for Windows
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+    "terminal.integrated.profiles.windows": {
+        "PowerShell": {
+            "source": "PowerShell",
+            "icon": "terminal-powershell"
+        },
+        "Command Prompt": {
+            "path": "cmd.exe",
+            "icon": "terminal-cmd"
+        }
+    },
+    "terminal.integrated.fontSize": 14,
+    "terminal.integrated.lineHeight": 1.2,
+    // Debug and Console Configuration
+    "debug.console.fontSize": 14,
+    "debug.console.lineHeight": 22,
+    // Prettier Configuration
+    "prettier.tabWidth": 2,
+    "prettier.useTabs": false,
+    "prettier.semi": true,
+    "prettier.singleQuote": true,
+    "prettier.trailingComma": "es5"
+}

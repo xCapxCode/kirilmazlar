@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import storage from '@core/storage';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../../../../contexts/AuthContext';
 import Icon from '../../../../../shared/components/AppIcon';
 import SaticiHeader from '../../../../../shared/components/ui/SaticiHeader';
@@ -6,7 +7,6 @@ import GunlukOzet from './components/GunlukOzet';
 import HizliIstatistikler from './components/HizliIstatistikler';
 import SonSiparisler from './components/SonSiparisler';
 import StokUyarilari from './components/StokUyarilari';
-import storage from '../../../../../core/storage/index.js';
 
 const SellerDashboard = () => {
   const { user, userProfile, loading: authLoading } = useAuth();
@@ -24,7 +24,7 @@ const SellerDashboard = () => {
   useEffect(() => {
     if (user && userProfile) {
       loadDashboardData();
-      
+
       // Real-time veri güncellemeleri için subscriptions
       const unsubscribeProducts = storage.subscribe('products', loadDashboardData);
       const unsubscribeOrders = storage.subscribe('orders', loadDashboardData);
@@ -87,7 +87,7 @@ const SellerDashboard = () => {
 
       // Temel istatistikler
       const totalProducts = products.length;
-      const activeOrders = uniqueOrders.filter(order => 
+      const activeOrders = uniqueOrders.filter(order =>
         ['pending', 'confirmed', 'preparing', 'Beklemede', 'Onaylandı', 'Hazırlanıyor'].includes(order.status)
       ).length;
       const lowStockItems = products.filter(product => product.stock <= (product.min_stock || 5)).length;
@@ -106,9 +106,9 @@ const SellerDashboard = () => {
           customerName: order.customerName || order.customer_name || 'Müşteri',
           total: parseFloat(order.total || order.total_amount) || 0,
           status: order.status === 'pending' || order.status === 'Beklemede' ? 'Beklemede' :
-                  order.status === 'confirmed' || order.status === 'Onaylandı' ? 'Onaylandı' :
-                  order.status === 'preparing' || order.status === 'Hazırlanıyor' ? 'Hazırlanıyor' :
-                  order.status === 'delivered' || order.status === 'Teslim Edildi' ? 'Teslim Edildi' : 'Diğer',
+            order.status === 'confirmed' || order.status === 'Onaylandı' ? 'Onaylandı' :
+              order.status === 'preparing' || order.status === 'Hazırlanıyor' ? 'Hazırlanıyor' :
+                order.status === 'delivered' || order.status === 'Teslim Edildi' ? 'Teslim Edildi' : 'Diğer',
           createdAt: order.createdAt || order.created_at || new Date().toISOString()
         }));
 
@@ -166,7 +166,7 @@ const SellerDashboard = () => {
 
     } catch (error) {
       console.error('Dashboard istatistik hesaplama hatası:', error);
-      
+
       // Fallback demo verileri
       return {
         dailyStats: { orders: 0, revenue: 0, products: 0 },
@@ -195,7 +195,7 @@ const SellerDashboard = () => {
     );
   }
 
-  if (!user || !userProfile || (userProfile.role !== 'seller' && userProfile.role !== 'admin')) {
+  if (!user || !userProfile || (userProfile.role !== 'seller' && userProfile.role !== 'admin' && userProfile.role !== 'owner')) {
     return (
       <div className="min-h-screen bg-slate-200 flex items-center justify-center">
         <div className="text-center">

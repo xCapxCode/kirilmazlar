@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { defineConfig } from 'vite'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -13,11 +13,27 @@ export default defineConfig({
   })],
   publicDir: 'public',
   server: {
-    port: 5500,
+    port: 3000,
     strictPort: true,
-    host: true,
+    host: 'localhost',
     fs: {
       allow: ['..']
+    }
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/test-setup.js'],
+    css: true,
+    reporters: ['verbose'],
+    coverage: {
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'src/test-setup.js',
+        '**/*.test.{js,jsx}',
+        '**/*.spec.{js,jsx}'
+      ]
     }
   },
   optimizeDeps: {
@@ -32,19 +48,34 @@ export default defineConfig({
       '@components': path.resolve(__dirname, 'src/components'),
       '@utils': path.resolve(__dirname, 'src/utils'),
       '@apps': path.resolve(__dirname, 'src/apps'),
-      '@core': path.resolve(__dirname, 'src/core'), // Core storage alias'ı eklendi
+      '@core': path.resolve(__dirname, 'src/core'),
     },
   },
   build: {
     outDir: 'dist',
     sourcemap: process.env.NODE_ENV !== 'production',
-    minify: 'esbuild',
+    minify: process.env.NODE_ENV === 'production' ? 'esbuild' : false,
+    target: process.env.NODE_ENV === 'production' ? 'es2015' : 'esnext',
     rollupOptions: {
       output: {
         manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom']
-        }
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          ui: ['lucide-react']
+        },
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
+        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
       }
     }
-  }
+  },
+  define: {
+    __DEV__: JSON.stringify(process.env.NODE_ENV !== 'production'),
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+    // Environment service integration
+    'import.meta.env.MODE': JSON.stringify(process.env.NODE_ENV || 'development')
+  },
+  // Environment-specific configuration loading
+  envDir: '.',
+  envPrefix: ['VITE_', 'KIRILMAZLAR_']
 })

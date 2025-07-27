@@ -1,8 +1,8 @@
 // Merkezi Veri Yönetim Servisi
 import storage from '@core/storage';
-import { TEST_USERS, TEST_BUSINESS } from '../data/testUsers.js';
-import logger from '../utils/logger.js';
+import { TEST_BUSINESS } from '../data/testUsers.js';
 import dataValidator from '../utils/dataValidator.js';
+import { logger } from '../utils/productionLogger.js';
 
 class DataService {
     constructor() {
@@ -20,7 +20,7 @@ class DataService {
             const savedVersion = storage.get('dataVersion');
 
             if (savedVersion !== currentVersion) {
-                logger.log('🔄 Veri versiyonu güncelleniyor:', savedVersion, '→', currentVersion);
+                logger.info('🔄 Veri versiyonu güncelleniyor:', savedVersion, '→', currentVersion);
                 this.resetAllData();
                 storage.set('dataVersion', currentVersion);
             }
@@ -35,7 +35,7 @@ class DataService {
                 // Otomatik düzeltme dene
                 const fixes = dataValidator.autoFix();
                 if (fixes.length > 0) {
-                    logger.log('🔧 Otomatik düzeltmeler uygulandı:', fixes);
+                    logger.info('🔧 Otomatik düzeltmeler uygulandı:', fixes);
                 }
             }
 
@@ -45,7 +45,7 @@ class DataService {
             }
 
             this.isInitialized = true;
-            logger.log('✅ Veri servisi başlatıldı');
+            logger.info('✅ Veri servisi başlatıldı');
         } catch (error) {
             logger.error('❌ Veri servisi başlatma hatası:', error);
         }
@@ -53,34 +53,53 @@ class DataService {
 
     // Temel verilerin varlığını kontrol et
     ensureBaseData() {
-        // Kullanıcılar
-        if (!storage.get('users') || storage.get('users').length === 0) {
-            storage.set('users', TEST_USERS);
-            logger.log('📝 Test kullanıcıları yüklendi');
+        // Kullanıcılar - Ana yönetici hesabı otomatik oluştur
+        let users = storage.get('users', []);
+        logger.debug('🔍 Mevcut users tablosu:', users);
+        logger.debug('🔍 Users tablosu uzunluğu:', users?.length);
+
+        if (!users || users.length === 0) {
+            // Ana yönetici hesabı oluştur
+            const defaultOwner = {
+                id: 'owner-' + Date.now(),
+                username: 'admin',
+                email: 'admin@kirilmazlar.com',
+                password: 'admin123', // İlk kurulumda, değiştirilebilir
+                name: 'Ana Yönetici',
+                role: 'owner',
+                businessId: 'business-1',
+                createdAt: new Date().toISOString(),
+                isActive: true,
+                isDefaultAccount: true // Varsayılan hesap işareti
+            };
+
+            users = [defaultOwner];
+            storage.set('users', users);
+            logger.info('� Ana yönetici hesabı oluşturuldu - Kullanıcı Adı: admin, Şifre: admin123');
         }
 
         // İşletme bilgileri
         if (!storage.get('business')) {
             storage.set('business', TEST_BUSINESS);
-            logger.log('🏢 İşletme bilgileri yüklendi');
+            logger.info('🏢 İşletme bilgileri yüklendi');
         }
 
         // Kategoriler
         if (!storage.get('categories') || storage.get('categories').length === 0) {
             storage.set('categories', []);
-            logger.log('📂 Kategoriler başlatıldı');
+            logger.info('📂 Kategoriler başlatıldı');
         }
 
         // Ürünler
         if (!storage.get('products') || storage.get('products').length === 0) {
             storage.set('products', []);
-            logger.log('📦 Ürünler başlatıldı');
+            logger.info('📦 Ürünler başlatıldı');
         }
 
         // Siparişler
         if (!storage.get('orders')) {
             storage.set('orders', []);
-            logger.log('📋 Siparişler başlatıldı');
+            logger.info('📋 Siparişler başlatıldı');
         }
 
         // Sepet
@@ -100,7 +119,7 @@ class DataService {
             storage.remove(key);
         });
 
-        logger.log('🧹 Tüm veriler sıfırlandı');
+        logger.info('🧹 Tüm veriler sıfırlandı');
     }
 
     // Veri tutarlılığını kontrol et
@@ -163,7 +182,7 @@ class DataService {
             if (data.products) storage.set('products', data.products);
             if (data.orders) storage.set('orders', data.orders);
 
-            logger.log('✅ Veri import işlemi tamamlandı');
+            logger.info('✅ Veri import işlemi tamamlandı');
             return { success: true };
         } catch (error) {
             logger.error('❌ Veri import hatası:', error);

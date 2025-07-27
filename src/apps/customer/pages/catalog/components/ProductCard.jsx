@@ -1,12 +1,16 @@
+import { memoComparisonHelpers, trackRender } from '@utils/memoizationHelpers';
 import React, { useState } from 'react';
 import Icon from '../../../../../shared/components/AppIcon';
 import Image from '../../../../../shared/components/AppImage';
 
-const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' }) => {
+const ProductCard = ({ product, onQuickAdd, onAddToCart, onProductClick, layout = 'vertical' }) => {
+  // Performance tracking
+  trackRender('ProductCard');
+
   const [quantity, setQuantity] = useState(0); // Default olarak 0
-  
-  const discountedPrice = product.discount > 0 
-    ? product.price * (1 - product.discount / 100) 
+
+  const discountedPrice = product.discount > 0
+    ? product.price * (1 - product.discount / 100)
     : product.price;
 
   const formatPrice = (price) => {
@@ -37,7 +41,7 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
             {/* Sol K�s�m: Resim + Bilgiler */}
             <div className="flex items-center space-x-4 flex-1">
               {/* �r�n Resmi */}
-              <div 
+              <div
                 className="relative w-20 h-16 aspect-[5/4] flex-shrink-0 overflow-hidden cursor-pointer rounded-lg bg-gray-50"
                 onClick={() => onProductClick(product)}
               >
@@ -46,7 +50,7 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
                   alt={product.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 rounded-lg"
                 />
-                
+
                 {/* Badges */}
                 <div className="absolute top-1 left-1 flex flex-col space-y-1">
                   {product.isOrganic && (
@@ -73,15 +77,15 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
 
               {/* �r�n Bilgileri */}
               <div className="flex-1 min-w-0">
-                <h3 
+                <h3
                   className="font-semibold text-gray-900 text-base mb-1 cursor-pointer hover:text-green-600 transition-colors truncate"
                   onClick={() => onProductClick(product)}
                 >
                   {product.name}
                 </h3>
-                
+
                 <p className="text-sm text-gray-500 mb-2">{product.category}</p>
-                
+
                 {/* Rating */}
                 <div className="flex items-center space-x-1">
                   <div className="flex items-center">
@@ -90,7 +94,7 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
                         key={i}
                         name="Star"
                         size={12}
-                        className={i < Math.floor(product.rating) 
+                        className={i < Math.floor(product.rating)
                           ? 'text-yellow-400 fill-current' : 'text-gray-300'
                         }
                       />
@@ -125,21 +129,20 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
                   / {product.unit}
                 </div>
               </div>
-              
+
               {/* Sepete Ekle Butonu */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   if (quantity > 0) {
-                    onQuickAdd(quantity); // Sadece quantity parametresini g�nder
+                    onAddToCart(product, quantity); // Direkt sepete ekle
                   }
                 }}
                 disabled={!product.isAvailable || quantity === 0}
-                className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
-                  product.isAvailable && quantity > 0
-                    ? 'bg-green-600 text-white hover:bg-green-700' 
-                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                }`}
+                className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${product.isAvailable && quantity > 0
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  }`}
               >
                 <Icon name="ShoppingCart" size={18} />
               </button>
@@ -161,11 +164,11 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
                   >
                     <Icon name="Minus" size={16} />
                   </button>
-                  
+
                   <span className="px-4 py-2 text-sm font-bold text-gray-900 border-x border-gray-200 min-w-[80px] text-center">
                     {quantity} {product.unit}
                   </span>
-                  
+
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -176,7 +179,7 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
                     <Icon name="Plus" size={16} />
                   </button>
                 </div>
-                
+
                 {/* Stok Bilgisi - Miktar se�icinin yan�nda */}
                 <div className="flex items-center space-x-1">
                   <span className="text-xs text-gray-600">
@@ -210,7 +213,7 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 group h-full flex flex-col">
       {/* Ürün Resmi - 15px küçültüldü */}
-      <div 
+      <div
         className="relative aspect-[5/4.3] overflow-hidden cursor-pointer bg-gray-50"
         onClick={() => onProductClick(product)}
       >
@@ -219,7 +222,7 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
           alt={product.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
-        
+
         {/* Badges */}
         <div className="absolute top-2 left-2 flex flex-col space-y-1">
           {product.isOrganic && (
@@ -246,13 +249,13 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
 
       {/* Ürün Bilgileri */}
       <div className="p-4 flex flex-col flex-grow">
-        <h3 
+        <h3
           className="font-bold text-gray-900 mb-2 cursor-pointer hover:text-green-600 transition-colors"
           onClick={() => onProductClick(product)}
         >
           {product.name}
         </h3>
-        
+
         {/* Rating */}
         <div className="flex items-center space-x-1 mb-2">
           <div className="flex items-center">
@@ -261,7 +264,7 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
                 key={i}
                 name="Star"
                 size={12}
-                className={i < Math.floor(product.rating) 
+                className={i < Math.floor(product.rating)
                   ? 'text-yellow-400 fill-current' : 'text-gray-300'
                 }
               />
@@ -317,11 +320,11 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
               >
                 <Icon name="Minus" size={16} />
               </button>
-              
+
               <span className="px-3 py-2 text-sm font-bold text-gray-900 border-x border-gray-200 min-w-[60px] text-center">
                 {quantity}
               </span>
-              
+
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -347,15 +350,14 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
               onClick={(e) => {
                 e.stopPropagation();
                 if (quantity > 0) {
-                  onQuickAdd(quantity);
+                  onAddToCart(product, quantity); // Direkt sepete ekle
                 }
               }}
               disabled={!product.isAvailable}
-              className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors flex-shrink-0 ${
-                product.isAvailable
-                  ? 'bg-green-600 text-white hover:bg-green-700' 
-                  : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              }`}
+              className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors flex-shrink-0 ${product.isAvailable
+                ? 'bg-green-600 text-white hover:bg-green-700'
+                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                }`}
             >
               <Icon name="ShoppingCart" size={20} />
             </button>
@@ -367,13 +369,4 @@ const ProductCard = ({ product, onQuickAdd, onProductClick, layout = 'vertical' 
 };
 
 // Memoize the component to prevent unnecessary re-renders
-export default React.memo(ProductCard, (prevProps, nextProps) => {
-  // Only re-render if these props change
-  return (
-    prevProps.product.id === nextProps.product.id &&
-    prevProps.product.price === nextProps.product.price &&
-    prevProps.product.stock === nextProps.product.stock &&
-    prevProps.product.isAvailable === nextProps.product.isAvailable &&
-    prevProps.layout === nextProps.layout
-  );
-});
+export default React.memo(ProductCard, memoComparisonHelpers.productCard);

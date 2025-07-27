@@ -12,104 +12,140 @@ class OrderService {
    */
   async getAll(options = {}) {
     try {
-      // Hem customer_orders hem de orders storage'larından veri al
+      // PRIMARY SOURCE: customer_orders storage'ı ana kaynak
       const customerOrders = await storage.get('customer_orders', []);
       const sellerOrders = await storage.get('orders', []);
-      
-      // Siparişleri birleştir - customer_orders öncelikli
+
+      // ISOLATION: Customer ID filtresi varsa, sadece o müşterinin verilerini al
+      if (options.customerId) {
+        const targetCustomerId = String(options.customerId);
+        const isolatedCustomerOrders = customerOrders.filter(order => {
+          const orderCustomerId = String(order.customerId || order.customer_id || '');
+          return orderCustomerId === targetCustomerId;
+        });
+
+        const isolatedSellerOrders = sellerOrders.filter(order => {
+          const orderCustomerId = String(order.customerId || order.customer_id || '');
+          return orderCustomerId === targetCustomerId;
+        });
+
+        // Merge only isolated orders
+        const allOrders = [...isolatedCustomerOrders];
+        isolatedSellerOrders.forEach(sellerOrder => {
+          const exists = allOrders.find(order => order.id === sellerOrder.id);
+          if (!exists) {
+            allOrders.push(sellerOrder);
+          }
+        });
+
+        return this.normalizeOrders(allOrders, options);
+      }
+
+      // NO CUSTOMER FILTER: Merge all orders but maintain integrity
       const allOrders = [...customerOrders];
-      
-      // Seller orders'dan duplicate olmayanları ekle
       sellerOrders.forEach(sellerOrder => {
         const exists = allOrders.find(order => order.id === sellerOrder.id);
         if (!exists) {
           allOrders.push(sellerOrder);
         }
       });
-      
-      // Siparişleri normalize et
-      const normalizedOrders = allOrders.map(order => ({
-        id: order.id,
-        orderNumber: order.orderNumber || order.order_number || `SIP-${order.id}`,
-        customerName: order.customerName || order.customer_name || 'Müşteri',
-        customerEmail: order.customerEmail || order.customer_email || '',
-        customerPhone: order.customerPhone || order.customer_phone || '',
-        items: order.items || order.orderItems || [],
-        total: parseFloat(order.total || order.total_amount || 0),
-        status: this.normalizeStatus(order.status),
-        orderDate: order.createdAt || order.created_at || order.orderDate || new Date().toISOString(),
-        deliveryAddress: order.deliveryAddress || order.delivery_address || '',
-        notes: order.notes || order.order_notes || '',
-        paymentMethod: order.paymentMethod || order.payment_method || 'Nakit',
-        source: order.source || 'customer'
-      }));
-      
-      // Filtreleme
-      let filteredOrders = normalizedOrders;
-      
-      if (options.status) {
-        filteredOrders = filteredOrders.filter(order => order.status === options.status);
-      }
-      
-      if (options.customerId) {
-        filteredOrders = filteredOrders.filter(order => 
-          order.customerId === options.customerId || 
-          order.customer_id === options.customerId
-        );
-      }
-      
-      if (options.dateRange) {
-        const now = new Date();
-        let startDate;
-        
-        switch (options.dateRange) {
-          case 'today':
-            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            break;
-          case 'week':
-            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            break;
-          case 'month':
-            startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-            break;
-          default:
-            startDate = null;
-        }
-        
-        if (startDate) {
-          filteredOrders = filteredOrders.filter(order => {
-            const orderDate = new Date(order.orderDate);
-            return orderDate >= startDate;
-          });
-        }
-      }
-      
-      // Sıralama
-      if (options.sortBy) {
-        switch (options.sortBy) {
-          case 'newest':
-            filteredOrders.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
-            break;
-          case 'oldest':
-            filteredOrders.sort((a, b) => new Date(a.orderDate) - new Date(b.orderDate));
-            break;
-          case 'total':
-            filteredOrders.sort((a, b) => b.total - a.total);
-            break;
-          case 'customer':
-            filteredOrders.sort((a, b) => a.customerName.localeCompare(b.customerName, 'tr'));
-            break;
-        }
-      } else {
-        // Varsayılan sıralama: en yeni siparişler önce
-        filteredOrders.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
-      }
-      
-      return filteredOrders;
+
+      return this.normalizeOrders(allOrders, options);
     } catch (error) {
       console.error('Siparişler yüklenirken hata:', error);
       throw error;
     }
+  }
+
+  /**
+   * Normalize orders and apply filters
+   * @param {Array} orders - Raw orders array
+   * @param {Object} options - Filter options
+   * @returns {Array} - Normalized and filtered orders
+   */
+  normalizeOrders(orders, options = {}) {
+    // Siparişleri normalize et
+    const normalizedOrders = orders.map(order => ({
+      id: order.id,
+      orderNumber: order.orderNumber || order.order_number || `SIP-${order.id}`,
+      customerId: order.customerId || order.customer_id, // Critical: Customer ID must be preserved
+      customerName: order.customerName || order.customer_name || 'Müşteri',
+      customerEmail: order.customerEmail || order.customer_email || '',
+      customerPhone: order.customerPhone || order.customer_phone || '',
+      items: order.items || order.orderItems || [],
+      total: parseFloat(order.total || order.total_amount || 0),
+      status: this.normalizeStatus(order.status),
+      orderDate: order.createdAt || order.created_at || order.orderDate || new Date().toISOString(),
+      deliveryAddress: order.deliveryAddress || order.delivery_address || '',
+      notes: order.notes || order.order_notes || '',
+      paymentMethod: order.paymentMethod || order.payment_method || 'Nakit',
+      source: order.source || 'customer'
+    }));
+
+    // Filtreleme
+    let filteredOrders = normalizedOrders;
+
+    if (options.status) {
+      filteredOrders = filteredOrders.filter(order => order.status === options.status);
+    }
+
+    if (options.customerId) {
+      filteredOrders = filteredOrders.filter(order => {
+        // Strict customer ID matching - prevent cross-contamination
+        const orderCustomerId = String(order.customerId || order.customer_id || '');
+        const targetCustomerId = String(options.customerId);
+        return orderCustomerId === targetCustomerId;
+      });
+    }
+
+    if (options.dateRange) {
+      const now = new Date();
+      let startDate;
+
+      switch (options.dateRange) {
+        case 'today':
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          startDate = null;
+      }
+
+      if (startDate) {
+        filteredOrders = filteredOrders.filter(order => {
+          const orderDate = new Date(order.orderDate);
+          return orderDate >= startDate;
+        });
+      }
+    }
+
+    // Sıralama
+    if (options.sortBy) {
+      switch (options.sortBy) {
+        case 'newest':
+          filteredOrders.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
+          break;
+        case 'oldest':
+          filteredOrders.sort((a, b) => new Date(a.orderDate) - new Date(b.orderDate));
+          break;
+        case 'total':
+          filteredOrders.sort((a, b) => b.total - a.total);
+          break;
+        case 'customer':
+          filteredOrders.sort((a, b) => a.customerName.localeCompare(b.customerName, 'tr'));
+          break;
+      }
+    } else {
+      // Varsayılan sıralama: en yeni siparişler önce
+      filteredOrders.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
+    }
+
+    return filteredOrders;
   }
 
   /**
@@ -121,19 +157,19 @@ class OrderService {
     try {
       const customerOrders = await storage.get('customer_orders', []);
       const sellerOrders = await storage.get('orders', []);
-      
+
       // Önce customer_orders'da ara
       let order = customerOrders.find(order => order.id === id);
-      
+
       // Bulunamazsa orders'da ara
       if (!order) {
         order = sellerOrders.find(order => order.id === id);
       }
-      
+
       if (!order) {
         return null;
       }
-      
+
       // Siparişi normalize et
       return {
         id: order.id,
@@ -163,36 +199,51 @@ class OrderService {
    */
   async create(orderData) {
     try {
+      // Order settings'i yükle
+      const orderSettings = await storage.get('order_settings', {
+        orderPrefix: 'SIP',
+        orderNumberStart: 1
+      });
+
       // Hem customer_orders hem de orders storage'larından veri al
       const customerOrders = await storage.get('customer_orders', []);
-      
+
       // Yeni ID oluştur
-      const newId = customerOrders.length > 0 
-        ? Math.max(...customerOrders.map(o => typeof o.id === 'number' ? o.id : 0)) + 1 
+      const newId = customerOrders.length > 0
+        ? Math.max(...customerOrders.map(o => typeof o.id === 'number' ? o.id : 0)) + 1
         : 1;
-      
-      // Sipariş numarası oluştur
-      const orderNumber = orderData.orderNumber || `SIP-${new Date().getFullYear()}-${String(newId).padStart(4, '0')}`;
-      
-      // Sipariş nesnesini oluştur
+
+      // Business ayarlarına göre sipariş numarası oluştur
+      const sequenceNumber = orderSettings.orderNumberStart + customerOrders.length;
+      const orderNumber = orderData.orderNumber || `${orderSettings.orderPrefix}-${String(sequenceNumber).padStart(6, '0')}`;
+
+      // Sipariş nesnesini oluştur - customerId'yi kesinlikle dahil et
       const newOrder = {
         ...orderData,
         id: newId,
         orderNumber,
         status: orderData.status || 'pending',
+        customerId: orderData.customerId, // Bu field kesinlikle set edilmeli
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      
+
+      console.log('📦 Yeni sipariş oluşturuluyor:', {
+        orderId: newId,
+        orderNumber,
+        customerId: orderData.customerId,
+        customerName: orderData.customerName
+      });
+
       // Storage'a kaydet
       const updatedCustomerOrders = [...customerOrders, newOrder];
       await storage.set('customer_orders', updatedCustomerOrders);
-      
+
       // Satıcı siparişlerine de ekle
       const sellerOrders = await storage.get('orders', []);
       const updatedSellerOrders = [...sellerOrders, newOrder];
       await storage.set('orders', updatedSellerOrders);
-      
+
       return newOrder;
     } catch (error) {
       console.error('Sipariş oluşturulurken hata:', error);
@@ -213,33 +264,33 @@ class OrderService {
       // Hem customer_orders hem de orders storage'larını güncelle
       const customerOrders = await storage.get('customer_orders', []);
       const sellerOrders = await storage.get('orders', []);
-      
+
       // Sipariş var mı kontrol et
       const customerOrder = customerOrders.find(order => order.id === id);
       const sellerOrder = sellerOrders.find(order => order.id === id);
-      
+
       if (!customerOrder && !sellerOrder) {
         console.error(`ID'si ${id} olan sipariş bulunamadı`);
         return null;
       }
-      
+
       const now = new Date().toISOString();
       const normalizedStatus = this.normalizeStatus(status);
-      
+
       // Customer orders'da güncelle
-      const updatedCustomerOrders = customerOrders.map(order => 
-        order.id === id 
-          ? { 
-              ...order, 
-              status: normalizedStatus, 
-              statusNotes: notes,
-              updatedAt: now,
-              updatedBy: source,
-              synced: true
-            }
+      const updatedCustomerOrders = customerOrders.map(order =>
+        order.id === id
+          ? {
+            ...order,
+            status: normalizedStatus,
+            statusNotes: notes,
+            updatedAt: now,
+            updatedBy: source,
+            synced: true
+          }
           : order
       );
-      
+
       // Eğer customer orders'da yoksa ve seller orders'da varsa ekle
       if (!customerOrder && sellerOrder) {
         updatedCustomerOrders.push({
@@ -251,21 +302,21 @@ class OrderService {
           synced: true
         });
       }
-      
+
       // Seller orders'da güncelle
-      const updatedSellerOrders = sellerOrders.map(order => 
-        order.id === id 
-          ? { 
-              ...order, 
-              status: normalizedStatus, 
-              statusNotes: notes,
-              updatedAt: now,
-              updatedBy: source,
-              synced: true
-            }
+      const updatedSellerOrders = sellerOrders.map(order =>
+        order.id === id
+          ? {
+            ...order,
+            status: normalizedStatus,
+            statusNotes: notes,
+            updatedAt: now,
+            updatedBy: source,
+            synced: true
+          }
           : order
       );
-      
+
       // Eğer seller orders'da yoksa ve customer orders'da varsa ekle
       if (!sellerOrder && customerOrder) {
         updatedSellerOrders.push({
@@ -281,13 +332,13 @@ class OrderService {
       // Her iki storage'ı da güncelle
       await storage.set('customer_orders', updatedCustomerOrders);
       await storage.set('orders', updatedSellerOrders);
-      
+
       // Güncellenen siparişi döndür
-      const updatedOrder = updatedCustomerOrders.find(order => order.id === id) || 
-                          updatedSellerOrders.find(order => order.id === id);
-      
+      const updatedOrder = updatedCustomerOrders.find(order => order.id === id) ||
+        updatedSellerOrders.find(order => order.id === id);
+
       console.log(`✅ Sipariş durumu güncellendi: ${id} -> ${normalizedStatus}`);
-      
+
       return updatedOrder;
     } catch (error) {
       console.error(`❌ ID'si ${id} olan sipariş durumu güncellenirken hata:`, error);
@@ -305,18 +356,18 @@ class OrderService {
       // Hem customer_orders hem de orders storage'larından sil
       const customerOrders = await storage.get('customer_orders', []);
       const sellerOrders = await storage.get('orders', []);
-      
+
       const updatedCustomerOrders = customerOrders.filter(order => order.id !== id);
       const updatedSellerOrders = sellerOrders.filter(order => order.id !== id);
-      
-      if (updatedCustomerOrders.length === customerOrders.length && 
-          updatedSellerOrders.length === sellerOrders.length) {
+
+      if (updatedCustomerOrders.length === customerOrders.length &&
+        updatedSellerOrders.length === sellerOrders.length) {
         return false; // Sipariş bulunamadı
       }
-      
+
       await storage.set('customer_orders', updatedCustomerOrders);
       await storage.set('orders', updatedSellerOrders);
-      
+
       return true;
     } catch (error) {
       console.error(`ID'si ${id} olan sipariş silinirken hata:`, error);
@@ -347,17 +398,17 @@ class OrderService {
     try {
       // Hem customer_orders hem de orders storage'larından test siparişlerini sil
       const customerOrders = await storage.get('customer_orders', []);
-      
+
       // Gerçek siparişleri koru
-      const realOrders = customerOrders.filter(order => 
-        !order.orderNumber?.includes('TEST') && 
+      const realOrders = customerOrders.filter(order =>
+        !order.orderNumber?.includes('TEST') &&
         !order.customerName?.includes('Test') &&
         order.source !== 'demo'
       );
-      
+
       await storage.set('customer_orders', realOrders);
       await storage.set('orders', []); // Seller orders'ı tamamen temizle
-      
+
       return customerOrders.length - realOrders.length;
     } catch (error) {
       console.error('Test siparişleri temizlenirken hata:', error);
@@ -380,7 +431,7 @@ class OrderService {
       'delivered': 'Teslim Edildi',
       'cancelled': 'İptal Edildi'
     };
-    
+
     return statusMap[status] || status || 'Beklemede';
   }
 
@@ -392,10 +443,26 @@ class OrderService {
   async getByCustomerId(customerId) {
     try {
       const orders = await this.getAll();
-      return orders.filter(order => 
-        order.customerId === customerId || 
-        order.customer_id === customerId
-      );
+
+      // Müşteri ID'sini string'e çevir çünkü storage'da farklı türlerde olabilir
+      const customerIdStr = String(customerId);
+
+      const customerOrders = orders.filter(order => {
+        const orderCustomerId = String(order.customerId || order.customer_id || '');
+        const orderCustomerEmail = order.customerEmail || order.customer_email || '';
+
+        // İlk şart: exact ID match
+        if (orderCustomerId === customerIdStr) {
+          return true;
+        }
+
+        // İkinci şart: ID boşsa ve email'e göre bağlantı kurulmaya çalışılıyorsa 
+        // Ama bu durumda dikkatli olmak gerek - sadece ID varsa kullan
+        return false;
+      });
+
+      console.log(`🔍 Customer ${customerId} için ${customerOrders.length} sipariş bulundu`);
+      return customerOrders;
     } catch (error) {
       console.error(`Müşteri ID'si ${customerId} olan siparişler yüklenirken hata:`, error);
       throw error;

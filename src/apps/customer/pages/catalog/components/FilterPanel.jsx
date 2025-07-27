@@ -1,5 +1,6 @@
 import React from 'react';
 import Icon from '../../../../../shared/components/AppIcon';
+import { memoComparisonHelpers, trackRender } from '../../../../../utils/memoizationHelpers';
 
 const FilterPanel = ({
   isOpen,
@@ -14,6 +15,9 @@ const FilterPanel = ({
   selectedCategory,
   onCategorySelect
 }) => {
+  // Performance tracking
+  trackRender('FilterPanel');
+
   const sortOptions = [
     { value: 'relevance', label: 'Relevance' },
     { value: 'price-low', label: 'Price: Low to High' },
@@ -257,4 +261,4 @@ const FilterContent = ({
   </>
 );
 
-export default FilterPanel;
+export default React.memo(FilterPanel, memoComparisonHelpers.filterPanel);

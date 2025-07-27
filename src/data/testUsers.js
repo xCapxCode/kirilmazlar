@@ -1,26 +1,6 @@
 // Test kullanıcıları - Yerel geliştirme için
 export const TEST_USERS = [
-  {
-    id: 'seller-1',
-    email: 'satici@test.com',
-    password: '1234',
-    name: 'Test Satıcı',
-    role: 'seller',
-    businessId: 'business-1',
-    createdAt: new Date().toISOString(),
-    isActive: true
-  },
-  {
-    id: 'customer-1', 
-    email: 'musteri@test.com',
-    password: '1234',
-    name: 'Test Müşteri',
-    role: 'customer',
-    phone: '0555 123 4567',
-    address: 'Test Adres, İstanbul',
-    createdAt: new Date().toISOString(),
-    isActive: true
-  }
+  // Test kullanıcıları silindi - gerçek kullanıcılar panel üzerinden oluşturulacak
 ];
 
 export const TEST_BUSINESS = {

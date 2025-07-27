@@ -1,0 +1,107 @@
+# ===========================================
+# KIRIILMAZLAR PANEL - DOCKER COMPOSE
+# Development and production environments
+# ===========================================
+
+version: '3.8'
+
+services:
+  # Main Application (Production)
+  kirilmazlar-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: kirilmazlar-panel
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - NODE_ENV=production
+      - VITE_APP_ENVIRONMENT=production
+    volumes:
+      - ./docker/logs:/var/log/nginx
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - kirilmazlar-network
+
+  # Development Environment
+  kirilmazlar-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      target: development
+    container_name: kirilmazlar-panel-dev
+    ports:
+      - "5500:5500"
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - VITE_APP_ENVIRONMENT=development
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./docker/logs-dev:/var/log
+    command: npm run dev
+    restart: unless-stopped
+    networks:
+      - kirilmazlar-network
+    profiles:
+      - development
+
+  # Monitoring with Nginx Exporter (Optional)
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:0.11.0
+    container_name: kirilmazlar-nginx-exporter
+    ports:
+      - "9113:9113"
+    command:
+      - '-nginx.scrape-uri=http://kirilmazlar-app:80/nginx_status'
+    depends_on:
+      - kirilmazlar-app
+    networks:
+      - kirilmazlar-network
+    profiles:
+      - monitoring
+
+  # Health Check Service
+  healthcheck:
+    image: curlimages/curl:latest
+    container_name: kirilmazlar-healthcheck
+    depends_on:
+      - kirilmazlar-app
+    command: >
+      sh -c "
+        echo 'Waiting for application to start...' &&
+        sleep 30 &&
+        while true; do
+          if curl -f http://kirilmazlar-app:80/health; then
+            echo '[$(date)] Health check passed'
+          else
+            echo '[$(date)] Health check failed'
+          fi
+          sleep 60
+        done
+      "
+    networks:
+      - kirilmazlar-network
+    profiles:
+      - monitoring
+
+networks:
+  kirilmazlar-network:
+    driver: bridge
+    name: kirilmazlar-network
+
+volumes:
+  nginx-logs:
+    driver: local
+  app-data:
+    driver: local

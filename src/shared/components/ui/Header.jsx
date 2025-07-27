@@ -1,10 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
+import { trackRender, useMemoizedCallbacks } from '../../../utils/memoizationHelpers';
 import Icon from '../AppIcon';
 import NotificationDropdown from './NotificationDropdown';
 
 const Header = () => {
+  // Performance tracking
+  trackRender('Header');
+
   const navigate = useNavigate();
   const location = useLocation();
   const { userProfile, signOut } = useAuth();
@@ -12,6 +16,13 @@ const Header = () => {
   const userMenuRef = useRef(null);
   const [businessLogo, setBusinessLogo] = useState('/assets/images/logo/KirilmazlarLogo.png');
   const [businessName, setBusinessName] = useState('KIRILMAZLAR');
+
+  // Optimized callbacks
+  const { handleLogout, handleProfileClick } = useMemoizedCallbacks.useHeaderCallbacks({
+    signOut,
+    navigate,
+    setIsUserMenuOpen
+  });
 
   // User dropdown dışına tıklama kontrolü
   useEffect(() => {
@@ -32,22 +43,6 @@ const Header = () => {
     { id: 'orders', label: 'Siparişlerim', path: '/customer/orders', icon: 'Clock' },
     { id: 'profile', label: 'Profilim', path: '/customer/profile', icon: 'User' }
   ];
-
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      setIsUserMenuOpen(false);
-      // Çıkış yaptıktan sonra ana sayfaya yönlendir
-      navigate('/', { replace: true });
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
-  const handleProfileClick = () => {
-    navigate('/customer/profile');
-    setIsUserMenuOpen(false);
-  };
 
   const isActive = (path) => {
     return location.pathname === path;
@@ -97,7 +92,7 @@ const Header = () => {
 
                 {/* Dropdown Menu */}
                 {isUserMenuOpen && (
-                  <div 
+                  <div
                     className="absolute right-0 mt-2 w-56 rounded-lg shadow-lg border border-gray-200 py-2 z-dropdown"
                     style={{ backgroundColor: '#FFFFFF' }}
                   >
@@ -145,8 +140,8 @@ const Header = () => {
                   key={item.id}
                   to={item.path}
                   className={`relative flex items-center space-x-2 px-4 py-2 text-sm font-medium transition-smooth ${isActive(item.path)
-                      ? 'text-green-600'
-                      : 'text-gray-700 hover:text-green-600'
+                    ? 'text-green-600'
+                    : 'text-gray-700 hover:text-green-600'
                     }`}
                 >
                   <Icon name={item.icon} size={16} strokeWidth={isActive(item.path) ? 2.5 : 2} />

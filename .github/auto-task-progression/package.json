@@ -1,0 +1,63 @@
+{
+  "name": "@kirilmazlar/auto-task-progression",
+  "version": "1.0.0",
+  "description": "Automatic task progression and continuous build system for GitHub Copilot workflows",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "test": "jest",
+    "lint": "eslint src --ext .js,.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "github-copilot",
+    "task-progression",
+    "continuous-integration",
+    "build-automation",
+    "workflow",
+    "ai-development"
+  ],
+  "author": "Kırılmazlar Panel Development Team",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
+  "dependencies": {
+    "cross-spawn": "^7.0.3",
+    "fs-extra": "^11.1.1",
+    "glob": "^10.3.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
+    "@rollup/plugin-babel": "^6.0.4",
+    "@rollup/plugin-commonjs": "^25.0.8",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^15.3.1",
+    "@rollup/plugin-typescript": "^11.1.2",
+    "@types/fs-extra": "^11.0.1",
+    "@types/jest": "^29.5.3",
+    "@typescript-eslint/eslint-plugin": "^6.2.0",
+    "@typescript-eslint/parser": "^6.2.0",
+    "eslint": "^8.45.0",
+    "jest": "^29.6.1",
+    "rollup": "^3.26.3",
+    "rollup-plugin-dts": "^5.3.1",
+    "typescript": "^5.1.6"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kirilmazlar-panel/auto-task-progression.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

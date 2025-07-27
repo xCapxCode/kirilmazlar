@@ -9,6 +9,7 @@ import BottomTabNavigation from '../../../../shared/components/ui/BottomTabNavig
 
 const ShoppingCartCheckout = () => {
   const navigate = useNavigate();
+  const { user, userProfile } = useAuth(); // Auth context'den user bilgisini al
   const { 
     cartItems, 
     updateQuantity, 
@@ -95,9 +96,15 @@ const ShoppingCartCheckout = () => {
 
     setIsLoading(true);
     
-    // Create order data
+    // Create order data with customer information
     const orderData = {
+      customerId: userProfile?.id, // Müşteri ID'sini ekle
+      customerName: userProfile?.name || customerInfo.name,
+      customerEmail: userProfile?.email || customerInfo.email,
+      customerPhone: userProfile?.phone || customerInfo.phone,
       total: total,
+      subtotal: subtotal,
+      deliveryFee: deliveryFee,
       items: cartItems.map(item => ({
         id: item.id,
         name: item.name,
@@ -108,17 +115,18 @@ const ShoppingCartCheckout = () => {
         total: item.total
       })),
       deliveryAddress: `${deliveryAddress.street}, ${deliveryAddress.district}, ${deliveryAddress.city}`,
+      paymentMethod: paymentMethod,
       notes: orderNotes
     };
 
     // Simulate checkout process
-    setTimeout(() => {
+    setTimeout(async () => {
       try {
-        console.log('Sipariş veriliyor:', orderData);
-        const orderId = addNewOrder(orderData);
-        console.log('Sipariş ID:', orderId);
+        console.log('Sipariş veriliyor - Customer ID:', userProfile?.id, orderData);
+        const orderNumber = await addNewOrder(orderData);
+        console.log('Sipariş numarası:', orderNumber);
         
-        setOrderNumber(orderId);
+        setOrderNumber(orderNumber);
         setOrderConfirmed(true);
         setIsLoading(false);
         clearCart();

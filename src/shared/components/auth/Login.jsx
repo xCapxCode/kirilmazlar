@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import { AlertCircle, ArrowRight, Eye, EyeOff, Info, Lock, User, X } from '@utils/selectiveIcons';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Eye, EyeOff, User, Lock, Info, ArrowRight, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
+import { logger } from '../../../utils/productionLogger.js';
 
 const Login = ({ onClose }) => {
   const [username, setUsername] = useState('');
@@ -21,11 +22,15 @@ const Login = ({ onClose }) => {
       const result = await signIn(username, password);
       if (result.success && result.data && result.data.user) {
         const role = result.data.user.role;
-        if (role === 'admin' || role === 'seller') {
+        logger.debug('🔄 Kullanıcı rolü:', role);
+        if (role === 'admin' || role === 'seller' || role === 'owner') {
+          logger.debug('🏃‍♂️ Seller dashboard\'a yönlendiriliyor...');
           navigate('/seller/dashboard');
         } else if (role === 'customer') {
+          logger.debug('🏃‍♂️ Customer catalog\'a yönlendiriliyor...');
           navigate('/customer/catalog');
         } else {
+          logger.debug('🏃‍♂️ Ana sayfaya yönlendiriliyor...');
           navigate('/');
         }
         if (onClose) onClose();
@@ -55,7 +60,7 @@ const Login = ({ onClose }) => {
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
             <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
-              Kullanıcı Adı
+              Kullanıcı Adı veya Email
             </label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -64,16 +69,16 @@ const Login = ({ onClose }) => {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="satici@test.com veya musteri@test.com"
+                placeholder="Kullanıcı adı veya email adresinizi girin"
                 className="w-full bg-gray-900 bg-opacity-50 border border-gray-600 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
                 style={{ boxShadow: 'inset 0 0 0 1000px rgba(31, 41, 55, 0.8)', color: 'white !important' }}
-                autoComplete="email"
+                autoComplete="username"
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="password"className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
               Şifre
             </label>
             <div className="relative">
@@ -141,7 +146,7 @@ const Login = ({ onClose }) => {
           <div>
             <h4 className="font-semibold text-gray-200">Test Hesapları:</h4>
             <p className="text-sm text-gray-400">
-              <strong>Satıcı:</strong> satici@test.com / 1234<br/>
+              <strong>Satıcı:</strong> satici@test.com / 1234<br />
               <strong>Müşteri:</strong> musteri@test.com / 1234
             </p>
           </div>

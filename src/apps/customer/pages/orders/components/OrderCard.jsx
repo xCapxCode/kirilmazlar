@@ -1,23 +1,27 @@
 import React from 'react';
 import Icon from '../../../../../shared/components/AppIcon';
 import Image from '../../../../../shared/components/AppImage';
+import { memoComparisonHelpers, trackRender } from '../../../../../utils/memoizationHelpers';
 
-const OrderCard = ({ 
-  order, 
-  onOrderSelect, 
+const OrderCard = ({
+  order,
+  onOrderSelect,
   onOrderAction,
-  getStatusColor, 
-  getStatusText, 
-  formatDate, 
-  formatCurrency 
+  getStatusColor,
+  getStatusText,
+  formatDate,
+  formatCurrency
 }) => {
+  // Performance tracking
+  trackRender('OrderCard');
+
   const handleQuickAction = (e, action) => {
     e.stopPropagation();
     onOrderAction(action, order);
   };
 
   return (
-    <div 
+    <div
       onClick={() => onOrderSelect(order)}
       className="bg-slate-100 rounded-lg border border-gray-200 p-4 hover:shadow-md transition-colors cursor-pointer"
     >
@@ -36,7 +40,7 @@ const OrderCard = ({
             {formatDate(order.date)}
           </p>
         </div>
-        
+
         <div className="text-right">
           <p className="font-semibold text-text-primary">
             {formatCurrency(order.total)}
@@ -69,7 +73,7 @@ const OrderCard = ({
             </div>
           )}
         </div>
-        
+
         <div className="mt-2">
           <p className="text-sm text-text-secondary line-clamp-1">
             {order.items.slice(0, 3).map(item => item.name).join(', ')}
@@ -84,12 +88,10 @@ const OrderCard = ({
           <div className="flex items-center justify-between text-xs">
             {order.timeline.map((step, index) => (
               <div key={step.status} className="flex flex-col items-center flex-1">
-                <div className={`w-3 h-3 rounded-full mb-1 ${
-                  step.completed ? 'bg-primary' : 'bg-gray-200'
-                }`} />
-                <span className={`text-center ${
-                  step.completed ? 'text-primary font-medium' : 'text-text-secondary'
-                }`}>
+                <div className={`w-3 h-3 rounded-full mb-1 ${step.completed ? 'bg-primary' : 'bg-gray-200'
+                  }`} />
+                <span className={`text-center ${step.completed ? 'text-primary font-medium' : 'text-text-secondary'
+                  }`}>
                   {step.status === 'confirmed' && 'Onaylandı'}
                   {step.status === 'preparing' && 'Hazırlanıyor'}
                   {step.status === 'out_for_delivery' && 'Yolda'}
@@ -100,10 +102,10 @@ const OrderCard = ({
           </div>
           <div className="flex items-center mt-2">
             <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-primary transition-all duration-500"
-                style={{ 
-                  width: `${(order.timeline.filter(s => s.completed).length / order.timeline.length) * 100}%` 
+                style={{
+                  width: `${(order.timeline.filter(s => s.completed).length / order.timeline.length) * 100}%`
                 }}
               />
             </div>
@@ -139,7 +141,7 @@ const OrderCard = ({
               <span>İptal Et</span>
             </button>
           )}
-          
+
           {/* Yeniden sipariş butonu - sadece delivered veya cancelled durumlarında */}
           {(order.status === 'delivered' || order.status === 'cancelled') && (
             <button
@@ -150,7 +152,7 @@ const OrderCard = ({
               <span>Yeniden Sipariş</span>
             </button>
           )}
-          
+
           {/* Sipariş takibi - aktif siparişler için */}
           {(order.status === 'confirmed' || order.status === 'preparing' || order.status === 'out_for_delivery') && (
             <button
@@ -172,4 +174,4 @@ const OrderCard = ({
   );
 };
 
-export default OrderCard;
+export default React.memo(OrderCard, memoComparisonHelpers.orderCard);

@@ -52,18 +52,18 @@ const SiparisDetayModali = ({ order, onClose, onCancel }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-100 rounded-lg max-w-3xl w-full overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+      <div className="bg-slate-100 rounded-lg max-w-3xl w-full overflow-hidden shadow-xl">
+        {/* Header - Daha belirgin */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-slate-200">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Sipariş Detayları</h2>
-            <p className="text-gray-600 mt-1">#{order.orderNumber}</p>
+            <h2 className="text-2xl font-bold text-gray-900">Sipariş Detayları</h2>
+            <p className="text-blue-600 font-semibold mt-1">#{order.orderNumber}</p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
           >
-            <Icon name="X" size={20} className="text-gray-500" />
+            <Icon name="X" size={24} className="text-gray-600" />
           </button>
         </div>
 

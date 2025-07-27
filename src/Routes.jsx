@@ -62,7 +62,7 @@ const SellerProtectedRoute = ({ children }) => {
       return <Navigate to="/login" replace />;
     }
     
-    if (userProfile.role !== 'seller' && userProfile.role !== 'admin') {
+    if (userProfile.role !== 'seller' && userProfile.role !== 'admin' && userProfile.role !== 'owner') {
       return <Navigate to="/customer/catalog" replace />;
     }
     

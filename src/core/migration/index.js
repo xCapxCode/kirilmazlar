@@ -5,7 +5,7 @@
  * Veri şeması değiştiğinde bu dosya güncellenmeli ve migration stratejisi uygulanmalıdır.
  */
 
-import storage from '../storage';
+import storage from '@core/storage';
 import { schemaVersions } from '../schema';
 
 class MigrationManager {
@@ -24,29 +24,29 @@ class MigrationManager {
    */
   async migrateAll() {
     console.log('🔄 Veri migrasyonu başlatılıyor...');
-    
+
     try {
       // Mevcut versiyon bilgilerini al
       const currentVersions = storage.get('schema_versions', {});
       console.log('📊 Mevcut şema versiyonları:', currentVersions);
-      
+
       // Her veri tipi için migrasyon yap
       for (const [dataType, latestVersion] of Object.entries(schemaVersions)) {
         const currentVersion = currentVersions[dataType] || '0.0';
-        
+
         if (currentVersion !== latestVersion) {
           console.log(`🔄 ${dataType} verisi için migrasyon yapılıyor: ${currentVersion} -> ${latestVersion}`);
           await this.migrateDataType(dataType, currentVersion, latestVersion);
-          
+
           // Versiyon bilgisini güncelle
           currentVersions[dataType] = latestVersion;
         }
       }
-      
+
       // Güncellenmiş versiyon bilgilerini kaydet
       storage.set('schema_versions', currentVersions);
       console.log('✅ Veri migrasyonu tamamlandı');
-      
+
       return true;
     } catch (error) {
       console.error('❌ Veri migrasyonu sırasında hata:', error);
@@ -62,22 +62,22 @@ class MigrationManager {
       console.warn(`⚠️ ${dataType} için migrasyon stratejisi bulunamadı`);
       return false;
     }
-    
+
     try {
       // Veriyi al
       const data = storage.get(dataType, []);
-      
+
       if (!data || (Array.isArray(data) && data.length === 0)) {
         console.log(`ℹ️ ${dataType} için veri bulunamadı, migrasyon gerekmiyor`);
         return true;
       }
-      
+
       // Migrasyon yap
       const migratedData = await this.migrations[dataType](data, fromVersion, toVersion);
-      
+
       // Güncellenmiş veriyi kaydet
       storage.set(dataType, migratedData);
-      
+
       console.log(`✅ ${dataType} verisi başarıyla migrate edildi`);
       return true;
     } catch (error) {
@@ -109,9 +109,9 @@ class MigrationManager {
         updatedAt: new Date().toISOString()
       }));
     }
-    
+
     // Diğer versiyon geçişleri buraya eklenecek
-    
+
     return data;
   }
 
@@ -143,9 +143,9 @@ class MigrationManager {
         updatedAt: new Date().toISOString()
       }));
     }
-    
+
     // Diğer versiyon geçişleri buraya eklenecek
-    
+
     return data;
   }
 
@@ -165,9 +165,9 @@ class MigrationManager {
         updatedAt: new Date().toISOString()
       }));
     }
-    
+
     // Diğer versiyon geçişleri buraya eklenecek
-    
+
     return data;
   }
 
@@ -188,9 +188,9 @@ class MigrationManager {
         updatedAt: new Date().toISOString()
       }));
     }
-    
+
     // Diğer versiyon geçişleri buraya eklenecek
-    
+
     return data;
   }
 
@@ -211,9 +211,9 @@ class MigrationManager {
         logo: data.logo || ''
       };
     }
-    
+
     // Diğer versiyon geçişleri buraya eklenecek
-    
+
     return data;
   }
 }

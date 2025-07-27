@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { orderSyncUtils } from '../shared/utils/orderSyncUtils';
 import storage from '@core/storage';
+import { createContext, useContext, useEffect, useState } from 'react';
+import orderService from '../services/orderService';
+import { logger } from '../utils/productionLogger.js';
+import { useAuth } from './AuthContext';
 
 const CartContext = createContext();
 
@@ -15,13 +17,14 @@ export const useCart = () => {
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   const [orders, setOrders] = useState([]);
+  const { userProfile } = useAuth();
 
   // Load cart from unified storage on mount
   useEffect(() => {
     try {
       const savedCart = storage.get('cart', []);
-      console.log('Loading cart from unified storage:', savedCart);
-      
+      logger.debug('Loading cart from unified storage:', savedCart);
+
       // Veri doğrulama
       const validatedCart = savedCart.map(item => ({
         id: item.id,
@@ -32,60 +35,60 @@ export const CartProvider = ({ children }) => {
         image: item.image || '',
         total: Number(item.total) || (Number(item.price) || 0) * (Number(item.quantity) || 1)
       }));
-      
-      console.log('Validated cart:', validatedCart);
+
+      logger.debug('Validated cart:', validatedCart);
       setCartItems(validatedCart);
     } catch (error) {
-      console.error('Error loading cart from storage:', error);
+      logger.error('Error loading cart from storage:', error);
       setCartItems([]);
     }
   }, []);
 
-  // Load orders from unified storage on mount
+  // Load customer-specific orders when user profile changes
   useEffect(() => {
-    try {
-      const savedOrders = storage.get('customer_orders', []);
-      console.log('Loading orders from unified storage:', savedOrders);
-      
-      const ordersWithDates = savedOrders.map(order => ({
-        ...order,
-        date: new Date(order.date || order.createdAt),
-        estimatedDelivery: order.estimatedDelivery ? new Date(order.estimatedDelivery) : null,
-        timeline: order.timeline ? order.timeline.map(t => ({
-          ...t,
-          time: t.time ? new Date(t.time) : null
-        })) : []
-      }));
-      setOrders(ordersWithDates);
-    } catch (error) {
-      console.error('Error loading orders from storage:', error);
-      setOrders([]);
-    }
-  }, []);
+    const loadCustomerOrders = async () => {
+      if (!userProfile?.id) {
+        logger.debug('🛒 CartContext - No user profile, clearing orders');
+        setOrders([]);
+        return;
+      }
+
+      try {
+        logger.debug('🛒 CartContext - Loading orders for customer:', userProfile.id);
+        const customerOrders = await orderService.getByCustomerId(userProfile.id);
+
+        const ordersWithDates = customerOrders.map(order => ({
+          ...order,
+          date: new Date(order.orderDate || order.createdAt),
+          estimatedDelivery: order.estimatedDelivery ? new Date(order.estimatedDelivery) : null,
+          timeline: order.timeline ? order.timeline.map(t => ({
+            ...t,
+            time: t.time ? new Date(t.time) : null
+          })) : []
+        }));
+
+        console.log('🛒 CartContext - Customer orders loaded:', ordersWithDates.length);
+        setOrders(ordersWithDates);
+      } catch (error) {
+        console.error('🛒 CartContext - Error loading customer orders:', error);
+        setOrders([]);
+      }
+    };
+
+    loadCustomerOrders();
+  }, [userProfile?.id]);
 
   // Save cart to unified storage whenever it changes
   useEffect(() => {
     storage.set('cart', cartItems);
   }, [cartItems]);
 
-  // Save orders to unified storage whenever they change
-  useEffect(() => {
-    if (orders.length > 0) {
-      const realOrders = orders.filter(order => !order.isDemo);
-      if (realOrders.length > 0) {
-        storage.set('customerOrders', realOrders);
-      } else {
-        storage.remove('customerOrders');
-      }
-    }
-  }, [orders]);
-
   const addToCart = (product, quantity = 1) => {
-    console.log('Adding to cart:', product, 'quantity:', quantity);
-    
+    logger.debug('Adding to cart:', product, 'quantity:', quantity);
+
     // Veri doğrulama
     if (!product || !product.id) {
-      console.error('Invalid product data:', product);
+      logger.error('Invalid product data:', product);
       return;
     }
 
@@ -95,9 +98,9 @@ export const CartProvider = ({ children }) => {
     // Stok kontrolü
     if (product.stock !== undefined && product.stock < validQuantity) {
       const event = new CustomEvent('showToast', {
-        detail: { 
-          message: `Yetersiz stok! Mevcut stok: ${product.stock} ${product.unit}`, 
-          type: 'error' 
+        detail: {
+          message: `Yetersiz stok! Mevcut stok: ${product.stock} ${product.unit}`,
+          type: 'error'
         }
       });
       window.dispatchEvent(event);
@@ -109,30 +112,30 @@ export const CartProvider = ({ children }) => {
       const existingItem = prev.find(item => item.id === product.id);
       if (existingItem) {
         const newQuantity = Number(existingItem.quantity) + validQuantity;
-        
+
         // Toplam miktar stok kontrolü
         if (newQuantity > product.stock) {
           const event = new CustomEvent('showToast', {
-            detail: { 
-              message: `Maksimum stok miktarına ulaştınız! Mevcut stok: ${product.stock} ${product.unit}`, 
-              type: 'error' 
+            detail: {
+              message: `Maksimum stok miktarına ulaştınız! Mevcut stok: ${product.stock} ${product.unit}`,
+              type: 'error'
             }
           });
           window.dispatchEvent(event);
           return prev;
         }
-        
+
         return prev.map(item =>
           item.id === product.id
-            ? { 
-                ...item, 
-                quantity: newQuantity, 
-                total: newQuantity * Number(item.price)
-              }
+            ? {
+              ...item,
+              quantity: newQuantity,
+              total: newQuantity * Number(item.price)
+            }
             : item
         );
       }
-      
+
       const newItem = {
         id: product.id,
         name: product.name || 'Bilinmeyen Ürün',
@@ -142,8 +145,8 @@ export const CartProvider = ({ children }) => {
         image: product.image || '',
         total: validPrice * validQuantity
       };
-      
-      console.log('New cart item:', newItem);
+
+      logger.debug('New cart item:', newItem);
       return [...prev, newItem];
     });
 
@@ -162,40 +165,40 @@ export const CartProvider = ({ children }) => {
         updateProductStock(productId, product.stock + removedItem.quantity);
       }
     }
-    
+
     setCartItems(prev => prev.filter(item => item.id !== productId));
   };
 
   const updateQuantity = (productId, quantity) => {
     const validQuantity = Number(quantity) || 0;
-    console.log('Updating quantity for product:', productId, 'to:', validQuantity);
-    
+    logger.debug('Updating quantity for product:', productId, 'to:', validQuantity);
+
     if (validQuantity <= 0) {
       removeFromCart(productId);
       return;
     }
-    
+
     // Mevcut sepetteki miktar ile karşılaştır
     const currentItem = cartItems.find(item => item.id === productId);
     if (currentItem) {
       const difference = validQuantity - currentItem.quantity;
-      
+
       if (difference > 0) {
         // Miktar artıyor - stok kontrolü yap
         const products = storage.get('products', []);
         const product = products.find(p => p.id === productId);
-        
+
         if (product && product.stock < difference) {
           const event = new CustomEvent('showToast', {
-            detail: { 
-              message: `Yetersiz stok! Mevcut stok: ${product.stock} ${product.unit}`, 
-              type: 'error' 
+            detail: {
+              message: `Yetersiz stok! Mevcut stok: ${product.stock} ${product.unit}`,
+              type: 'error'
             }
           });
           window.dispatchEvent(event);
           return;
         }
-        
+
         // Stoktan düş
         reduceStock(productId, difference);
       } else if (difference < 0) {
@@ -207,15 +210,15 @@ export const CartProvider = ({ children }) => {
         }
       }
     }
-    
+
     setCartItems(prev =>
       prev.map(item =>
         item.id === productId
-          ? { 
-              ...item, 
-              quantity: validQuantity, 
-              total: validQuantity * Number(item.price)
-            }
+          ? {
+            ...item,
+            quantity: validQuantity,
+            total: validQuantity * Number(item.price)
+          }
           : item
       )
     );
@@ -232,7 +235,7 @@ export const CartProvider = ({ children }) => {
         }
       });
     }
-    
+
     setCartItems([]);
     storage.remove('cart');
     console.log('Cart cleared from unified storage');
@@ -251,93 +254,104 @@ export const CartProvider = ({ children }) => {
     const timestamp = Date.now();
     const randomNum = Math.floor(Math.random() * 1000000);
     const uniqueId = `SIP-${timestamp}-${randomNum}`;
-    
+
     // Mevcut siparişlerde bu ID var mı kontrol et
     const existingOrders = storage.get('customerOrders', []);
     const sellerOrders = storage.get('sellerOrders', []);
     const allOrders = [...existingOrders, ...sellerOrders];
-    
+
     // Eğer aynı ID varsa yeniden generate et
     if (allOrders.some(order => order.id === uniqueId)) {
       return generateUniqueOrderId();
     }
-    
+
     return uniqueId;
   };
 
   // Yeni sipariş ekleme fonksiyonu
-  const addNewOrder = (orderData) => {
-    // orderSyncUtils kullanarak sipariş ekle
-    const orderId = orderSyncUtils.addOrder(orderData);
-    
-    // Local state'i güncelle
-    const newOrder = {
-      id: orderId,
-      date: new Date(),
-      status: 'pending',
-      total: orderData.total,
-      itemCount: orderData.items.length,
-      deliveryAddress: orderData.deliveryAddress || "Atatürk Caddesi No: 123, Kadıköy, İstanbul",
-      estimatedDelivery: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      items: orderData.items,
-      timeline: [
-        { status: "confirmed", time: null, completed: false },
-        { status: "preparing", time: null, completed: false },
-        { status: "out_for_delivery", time: null, completed: false },
-        { status: "delivered", time: null, completed: false }
-      ],
-      canCancel: true,
-      canReorder: true,
-      notes: orderData.notes || "",
-      isDemo: false
-    };
+  const addNewOrder = async (orderData) => {
+    try {
+      console.log('🛒 CartContext - OrderService ile sipariş oluşturuluyor:', orderData);
 
-    setOrders(prev => [newOrder, ...prev]);
-    
-    console.log('Yeni sipariş eklendi ve senkronize edildi:', orderId);
-    return orderId;
+      // OrderService kullanarak sipariş oluştur
+      const newOrder = await orderService.create(orderData);
+
+      console.log('✅ CartContext - Sipariş başarıyla oluşturuldu:', newOrder);
+
+      // Local state'i güncelle
+      const stateOrder = {
+        id: newOrder.id,
+        orderNumber: newOrder.orderNumber,
+        date: new Date(newOrder.createdAt),
+        status: newOrder.status,
+        total: newOrder.total,
+        itemCount: newOrder.items?.length || 0,
+        deliveryAddress: newOrder.deliveryAddress,
+        estimatedDelivery: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        items: newOrder.items || [],
+        timeline: [
+          { status: "confirmed", time: null, completed: false },
+          { status: "preparing", time: null, completed: false },
+          { status: "out_for_delivery", time: null, completed: false },
+          { status: "delivered", time: null, completed: false }
+        ],
+        canCancel: true,
+        canReorder: true,
+        notes: newOrder.notes || "",
+        customerId: newOrder.customerId,
+        isDemo: false
+      };
+
+      setOrders(prev => [stateOrder, ...prev]);
+
+      console.log('Yeni sipariş eklendi ve senkronize edildi:', newOrder.orderNumber);
+      return newOrder.orderNumber; // Order number'ı döndür
+    } catch (error) {
+      console.error('❌ CartContext - Sipariş oluşturma hatası:', error);
+      throw error;
+    }
   };
 
   // Stok yönetimi fonksiyonları
   const updateProductStock = (productId, newStock) => {
     // Mevcut ürünleri al
     const products = storage.get('products', []);
-    
+
     // Ürünü bul ve stokunu güncelle
-    const updatedProducts = products.map(product => 
-      product.id === productId 
+    const updatedProducts = products.map(product =>
+      product.id === productId
         ? { ...product, stock: Math.max(0, newStock), isAvailable: newStock > 0 }
         : product
     );
-    
+
     // Güncellenmiş ürünleri kaydet
     storage.set('products', updatedProducts);
-    
+
     console.log(`Ürün ${productId} stoku güncellendi: ${newStock}`);
   };
 
   const reduceStock = (productId, quantity) => {
     const products = storage.get('products', []);
     const product = products.find(p => p.id === productId);
-    
+
     if (product) {
       const newStock = Math.max(0, product.stock - quantity);
       updateProductStock(productId, newStock);
-      
+
       // Stok biterse toast göster
       if (newStock === 0) {
         const event = new CustomEvent('showToast', {
-          detail: { 
-            message: `${product.name} ürününün stoku bitti!`, 
-            type: 'warning' 
+          detail: {
+            message: `${product.name} ürününün stoku bitti!`,
+            type: 'warning'
           }
         });
         window.dispatchEvent(event);
       } else if (newStock <= 10) {
         const event = new CustomEvent('showToast', {
-          detail: { 
-            message: `${product.name} ürününde az stok kaldı! (${newStock} ${product.unit})`, 
-            type: 'info' 
+          detail: {
+            message: `${product.name} ürününde az stok kaldı! (${newStock} ${product.unit})`,
+            type: 'info'
           }
         });
         window.dispatchEvent(event);

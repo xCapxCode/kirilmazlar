@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import storage from '@core/storage';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../../../../contexts/AuthContext';
 import { useModal } from '../../../../../contexts/ModalContext';
 import { useNotification } from '../../../../../contexts/NotificationContext';
-import SaticiHeader from '../../../../../shared/components/ui/SaticiHeader';
 import Icon from '../../../../../shared/components/AppIcon';
-import storage from '../../../../../core/storage/index.js';
+import SaticiHeader from '../../../../../shared/components/ui/SaticiHeader';
 
 // Bileşenler
 import UrunModali from './components/UrunModali';
@@ -36,12 +36,12 @@ const UrunYonetimi = () => {
   useEffect(() => {
     if (user && userProfile) {
       loadData();
-      
+
       const unsubscribeProducts = storage.subscribe('products', (newProducts) => {
         setProducts(newProducts || []);
         console.log('🔄 Products updated via storage subscription');
       });
-      
+
       const unsubscribeCategories = storage.subscribe('categories', (newCategories) => {
         setCategories(newCategories || []);
         console.log('🔄 Categories updated via storage subscription');
@@ -54,10 +54,118 @@ const UrunYonetimi = () => {
     }
   }, [user, userProfile]);
 
+  // Tüm ürünleri otomatik yükle fonksiyonu
+  const loadAllProductsFromImages = async () => {
+    try {
+      const allProductsData = [
+        { name: 'Ananas', category: 'Meyveler', price: 35.00, description: 'Taze ananas' },
+        { name: 'Armut', category: 'Meyveler', price: 16.00, description: 'Taze armut' },
+        { name: 'Avakado', category: 'Meyveler', price: 40.00, description: 'Taze avakado' },
+        { name: 'Ayva', category: 'Meyveler', price: 14.00, description: 'Taze ayva' },
+        { name: 'Darı Mısır', category: 'Sebzeler', price: 4.00, description: 'Taze darı mısır' },
+        { name: 'Domates', category: 'Sebzeler', price: 18.00, description: 'Taze domates' },
+        { name: 'Elma', category: 'Meyveler', price: 15.00, description: 'Taze kırmızı elma' },
+        { name: 'Greyfurt', category: 'Meyveler', price: 22.00, description: 'Taze greyfurt' },
+        { name: 'Kabak', category: 'Sebzeler', price: 6.00, description: 'Taze kabak' },
+        { name: 'Kavun', category: 'Meyveler', price: 8.00, description: 'Taze kavun' },
+        { name: 'Kayısı', category: 'Meyveler', price: 35.00, description: 'Taze kayısı' },
+        { name: 'Kereviz', category: 'Sebzeler', price: 18.00, description: 'Taze kereviz' },
+        { name: 'Kiraz', category: 'Meyveler', price: 60.00, description: 'Taze kiraz' },
+        { name: 'Kivi', category: 'Meyveler', price: 25.00, description: 'Taze kivi' },
+        { name: 'Kırmızı Biber', category: 'Sebzeler', price: 25.00, description: 'Taze kırmızı biber' },
+        { name: 'Kıvırcık', category: 'Sebzeler', price: 12.00, description: 'Taze kıvırcık' },
+        { name: 'Lahana', category: 'Sebzeler', price: 5.00, description: 'Taze lahana' },
+        { name: 'Lime', category: 'Meyveler', price: 30.00, description: 'Taze lime' },
+        { name: 'Limon', category: 'Meyveler', price: 25.00, description: 'Taze limon' },
+        { name: 'Mandalina', category: 'Meyveler', price: 18.00, description: 'Taze mandalina' },
+        { name: 'Mantar', category: 'Sebzeler', price: 35.00, description: 'Taze mantar' },
+        { name: 'Muz', category: 'Meyveler', price: 12.00, description: 'Taze muz' },
+        { name: 'Nar', category: 'Meyveler', price: 24.00, description: 'Taze nar' },
+        { name: 'Nektarin', category: 'Meyveler', price: 32.00, description: 'Taze nektarin' },
+        { name: 'Patates', category: 'Sebzeler', price: 7.00, description: 'Taze patates' },
+        { name: 'Portakal', category: 'Meyveler', price: 20.00, description: 'Taze portakal' },
+        { name: 'Roka', category: 'Sebzeler', price: 15.00, description: 'Taze roka' },
+        { name: 'Salatalık', category: 'Sebzeler', price: 8.00, description: 'Taze salatalık' },
+        { name: 'Sarımsak', category: 'Sebzeler', price: 45.00, description: 'Taze sarımsak' },
+        { name: 'Soğan (Çuval)', category: 'Kasalı Ürünler', price: 15.00, description: 'Taze soğan çuval' },
+        { name: 'Tere Otu', category: 'Sebzeler', price: 8.00, description: 'Taze tere otu' },
+        { name: 'Yeşil Elma', category: 'Meyveler', price: 17.00, description: 'Taze yeşil elma' },
+        { name: 'Çilek', category: 'Meyveler', price: 45.00, description: 'Taze çilek' },
+        { name: 'Üzüm', category: 'Meyveler', price: 22.00, description: 'Taze üzüm' },
+        { name: 'İncir', category: 'Meyveler', price: 38.00, description: 'Taze incir' },
+        { name: 'Şeftali', category: 'Meyveler', price: 28.00, description: 'Taze şeftali' }
+      ];
+
+      // Mevcut ürünleri al
+      const existingProducts = await storage.get('products', []);
+      const existingNames = existingProducts.map(p => p.name);
+
+      // Eksik ürünleri filtrele
+      const missingProducts = allProductsData.filter(product =>
+        !existingNames.includes(product.name)
+      );
+
+      if (missingProducts.length === 0) {
+        showSuccess('✅ Tüm ürünler zaten sistemde!');
+        return existingProducts;
+      }
+
+      // Yeni ID'ler oluştur
+      const maxId = existingProducts.length > 0
+        ? Math.max(...existingProducts.map(p => {
+          const numId = typeof p.id === 'string' ? parseInt(p.id.replace(/[^\d]/g, '')) || 0 : p.id || 0;
+          return numId;
+        }))
+        : 0;
+
+      // Eksik ürünleri ekle
+      const newProducts = missingProducts.map((product, index) => {
+        const imageFileName = product.name === 'Nektarin' ? 'nectarine.png' :
+          product.name === 'Patates' ? 'patates.png' :
+            product.name === 'Kabak' ? 'kabak.png' :
+              product.name === 'Lahana' ? 'lahana.png' :
+                product.name === 'Soğan (Çuval)' ? 'sogan-cuval.png' :
+                  product.name === 'Tere Otu' ? 'TereOtu.png' :
+                    product.name === 'Darı Mısır' ? 'DarıMısır.png' :
+                      `${product.name}.png`;
+
+        return {
+          id: `prod-${maxId + index + 1}`,
+          name: product.name,
+          description: product.description,
+          category: product.category,
+          subcategory: product.category === 'Meyveler' ? 'Taze Meyveler' :
+            product.category === 'Sebzeler' ? 'Taze Sebzeler' :
+              'Genel',
+          unit: 'kg',
+          price: product.price,
+          stock: Math.floor(Math.random() * 30) + 15, // 15-45 arası rastgele
+          minStock: Math.floor(Math.random() * 8) + 3, // 3-10 arası
+          status: 'active',
+          image: `/assets/images/products/${imageFileName}`,
+          createdAt: new Date().toISOString(),
+          isActive: true
+        };
+      });
+
+      const allProducts = [...existingProducts, ...newProducts];
+      await storage.set('products', allProducts);
+      setProducts(allProducts);
+
+      showSuccess(`✅ ${newProducts.length} yeni ürün eklendi! Toplam: ${allProducts.length}`);
+      return allProducts;
+
+    } catch (error) {
+      console.error('Ürünler yüklenirken hata:', error);
+      showError('Ürünler yüklenirken hata oluştu');
+      return [];
+    }
+  };
+
   const loadData = async () => {
     try {
       console.log('🔄 Ürün yönetimi verileri yükleniyor...');
-      
+
       const [storedProducts, storedCategories] = await Promise.all([
         storage.get('products', []),
         storage.get('categories', [])
@@ -68,7 +176,7 @@ const UrunYonetimi = () => {
         categoriesCount: storedCategories.length
       });
 
-      // Kategorileri ayarla
+      // Kategorileri ayarla - "Kuru Yemiş" yerine "Kasalı Ürünler"
       if (storedCategories.length === 0) {
         console.log('🆕 Varsayılan kategoriler oluşturuluyor...');
         const defaultCategories = [
@@ -95,103 +203,82 @@ const UrunYonetimi = () => {
           },
           {
             id: 4,
-            name: 'Kuru Yemiş',
-            icon: 'Nut',
+            name: 'Kasalı Ürünler',
+            icon: 'Package2',
             color: 'amber',
-            subcategories: ['Çiğ Kuruyemiş', 'Kurutulmuş Meyve']
+            subcategories: ['Kasalı Sebzeler', 'Kasalı Meyveler', 'Kasalı Diğer']
           }
         ];
-        
+
         await storage.set('categories', defaultCategories);
         setCategories(defaultCategories);
       } else {
         setCategories(storedCategories);
       }
 
-      // Ürünleri ayarla
-      if (storedProducts.length === 0) {
-        console.log('🆕 Demo ürünler oluşturuluyor...');
-        const demoProducts = [
-          {
-            id: 1,
-            name: 'Domates',
-            category: 'Sebzeler',
-            subcategory: 'Mevsim Sebzeleri',
-            unit: 'kg',
-            price: 18.00,
-            stock: 25,
-            minStock: 5,
-            status: 'active',
-            image: '/assets/images/products/Domates.png',
-            description: 'Taze, kırmızı, lezzetli domates',
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: 2,
-            name: 'Elma',
-            category: 'Meyveler',
-            subcategory: 'Yumuşak Meyveler',
-            unit: 'kg',
-            price: 15.00,
-            stock: 40,
-            minStock: 10,
-            status: 'active',
-            image: '/assets/images/products/Elma.png',
-            description: 'Kırmızı, tatlı ve sulu elma',
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: 3,
-            name: 'Yeşil Elma',
-            category: 'Meyveler',
-            subcategory: 'Yumuşak Meyveler',
-            unit: 'kg',
-            price: 17.00,
-            stock: 32,
-            minStock: 8,
-            status: 'active',
-            image: '/assets/images/products/Yeşil Elma.png',
-            description: 'Granny Smith yeşil elma, ekşi ve sağlıklı',
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: 4,
-            name: 'Portakal',
-            category: 'Meyveler',
-            subcategory: 'Turunçgiller',
-            unit: 'kg',
-            price: 20.00,
-            stock: 28,
-            minStock: 6,
-            status: 'active',
-            image: '/assets/images/products/Portakal.png',
-            description: 'Valencia portakalı, vitamin C deposu',
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: 5,
-            name: 'Limon',
-            category: 'Meyveler',
-            subcategory: 'Turunçgiller',
-            unit: 'kg',
-            price: 25.00,
-            stock: 15,
-            minStock: 4,
-            status: 'active',
-            image: '/assets/images/products/Limon.png',
-            description: 'Akdeniz limonu, ferahlatıcı ve aromatik',
-            createdAt: new Date().toISOString()
-          }
-        ];
-        
-        await storage.set('products', demoProducts);
-        setProducts(demoProducts);
-      } else {
-        setProducts(storedProducts);
+      // Ürünleri ayarla - önce eksik ürünleri kontrol et ve ekle
+      console.log('🔄 Eksik ürünler kontrol ediliyor...');
+
+      try {
+        // İlk başta mevcut ürünleri kontrol et
+        if (storedProducts.length < 10) {
+          console.log('🆕 Otomatik ürün yükleme başlatılıyor...');
+          const allProducts = await loadAllProductsFromImages();
+          setProducts(allProducts);
+          console.log('✅ Otomatik ürün yükleme başarılı:', allProducts.length, 'ürün');
+        } else {
+          setProducts(storedProducts);
+          console.log('✅ Mevcut ürünler kullanıldı:', storedProducts.length);
+        }
+      } catch (productLoadError) {
+        console.warn('⚠️ Ürün yükleme hatası, basit demo ürünler ekleniyor:', productLoadError);
+
+        // Son çare: Basit demo ürünler
+        if (storedProducts.length === 0) {
+          const simpleProducts = [
+            {
+              id: 'prod-simple-1',
+              name: 'Domates',
+              description: 'Taze domates',
+              category: 'Sebzeler',
+              subcategory: 'Mevsim Sebzeleri',
+              unit: 'kg',
+              price: 18.00,
+              stock: 25,
+              minStock: 5,
+              status: 'active',
+              image: '/assets/images/products/Domates.png',
+              createdAt: new Date().toISOString(),
+              isActive: true
+            },
+            {
+              id: 'prod-simple-2',
+              name: 'Elma',
+              description: 'Taze elma',
+              category: 'Meyveler',
+              subcategory: 'Yumuşak Meyveler',
+              unit: 'kg',
+              price: 15.00,
+              stock: 40,
+              minStock: 10,
+              status: 'active',
+              image: '/assets/images/products/Elma.png',
+              createdAt: new Date().toISOString(),
+              isActive: true
+            }
+          ];
+
+          await storage.set('products', simpleProducts);
+          setProducts(simpleProducts);
+          console.log('✅ Basit demo ürünler yüklendi:', simpleProducts.length);
+        } else {
+          setProducts(storedProducts);
+          console.log('✅ Mevcut stored ürünler kullanıldı:', storedProducts.length);
+        }
       }
 
       console.log('✅ Ürün yönetimi verileri başarıyla yüklendi');
-      
+
     } catch (error) {
       console.error('❌ Ürün yönetimi veri yükleme hatası:', error);
     } finally {
@@ -219,14 +306,14 @@ const UrunYonetimi = () => {
         type: 'danger'
       }
     );
-    
+
     if (confirmed) {
       try {
         const currentProducts = await storage.get('products', []);
         const updatedProducts = currentProducts.filter(p => p.id !== productId);
         await storage.set('products', updatedProducts);
         setProducts(updatedProducts);
-        
+
         console.log('✅ Ürün başarıyla silindi:', productId);
         showSuccess('Ürün başarıyla silindi');
       } catch (error) {
@@ -238,16 +325,16 @@ const UrunYonetimi = () => {
 
   const handleSaveProduct = async (productData) => {
     console.log('🔍 handleSaveProduct çağrıldı:', productData);
-    
+
     try {
       const currentProducts = await storage.get('products', []);
       let updatedProducts;
-      
+
       if (editingProduct) {
         // Düzenleme
-        updatedProducts = currentProducts.map(p => 
-          p.id === editingProduct.id ? { 
-            ...productData, 
+        updatedProducts = currentProducts.map(p =>
+          p.id === editingProduct.id ? {
+            ...productData,
             id: editingProduct.id,
             updatedAt: new Date().toISOString()
           } : p
@@ -265,18 +352,18 @@ const UrunYonetimi = () => {
         console.log('🔍 Yeni ürün oluşturuluyor:', newProduct);
         updatedProducts = [...currentProducts, newProduct];
       }
-      
+
       console.log('🔍 Güncellenecek tüm ürünler:', updatedProducts.length);
-      
+
       // Unified storage'a kaydet (cross-device sync ile)
       await storage.set('products', updatedProducts);
       setProducts(updatedProducts);
-      
+
       console.log('✅ Ürün başarıyla kaydedildi');
-      
+
       setShowProductModal(false);
       setEditingProduct(null);
-      
+
     } catch (error) {
       console.error('❌ Ürün kaydetme hatası:', error);
     }
@@ -285,22 +372,22 @@ const UrunYonetimi = () => {
   // Kategori yönetimi işlevleri
   const handleAddCategory = async () => {
     const trimmedName = newCategoryName.trim();
-    
+
     if (!trimmedName) {
       showError('Kategori adı boş olamaz');
       return;
     }
-    
+
     if (trimmedName.length < 2) {
       showError('Kategori adı en az 2 karakter olmalıdır');
       return;
     }
-    
+
     if (categories.find(cat => cat.name.toLowerCase() === trimmedName.toLowerCase())) {
       showError('Bu kategori zaten mevcut');
       return;
     }
-    
+
     try {
       const newCategory = {
         id: Math.max(...categories.map(c => c.id)) + 1,
@@ -310,7 +397,7 @@ const UrunYonetimi = () => {
         subcategories: ['Genel']
       };
       const updatedCategories = [...categories, newCategory];
-      
+
       await storage.set('categories', updatedCategories);
       setCategories(updatedCategories);
       setActiveTab(newCategory.name);
@@ -327,7 +414,7 @@ const UrunYonetimi = () => {
   const handleDeleteCategory = async (categoryToDelete) => {
     // Kategorideki ürün sayısını kontrol et
     const categoryProducts = products.filter(p => p.category === categoryToDelete.name);
-    
+
     if (categoryProducts.length > 0) {
       showError(`Bu kategoride ${categoryProducts.length} ürün bulunuyor. Önce ürünleri silmeniz veya başka kategoriye taşımanız gerekiyor.`);
       return;
@@ -353,12 +440,12 @@ const UrunYonetimi = () => {
         const updatedCategories = categories.filter(cat => cat.id !== categoryToDelete.id);
         await storage.set('categories', updatedCategories);
         setCategories(updatedCategories);
-        
+
         // Eğer silinen kategori aktif sekme ise, ilk kategoriye geç
         if (activeTab === categoryToDelete.name) {
           setActiveTab(updatedCategories[0].name);
         }
-        
+
         console.log('✅ Kategori başarıyla silindi:', categoryToDelete.name);
         showSuccess(`"${categoryToDelete.name}" kategorisi başarıyla silindi`);
       } catch (error) {
@@ -373,10 +460,10 @@ const UrunYonetimi = () => {
     const matchesSearch = product.name.toLowerCase().includes(filters.search.toLowerCase());
     const matchesStatus = !filters.status || product.status === filters.status;
     const matchesCategory = activeTab === 'Tüm Ürünler' || product.category === activeTab;
-    const matchesStockStatus = !filters.stockStatus || 
+    const matchesStockStatus = !filters.stockStatus ||
       (filters.stockStatus === 'low' && product.stock <= product.minStock) ||
       (filters.stockStatus === 'normal' && product.stock > product.minStock);
-    
+
     return matchesSearch && matchesStatus && matchesCategory && matchesStockStatus;
   });
 
@@ -412,7 +499,7 @@ const UrunYonetimi = () => {
     );
   }
 
-  if (!user || !userProfile || (userProfile.role !== 'seller' && userProfile.role !== 'admin')) {
+  if (!user || !userProfile || (userProfile.role !== 'seller' && userProfile.role !== 'admin' && userProfile.role !== 'owner')) {
     return (
       <div className="min-h-screen bg-slate-200 flex items-center justify-center">
         <div className="text-center">
@@ -443,6 +530,22 @@ const UrunYonetimi = () => {
             </div>
 
             <div className="flex items-center space-x-3">
+              {/* Tüm ürünleri yükle butonu */}
+              <button
+                onClick={async () => {
+                  try {
+                    await loadAllProductsFromImages();
+                  } catch (error) {
+                    console.error('Ürün yükleme hatası:', error);
+                    showError('Ürünler yüklenirken hata oluştu');
+                  }
+                }}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+              >
+                <Icon name="Download" size={18} />
+                <span>Tüm Ürünleri Yükle</span>
+              </button>
+
               <button
                 onClick={handleAddProduct}
                 className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
@@ -464,11 +567,10 @@ const UrunYonetimi = () => {
                     setActiveTab(category.name);
                     setCurrentPage(1);
                   }}
-                  className={`px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
-                    activeTab === category.name
+                  className={`px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 ${activeTab === category.name
                       ? 'bg-green-600 text-white'
                       : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <Icon name={category.icon} size={16} />
                   <span>{category.name}</span>
@@ -484,7 +586,7 @@ const UrunYonetimi = () => {
                 )}
               </div>
             ))}
-            
+
             {/* Yeni Kategori Ekleme Butonu */}
             <button
               onClick={() => setShowNewCategoryModal(true)}
@@ -509,7 +611,7 @@ const UrunYonetimi = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
             </div>
-            
+
             <div>
               <select
                 value={filters.status}
@@ -572,9 +674,8 @@ const UrunYonetimi = () => {
                   <div key={product.id} className="bg-slate-100 border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                     {/* Durum */}
                     <div className="flex items-center justify-end mb-3">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                        (product.isActive === true || product.status === 'active') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${(product.isActive === true || product.status === 'active') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
                         {(product.isActive === true || product.status === 'active') ? 'Aktif' : 'Pasif'}
                       </span>
                     </div>
@@ -602,43 +703,43 @@ const UrunYonetimi = () => {
                                       showError('Dosya boyutu 2MB\'dan büyük olamaz. Lütfen daha küçük bir dosya seçin.');
                                       return;
                                     }
-                                    
+
                                     if (!file.type.startsWith('image/')) {
                                       showError('Lütfen geçerli bir resim dosyası seçiniz (PNG, JPG, JPEG)');
                                       return;
                                     }
-                                    
+
                                     // Resmi yükle ve boyutlandır
                                     const reader = new FileReader();
                                     reader.onload = (event) => {
                                       const imageData = event.target.result;
-                                      
+
                                       // Resmi boyutlandır
                                       const img = new Image();
                                       img.onload = () => {
                                         const canvas = document.createElement('canvas');
                                         const ctx = canvas.getContext('2d');
-                                        
+
                                         // Hedef boyutlar
                                         const targetWidth = 500;
                                         const targetHeight = 400;
-                                        
+
                                         canvas.width = targetWidth;
                                         canvas.height = targetHeight;
-                                        
+
                                         // Resmi canvas'a çiz (otomatik olarak yeniden boyutlandırılır)
                                         ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
-                                        
+
                                         // Yeniden boyutlandırılmış resmi base64'e çevir
                                         const resizedImage = canvas.toDataURL('image/jpeg', 0.8);
-                                        
+
                                         // Ürünü güncelle
-                                        const updatedProducts = products.map(p => 
+                                        const updatedProducts = products.map(p =>
                                           p.id === product.id ? { ...p, image: resizedImage } : p
                                         );
                                         setProducts(updatedProducts);
                                         storage.set('products', updatedProducts);
-                                        
+
                                         showSuccess('Ürün resmi başarıyla güncellendi');
                                       };
                                       img.src = imageData;
@@ -667,43 +768,43 @@ const UrunYonetimi = () => {
                                   showError('Dosya boyutu 2MB\'dan büyük olamaz. Lütfen daha küçük bir dosya seçin.');
                                   return;
                                 }
-                                
+
                                 if (!file.type.startsWith('image/')) {
                                   showError('Lütfen geçerli bir resim dosyası seçiniz (PNG, JPG, JPEG)');
                                   return;
                                 }
-                                
+
                                 // Resmi yükle ve boyutlandır
                                 const reader = new FileReader();
                                 reader.onload = (event) => {
                                   const imageData = event.target.result;
-                                  
+
                                   // Resmi boyutlandır
                                   const img = new Image();
                                   img.onload = () => {
                                     const canvas = document.createElement('canvas');
                                     const ctx = canvas.getContext('2d');
-                                    
+
                                     // Hedef boyutlar
                                     const targetWidth = 500;
                                     const targetHeight = 400;
-                                    
+
                                     canvas.width = targetWidth;
                                     canvas.height = targetHeight;
-                                    
+
                                     // Resmi canvas'a çiz (otomatik olarak yeniden boyutlandırılır)
                                     ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
-                                    
+
                                     // Yeniden boyutlandırılmış resmi base64'e çevir
                                     const resizedImage = canvas.toDataURL('image/jpeg', 0.8);
-                                    
+
                                     // Ürünü güncelle
-                                    const updatedProducts = products.map(p => 
+                                    const updatedProducts = products.map(p =>
                                       p.id === product.id ? { ...p, image: resizedImage } : p
                                     );
                                     setProducts(updatedProducts);
                                     storage.set('products', updatedProducts);
-                                    
+
                                     showSuccess('Ürün resmi başarıyla eklendi');
                                   };
                                   img.src = imageData;
@@ -720,7 +821,7 @@ const UrunYonetimi = () => {
                     <div className="space-y-2">
                       <h3 className="font-semibold text-gray-900 truncate">{product.name}</h3>
                       <p className="text-sm text-gray-600">{product.subcategory}</p>
-                      
+
                       {/* Fiyat ve Birim */}
                       <div className="flex items-center justify-between">
                         <span className="text-lg font-bold text-green-600">
@@ -735,13 +836,12 @@ const UrunYonetimi = () => {
                       {/* Stok Durumu */}
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Stok: {product.stock}</span>
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          product.stock === 0 ? 'bg-red-100 text-red-800' :
-                          product.stock <= product.minStock ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${product.stock === 0 ? 'bg-red-100 text-red-800' :
+                            product.stock <= product.minStock ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-green-100 text-green-800'
+                          }`}>
                           {product.stock === 0 ? 'Tükendi' :
-                           product.stock <= product.minStock ? 'Az Stok' : 'Normal'}
+                            product.stock <= product.minStock ? 'Az Stok' : 'Normal'}
                         </span>
                       </div>
 
@@ -818,7 +918,7 @@ const UrunYonetimi = () => {
                 <Icon name="X" size={24} />
               </button>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -871,7 +971,7 @@ const UrunYonetimi = () => {
                   Alt kategoriler ürünleri daha detaylı sınıflandırmanıza yardımcı olur.
                 </p>
               </div>
-              
+
               <div className="flex space-x-3 pt-4">
                 <button
                   onClick={() => {

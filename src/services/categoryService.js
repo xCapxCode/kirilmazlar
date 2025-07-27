@@ -256,10 +256,10 @@ class CategoryService {
       },
       {
         id: 4,
-        name: 'Kuru Yemiş',
-        icon: 'Nut',
+        name: 'Kasalı Ürünler',
+        icon: 'Package2',
         color: 'amber',
-        subcategories: ['Çiğ Kuruyemiş', 'Kurutulmuş Meyve']
+        subcategories: ['Kasalı Sebzeler', 'Kasalı Meyveler', 'Kasalı Diğer']
       }
     ];
   }

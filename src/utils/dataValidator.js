@@ -22,7 +22,7 @@ class DataValidator {
       const data = storage.get(key);
       const validation = this.validationRules[key](data);
       results[key] = validation;
-      
+
       if (!validation.isValid) {
         hasErrors = true;
         logger.warn(`❌ ${key} doğrulama hatası:`, validation.errors);
@@ -32,7 +32,7 @@ class DataValidator {
     // İlişkisel doğrulamalar
     const relationalValidation = this.validateRelations();
     results.relations = relationalValidation;
-    
+
     if (!relationalValidation.isValid) {
       hasErrors = true;
       logger.warn('❌ İlişkisel doğrulama hatası:', relationalValidation.errors);
@@ -69,7 +69,7 @@ class DataValidator {
       }
 
       // Rol kontrolü
-      if (user.role && !['admin', 'seller', 'customer'].includes(user.role)) {
+      if (user.role && !['admin', 'seller', 'customer', 'owner'].includes(user.role)) {
         errors.push(`User ${index}: Invalid role ${user.role}`);
       }
     });
@@ -215,7 +215,7 @@ class DataValidator {
   // İlişkisel doğrulamalar
   validateRelations() {
     const errors = [];
-    
+
     const products = storage.get('products', []);
     const categories = storage.get('categories', []);
     const orders = storage.get('orders', []);
@@ -286,12 +286,12 @@ class DataValidator {
   // Periyodik doğrulama başlat
   startPeriodicValidation(intervalMinutes = 5) {
     const interval = intervalMinutes * 60 * 1000;
-    
+
     setInterval(() => {
       const validation = this.validateAll();
       if (!validation.isValid) {
         logger.warn('⚠️ Periyodik veri doğrulama hatası tespit edildi');
-        
+
         // Otomatik düzeltme dene
         const fixes = this.autoFix();
         if (fixes.length > 0) {
@@ -300,7 +300,7 @@ class DataValidator {
       }
     }, interval);
 
-    logger.log(`✅ Periyodik veri doğrulama başlatıldı (${intervalMinutes} dakika)`);
+    logger.info(`✅ Periyodik veri doğrulama başlatıldı (${intervalMinutes} dakika)`);
   }
 }
 

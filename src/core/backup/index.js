@@ -4,7 +4,7 @@
  * Bu dosya, verilerin yedeklenmesi ve geri yüklenmesi için gerekli fonksiyonları içerir.
  */
 
-import storage from '../storage';
+import storage from '@core/storage';
 import { schemaVersions } from '../schema';
 
 class BackupManager {
@@ -32,7 +32,7 @@ class BackupManager {
   async createBackup() {
     try {
       console.log('🔄 Veri yedekleme başlatılıyor...');
-      
+
       // Tüm verileri topla
       const backupData = {
         metadata: {
@@ -42,7 +42,7 @@ class BackupManager {
         },
         data: {}
       };
-      
+
       // Her veri tipini yedekle
       for (const dataType of this.dataTypes) {
         const data = storage.get(dataType, null);
@@ -50,18 +50,18 @@ class BackupManager {
           backupData.data[dataType] = data;
         }
       }
-      
+
       // JSON dosyası oluştur
       const backupJson = JSON.stringify(backupData, null, 2);
       const blob = new Blob([backupJson], { type: 'application/json' });
-      
+
       // Dosya adı oluştur
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const fileName = `kirilmazlar_backup_${timestamp}.json`;
-      
+
       // Dosyayı indir
       this.downloadBlob(blob, fileName);
-      
+
       console.log('✅ Veri yedekleme tamamlandı');
       return true;
     } catch (error) {
@@ -76,14 +76,14 @@ class BackupManager {
   async restoreBackup(backupFile) {
     try {
       console.log('🔄 Veri geri yükleme başlatılıyor...');
-      
+
       // Dosyayı oku
       const backupData = await this.readBackupFile(backupFile);
-      
+
       if (!backupData || !backupData.metadata || !backupData.data) {
         throw new Error('Geçersiz yedek dosyası formatı');
       }
-      
+
       // Şema versiyonlarını kontrol et
       const backupSchemaVersions = backupData.metadata.schemaVersions || {};
       for (const [dataType, version] of Object.entries(schemaVersions)) {
@@ -91,7 +91,7 @@ class BackupManager {
           console.warn(`⚠️ ${dataType} için şema versiyonu uyumsuz: ${backupSchemaVersions[dataType]} -> ${version}`);
         }
       }
-      
+
       // Verileri geri yükle
       for (const [dataType, data] of Object.entries(backupData.data)) {
         if (this.dataTypes.includes(dataType)) {
@@ -99,10 +99,10 @@ class BackupManager {
           console.log(`✅ ${dataType} verisi geri yüklendi`);
         }
       }
-      
+
       // Şema versiyonlarını güncelle
       storage.set('schema_versions', schemaVersions);
-      
+
       console.log('✅ Veri geri yükleme tamamlandı');
       return true;
     } catch (error) {
@@ -137,7 +137,7 @@ class BackupManager {
   async readBackupFile(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      
+
       reader.onload = (event) => {
         try {
           const data = JSON.parse(event.target.result);
@@ -146,11 +146,11 @@ class BackupManager {
           reject(new Error('Dosya JSON formatında değil'));
         }
       };
-      
+
       reader.onerror = () => {
         reject(new Error('Dosya okunamadı'));
       };
-      
+
       reader.readAsText(file);
     });
   }

@@ -1,0 +1,141 @@
+# ===========================================
+# KIRIILMAZLAR PANEL - SECURITY HEADERS
+# Content Security Policy and security headers
+# ===========================================
+
+name: 🛡️ Security Hardening
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  NODE_ENV: production
+
+jobs:
+  # ===========================================
+  # CONTENT SECURITY POLICY
+  # ===========================================
+  security-headers:
+    name: 🛡️ Security Headers Setup
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🔧 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: 📦 Install Dependencies
+      run: npm ci
+
+    - name: 🛡️ Generate Security Headers
+      run: |
+        mkdir -p public/security
+        
+        # Content Security Policy
+        cat > public/security/csp.json << 'EOF'
+        {
+          "default-src": "'self'",
+          "script-src": [
+            "'self'",
+            "'unsafe-inline'",
+            "'unsafe-eval'",
+            "https://cdn.jsdelivr.net",
+            "https://unpkg.com"
+          ],
+          "style-src": [
+            "'self'",
+            "'unsafe-inline'",
+            "https://fonts.googleapis.com",
+            "https://cdn.jsdelivr.net"
+          ],
+          "font-src": [
+            "'self'",
+            "https://fonts.gstatic.com",
+            "data:"
+          ],
+          "img-src": [
+            "'self'",
+            "data:",
+            "blob:",
+            "https:",
+            "http:"
+          ],
+          "connect-src": [
+            "'self'",
+            "https://api.kirilmazlar.com",
+            "wss://api.kirilmazlar.com"
+          ],
+          "frame-src": "'none'",
+          "object-src": "'none'",
+          "base-uri": "'self'",
+          "form-action": "'self'",
+          "upgrade-insecure-requests": true
+        }
+        EOF
+        
+        # Security Headers Configuration
+        cat > public/security/headers.json << 'EOF'
+        {
+          "X-Content-Type-Options": "nosniff",
+          "X-Frame-Options": "DENY",
+          "X-XSS-Protection": "1; mode=block",
+          "Referrer-Policy": "strict-origin-when-cross-origin",
+          "Permissions-Policy": "geolocation=(), microphone=(), camera=(), payment=()",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload"
+        }
+        EOF
+
+    - name: 🔒 HTTPS Enforcement Configuration
+      run: |
+        # Create HTTPS enforcement middleware
+        cat > src/security/httpsEnforcement.js << 'EOF'
+        /**
+         * HTTPS Enforcement Middleware
+         * Forces HTTPS in production environments
+         */
+        
+        class HTTPSEnforcement {
+          static enforce() {
+            if (typeof window !== 'undefined' && window.location.protocol !== 'https:') {
+              if (process.env.NODE_ENV === 'production') {
+                window.location.replace(`https:${window.location.href.substring(window.location.protocol.length)}`);
+              }
+            }
+          }
+          
+          static isSecure() {
+            if (typeof window === 'undefined') return true;
+            return window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+          }
+          
+          static enforceSecureCookies() {
+            if (typeof document !== 'undefined' && this.isSecure()) {
+              // Ensure all cookies are secure
+              const cookies = document.cookie.split(';');
+              cookies.forEach(cookie => {
+                if (cookie.trim() && !cookie.includes('Secure')) {
+                  console.warn('Insecure cookie detected:', cookie.trim());
+                }
+              });
+            }
+          }
+        }
+        
+        export default HTTPSEnforcement;
+        EOF
+
+    - name: 📤 Store Security Configuration
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-config
+        path: public/security/
+        retention-days: 30

@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import storage from '@core/storage';
+import Icon from '@shared/components/AppIcon';
+import Header from '@shared/components/ui/Header';
+import { useCallback, useEffect, useState } from 'react';
+import { PageLoading } from '../../../../components/ui/LoadingSystem';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { useModal } from '../../../../contexts/ModalContext';
 import { useNotification } from '../../../../contexts/NotificationContext';
-import Header from '@shared/components/ui/Header';
-import Icon from '@shared/components/AppIcon';
-import SiparisGecmisi from './components/SiparisGecmisi';
-import SiparisIptalModali from './components/SiparisIptalModali';
-import SiparisDetayModali from './components/SiparisDetayModali';
-import ArsivlenmisModali from './components/ArsivlenmisModali';
 import orderService from '../../../../services/orderService';
 import orderCleanupUtil from '../../../../utils/orderCleanupUtil';
-import storage from '@core/storage';
+import ArsivlenmisModali from './components/ArsivlenmisModali';
+import SiparisGecmisi from './components/SiparisGecmisi';
+import SiparisIptalModali from './components/SiparisIptalModali';
 
 const CustomerOrders = () => {
   const { user, userProfile, loading: authLoading } = useAuth();
@@ -30,22 +30,22 @@ const CustomerOrders = () => {
   });
 
   const calculateStats = useCallback((orders) => {
-    const activeOrders = orders.filter(order => 
+    const activeOrders = orders.filter(order =>
       !['Teslim Edildi', 'İptal Edildi'].includes(order.status)
     ).length;
-    
-    const completedOrders = orders.filter(order => 
+
+    const completedOrders = orders.filter(order =>
       order.status === 'Teslim Edildi'
     ).length;
-    
-    const cancelledOrders = orders.filter(order => 
+
+    const cancelledOrders = orders.filter(order =>
       order.status === 'İptal Edildi'
     ).length;
-    
+
     const totalSpent = orders
       .filter(order => order.status === 'Teslim Edildi')
       .reduce((sum, order) => sum + (order.total || 0), 0);
-    
+
     setStats({
       totalOrders: orders.length,
       activeOrders,
@@ -58,31 +58,43 @@ const CustomerOrders = () => {
   const loadOrders = useCallback(async () => {
     try {
       setLoading(true);
-      
-      // Basit test - sadece customer_orders storage'ından oku
-      const loadedOrders = await storage.get('customer_orders', []);
-      
+
+      if (!userProfile?.id) {
+        console.log('⚠️  User profile veya ID yok, siparişler yüklenemez');
+        setOrders([]);
+        return;
+      }
+
+      // Tüm siparişleri al ve debug et
+      const allOrders = await storage.get('customer_orders', []);
+      console.log('🔍 DEBUG - Tüm customer_orders:', allOrders);
+      console.log('🔍 DEBUG - Current user ID:', userProfile.id);
+
+      // OrderService kullanarak müşteriye özel siparişleri yükle
+      const loadedOrders = await orderService.getByCustomerId(userProfile.id);
+      console.log('🔍 DEBUG - Filtered orders for user:', loadedOrders);
+
       setOrders(loadedOrders);
-      
+
       // İstatistikleri hesapla
       calculateStats(loadedOrders);
-      
-      console.log('✅ Sipariş verileri yüklendi:', loadedOrders.length);
+
+      console.log(`✅ Customer ${userProfile.id} için ${loadedOrders.length} sipariş yüklendi`);
     } catch (error) {
       console.error('❌ Sipariş yükleme hatası:', error);
       showError('Siparişler yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);
     }
-  }, [showError, calculateStats]);
+  }, [userProfile?.id, showError, calculateStats]);
 
   useEffect(() => {
     if (user && userProfile) {
       loadOrders();
-      
+
       // Sadece customer_orders storage'ını dinle
       const unsubscribeCustomerOrders = storage.subscribe('customer_orders', loadOrders);
-      
+
       return () => {
         unsubscribeCustomerOrders();
       };
@@ -92,14 +104,14 @@ const CustomerOrders = () => {
   const handleCancelOrder = async (orderId, reason) => {
     try {
       const updatedOrder = await orderService.cancel(orderId, reason);
-      
+
       if (!updatedOrder) {
         throw new Error('Sipariş bulunamadı');
       }
-      
+
       // Siparişleri yeniden yükle
       await loadOrders();
-      
+
       showSuccess('Sipariş başarıyla iptal edildi');
       return true;
     } catch (error) {
@@ -123,10 +135,10 @@ const CustomerOrders = () => {
     if (confirmed) {
       try {
         const cleanedCount = await orderCleanupUtil.cleanupOldOrders(30);
-        
+
         // Siparişleri yeniden yükle
         await loadOrders();
-        
+
         showSuccess(`${cleanedCount} eski sipariş başarıyla temizlendi`);
       } catch (error) {
         console.error('Error cleaning up old orders:', error);
@@ -149,10 +161,10 @@ const CustomerOrders = () => {
     if (confirmed) {
       try {
         const archivedCount = await orderCleanupUtil.archiveCompletedOrders();
-        
+
         // Siparişleri yeniden yükle
         await loadOrders();
-        
+
         showSuccess(`${archivedCount} tamamlanan sipariş başarıyla arşivlendi`);
       } catch (error) {
         console.error('Error archiving completed orders:', error);
@@ -169,15 +181,7 @@ const CustomerOrders = () => {
   };
 
   if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-green-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p className="text-gray-600 font-medium">Siparişleriniz yükleniyor...</p>
-          <p className="text-gray-500 text-sm mt-2">Lütfen bekleyin, sipariş bilgileri hazırlanıyor</p>
-        </div>
-      </div>
-    );
+    return <PageLoading isLoading={true} loadingText="Siparişleriniz yükleniyor..." />;
   }
 
   if (!user || !userProfile) {
@@ -218,7 +222,7 @@ const CustomerOrders = () => {
                 <Icon name="Archive" size={18} />
                 <span>Tamamlananları Arşivle</span>
               </button>
-              
+
               <button
                 onClick={() => setShowArchivedModal(true)}
                 className="border-2 border-purple-600 text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-600/10 transition-colors flex items-center space-x-2"
@@ -226,7 +230,7 @@ const CustomerOrders = () => {
                 <Icon name="Inbox" size={18} />
                 <span>Arşivi Görüntüle</span>
               </button>
-              
+
               <button
                 onClick={handleCleanupOldOrders}
                 className="border-2 border-orange-600 text-orange-600 px-4 py-2 rounded-lg hover:bg-orange-600/10 transition-colors flex items-center space-x-2"
@@ -234,7 +238,7 @@ const CustomerOrders = () => {
                 <Icon name="Trash2" size={18} />
                 <span>Eski Siparişleri Temizle</span>
               </button>
-              
+
               <button
                 onClick={loadOrders}
                 className="border-2 border-blue-600 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-600/10 transition-colors flex items-center space-x-2"

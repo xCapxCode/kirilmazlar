@@ -20,9 +20,29 @@ yarn-debug.log*
 yarn-error.log*
 
 # IDEs
-.vscode/
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/.ropeproject
 .idea/
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Debug and Temporary Files
+debug-*.js
+debug-*.html
+test-*.js
+manual-*.js
+check-*.js
+restore-*.js
+search-*.js
+clear-*.html
+*_backup.*
+*.backup.*
+temp-*
+tmp-*
+
+# Development Utilities
+storage-test.html
+storage-check.html

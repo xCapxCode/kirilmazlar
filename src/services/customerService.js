@@ -1,5 +1,5 @@
 import storage from '@core/storage';
-import orderService from './orderService';
+// Removed orderService import to avoid circular dependency
 
 /**
  * Müşteri yönetimi için servis sınıfı
@@ -42,8 +42,11 @@ class CustomerService {
    */
   async create(customerData) {
     try {
+      console.log('🔄 CustomerService.create başlatılıyor:', customerData);
+
       const customers = await storage.get('customers', []);
-      
+      console.log('📋 Mevcut müşteriler:', customers.length);
+
       const newCustomer = {
         id: Date.now(),
         ...customerData,
@@ -51,19 +54,25 @@ class CustomerService {
         updatedAt: new Date().toISOString(),
         status: 'active'
       };
-      
+
+      console.log('📝 Oluşturulan müşteri objesi:', newCustomer);
+
       const updatedCustomers = [...customers, newCustomer];
+      console.log('💾 Storage\'a kaydedilecek müşteri listesi:', updatedCustomers.length);
+
       await storage.set('customers', updatedCustomers);
-      
+      console.log('✅ Müşteri storage\'a kaydedildi');
+
       // Müşteri hesabını users tablosuna da ekle (giriş yapabilmesi için)
       if (customerData.username && customerData.password) {
         const users = await storage.get('users', []);
-        
+        console.log('👥 Mevcut users:', users.length);
+
         // Aynı email/username kontrolü
-        const existingUser = users.find(u => 
+        const existingUser = users.find(u =>
           u.email === customerData.email || u.username === customerData.username
         );
-        
+
         if (!existingUser) {
           const newUser = {
             id: newCustomer.id,
@@ -76,13 +85,13 @@ class CustomerService {
             createdAt: new Date().toISOString(),
             isActive: true
           };
-          
+
           users.push(newUser);
           await storage.set('users', users);
           console.log('✅ Müşteri user hesabı oluşturuldu:', customerData.email);
         }
       }
-      
+
       return newCustomer;
     } catch (error) {
       console.error('Müşteri oluşturulurken hata:', error);
@@ -100,25 +109,25 @@ class CustomerService {
     try {
       const customers = await storage.get('customers', []);
       const customerIndex = customers.findIndex(customer => customer.id === id);
-      
+
       if (customerIndex === -1) {
         return null;
       }
-      
+
       const updatedCustomer = {
         ...customers[customerIndex],
         ...updateData,
         updatedAt: new Date().toISOString()
       };
-      
+
       customers[customerIndex] = updatedCustomer;
       await storage.set('customers', customers);
-      
+
       // İlgili user hesabını da güncelle
       if (updateData.username || updateData.password || updateData.email || updateData.name) {
         const users = await storage.get('users', []);
         const userIndex = users.findIndex(user => user.customerId === id);
-        
+
         if (userIndex !== -1) {
           const updatedUser = {
             ...users[userIndex],
@@ -127,13 +136,13 @@ class CustomerService {
             ...(updateData.email && { email: updateData.email }),
             ...(updateData.name && { name: updateData.name })
           };
-          
+
           users[userIndex] = updatedUser;
           await storage.set('users', users);
           console.log('✅ Müşteri user hesabı da güncellendi:', updateData.email || updatedUser.email);
         }
       }
-      
+
       return updatedCustomer;
     } catch (error) {
       console.error(`ID'si ${id} olan müşteri güncellenirken hata:`, error);
@@ -151,26 +160,26 @@ class CustomerService {
       const customers = await storage.get('customers', []);
       const customerToDelete = customers.find(customer => customer.id === id);
       const filteredCustomers = customers.filter(customer => customer.id !== id);
-      
+
       if (filteredCustomers.length === customers.length) {
         return false; // Müşteri bulunamadı
       }
-      
+
       await storage.set('customers', filteredCustomers);
-      
+
       // İlgili user hesabını da sil
       if (customerToDelete && customerToDelete.email) {
         const users = await storage.get('users', []);
-        const filteredUsers = users.filter(user => 
+        const filteredUsers = users.filter(user =>
           user.email !== customerToDelete.email && user.customerId !== id
         );
-        
+
         if (filteredUsers.length !== users.length) {
           await storage.set('users', filteredUsers);
           console.log('✅ Müşteri user hesabı da silindi:', customerToDelete.email);
         }
       }
-      
+
       return true;
     } catch (error) {
       console.error(`ID'si ${id} olan müşteri silinirken hata:`, error);
@@ -186,14 +195,14 @@ class CustomerService {
   async search(query) {
     try {
       const customers = await storage.get('customers', []);
-      
+
       if (!query || query.trim() === '') {
         return customers;
       }
-      
+
       const searchTerm = query.toLowerCase().trim();
-      
-      return customers.filter(customer => 
+
+      return customers.filter(customer =>
         customer.name?.toLowerCase().includes(searchTerm) ||
         customer.email?.toLowerCase().includes(searchTerm) ||
         customer.phone?.includes(searchTerm) ||
@@ -206,14 +215,17 @@ class CustomerService {
   }
 
   /**
-   * Müşterinin sipariş geçmişini getirir
+   * Müşterinin sipariş geçmişini getirir - CROSS-CONTAMINATION SAFE
    * @param {number|string} customerId - Müşteri ID'si
    * @returns {Promise<Array>} - Müşterinin sipariş listesi
    */
   async getCustomerOrders(customerId) {
     try {
-      const orders = await orderService.getAll();
-      return orders.filter(order => order.customerId === customerId);
+      // Import orderService dinamik olarak circular dependency'yi önlemek için
+      const { default: orderService } = await import('./orderService.js');
+
+      // CRITICAL: Use the improved getByCustomerId method
+      return await orderService.getByCustomerId(customerId);
     } catch (error) {
       console.error(`Müşteri ${customerId} siparişleri yüklenirken hata:`, error);
       throw error;
@@ -228,20 +240,20 @@ class CustomerService {
   async getCustomerStats(customerId) {
     try {
       const orders = await this.getCustomerOrders(customerId);
-      
+
       const totalOrders = orders.length;
       const completedOrders = orders.filter(order => order.status === 'Teslim Edildi').length;
       const totalSpent = orders
         .filter(order => order.status === 'Teslim Edildi')
         .reduce((sum, order) => sum + (order.total || 0), 0);
       const averageOrderValue = completedOrders > 0 ? totalSpent / completedOrders : 0;
-      
+
       return {
         totalOrders,
         completedOrders,
         totalSpent,
         averageOrderValue,
-        lastOrderDate: orders.length > 0 ? 
+        lastOrderDate: orders.length > 0 ?
           Math.max(...orders.map(order => new Date(order.orderDate).getTime())) : null
       };
     } catch (error) {
@@ -267,7 +279,7 @@ class CustomerService {
           };
         })
       );
-      
+
       return customersWithStats
         .sort((a, b) => b.totalSpent - a.totalSpent)
         .slice(0, limit);

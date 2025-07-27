@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { useCart } from '../../../../contexts/CartContext';
-import Header from '../../../../shared/components/ui/Header';
-import BottomTabNavigation from '../../../../shared/components/ui/BottomTabNavigation';
 import Icon from '../../../../shared/components/AppIcon';
+import BottomTabNavigation from '../../../../shared/components/ui/BottomTabNavigation';
+import Header from '../../../../shared/components/ui/Header';
 
 console.log('🔥 MusteriProfil module loaded!');
 
 const MusteriProfil = () => {
   console.log('🔥 MusteriProfil component rendering!');
-  
+
   const navigate = useNavigate();
   const { userProfile, signOut } = useAuth();
   const { orders, clearCart } = useCart();
@@ -26,21 +26,36 @@ const MusteriProfil = () => {
     address: 'Atatürk Caddesi No: 123, Kadıköy, İstanbul'
   });
 
-  // İşletme bilgilerini localStorage'dan yükle
+  // Kullanıcı profil bilgilerini yükle
   useEffect(() => {
     // Scroll'u en üste taşı
     window.scrollTo(0, 0);
-    
-    const savedBusinessInfo = localStorage.getItem('businessInfo');
-    if (savedBusinessInfo) {
-      const parsed = JSON.parse(savedBusinessInfo);
-      setBusinessInfo({
-        name: parsed.name || 'Meyve Sebze Marketi',
-        phone: parsed.phone || '0532 123 45 67',
-        address: parsed.address || 'Atatürk Caddesi No: 123, Kadıköy, İstanbul'
-      });
+
+    console.log('👤 Customer Profile useEffect - userProfile:', userProfile);
+
+    // Eğer giriş yapmış kullanıcı varsa, onun bilgilerini kullan
+    if (userProfile) {
+      const customerBusinessInfo = {
+        name: userProfile.companyName || userProfile.name || 'Meyve Sebze Marketi',
+        phone: userProfile.phone || '0532 123 45 67',
+        address: userProfile.address || 'Atatürk Caddesi No: 123, Kadıköy, İstanbul'
+      };
+
+      console.log('📋 Customer business info from userProfile:', customerBusinessInfo);
+      setBusinessInfo(customerBusinessInfo);
+    } else {
+      // Fallback: localStorage'dan yükle
+      const savedBusinessInfo = localStorage.getItem('businessInfo');
+      if (savedBusinessInfo) {
+        const parsed = JSON.parse(savedBusinessInfo);
+        setBusinessInfo({
+          name: parsed.name || 'Meyve Sebze Marketi',
+          phone: parsed.phone || '0532 123 45 67',
+          address: parsed.address || 'Atatürk Caddesi No: 123, Kadıköy, İstanbul'
+        });
+      }
     }
-  }, []);
+  }, [userProfile]);
 
   const handleSignOut = () => {
     clearCart();
@@ -96,7 +111,7 @@ const MusteriProfil = () => {
     <div className="min-h-screen bg-slate-200">
       <Header />
       <BottomTabNavigation />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
           {/* Profil Başlığı */}
@@ -134,7 +149,7 @@ const MusteriProfil = () => {
                       <p className="font-bold text-gray-900">{userProfile?.full_name || userProfile?.name || 'Müşteri'}</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-3">
                     <Icon name="Mail" size={20} className="text-gray-400" />
                     <div>
@@ -142,7 +157,7 @@ const MusteriProfil = () => {
                       <p className="font-bold text-gray-900">{userProfile?.email || 'demo@mail.com'}</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-3">
                     <Icon name="Phone" size={20} className="text-gray-400" />
                     <div>
@@ -150,7 +165,7 @@ const MusteriProfil = () => {
                       <p className="font-bold text-gray-900">{userProfile?.phone || '+90 555 123 4567'}</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-3">
                     <Icon name="MapPin" size={20} className="text-gray-400" />
                     <div>
@@ -175,7 +190,7 @@ const MusteriProfil = () => {
                     </div>
                     <Icon name="ChevronRight" size={16} className="text-gray-400" />
                   </button>
-                  
+
                   <button
                     onClick={() => navigate('/customer/catalog')}
                     className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
@@ -186,7 +201,7 @@ const MusteriProfil = () => {
                     </div>
                     <Icon name="ChevronRight" size={16} className="text-gray-400" />
                   </button>
-                  
+
                   <button
                     onClick={() => setShowPasswordModal(true)}
                     className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
@@ -197,7 +212,7 @@ const MusteriProfil = () => {
                     </div>
                     <Icon name="ChevronRight" size={16} className="text-gray-400" />
                   </button>
-                  
+
                   <button
                     onClick={() => setShowSignOutConfirm(true)}
                     className="w-full flex items-center justify-between p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
@@ -280,20 +295,20 @@ const MusteriProfil = () => {
                 <Icon name="Lock" size={24} className="text-green-600" />
                 <h3 className="text-lg font-semibold text-gray-900">Şifre Değiştir</h3>
               </div>
-              <button 
+              <button
                 onClick={() => setShowPasswordModal(false)}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <Icon name="X" size={20} />
               </button>
             </div>
-            
+
             {passwordError && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
                 {passwordError}
               </div>
             )}
-            
+
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -307,7 +322,7 @@ const MusteriProfil = () => {
                   placeholder="Mevcut şifrenizi girin"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Yeni Şifre
@@ -320,7 +335,7 @@ const MusteriProfil = () => {
                   placeholder="Yeni şifrenizi girin"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Yeni Şifre (Tekrar)
@@ -334,7 +349,7 @@ const MusteriProfil = () => {
                 />
               </div>
             </div>
-            
+
             <div className="flex space-x-3">
               <button
                 onClick={() => setShowPasswordModal(false)}
@@ -348,24 +363,24 @@ const MusteriProfil = () => {
                     setPasswordError('Lütfen tüm alanları doldurun');
                     return;
                   }
-                  
+
                   if (newPassword !== confirmPassword) {
                     setPasswordError('Yeni şifreler eşleşmiyor');
                     return;
                   }
-                  
+
                   if (newPassword.length < 6) {
                     setPasswordError('Şifre en az 6 karakter olmalıdır');
                     return;
                   }
-                  
+
                   // Şifre değiştirme işlemi başarılı
                   setPasswordError('');
                   setCurrentPassword('');
                   setNewPassword('');
                   setConfirmPassword('');
                   setShowPasswordModal(false);
-                  
+
                   // Başarılı mesajı göster
                   const event = new CustomEvent('showToast', {
                     detail: { message: 'Şifreniz başarıyla değiştirildi', type: 'success' }
@@ -380,7 +395,7 @@ const MusteriProfil = () => {
           </div>
         </div>
       )}
-      
+
       {/* Çıkış Onayı */}
       {showSignOutConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
