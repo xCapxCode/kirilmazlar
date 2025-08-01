@@ -3,7 +3,7 @@ const sellerService = {
     return {
       success: true,
       data: {
-        id: 'sub-demo-id',
+        id: `sub-${sellerId}-${Date.now()}`,
         seller_id: sellerId,
         plan_name: 'Pro Plan',
         credits_balance: 1000,
@@ -14,13 +14,11 @@ const sellerService = {
     };
   },
 
-  getCreditTransactions: async (sellerId) => {
+  getCreditTransactions: async () => {
+    // Gerçek işlem geçmişi storage'dan gelecek
     return {
       success: true,
-      data: [
-        { id: 'txn-1', seller_id: sellerId, type: 'purchase', amount: 500, description: 'Initial credits', created_at: new Date().toISOString() },
-        { id: 'txn-2', seller_id: sellerId, type: 'usage', amount: 50, description: 'Customer data access', created_at: new Date().toISOString() }
-      ]
+      data: []
     };
   },
 
@@ -36,12 +34,10 @@ const sellerService = {
   },
 
   getSellerAnalytics: async () => {
+    // Gerçek analitik verileri hesaplanacak
     return {
       success: true,
-      data: [
-        { date: '2023-10-01', profile_views: 150, leads: 20 },
-        { date: '2023-10-02', profile_views: 180, leads: 25 }
-      ]
+      data: []
     };
   },
 
@@ -80,12 +76,12 @@ const sellerService = {
 
   subscribeToSubscriptionChanges: () => {
     // Mock subscription, does nothing
-    return { unsubscribe: () => {} };
+    return { unsubscribe: () => { } };
   },
 
   subscribeToCreditTransactions: () => {
     // Mock subscription, does nothing
-    return { unsubscribe: () => {} };
+    return { unsubscribe: () => { } };
   }
 };
 

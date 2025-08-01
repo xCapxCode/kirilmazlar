@@ -4,7 +4,7 @@ import { useNotification } from '../../../../../../contexts/NotificationContext'
 
 const SiparisDetayModali = ({ order, onClose, onStatusUpdate }) => {
   // Debug: Log order data to understand structure
-  console.log('Order data in modal:', order);
+  logger.info('Order data in modal:', order);
   const { showSuccess, showError } = useNotification();
 
   const formatCurrency = (amount) => {

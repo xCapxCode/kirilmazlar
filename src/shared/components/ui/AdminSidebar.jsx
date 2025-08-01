@@ -1,11 +1,24 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../../../contexts/AuthContext';
+import storage from '../../../core/storage';
 import Icon from '../AppIcon';
 
 const AdminSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const location = useLocation();
+  const { userProfile } = useAuth();
+
+  // Real-time user data update
+  useEffect(() => {
+    const unsubscribe = storage.subscribe('currentUser', () => {
+      // Force re-render when user data changes
+      window.dispatchEvent(new Event('userDataUpdated'));
+    });
+
+    return unsubscribe;
+  }, []);
 
   const navigationSections = [
     {
@@ -85,14 +98,14 @@ const AdminSidebar = () => {
                 </span>
               </Link>
             )}
-            
+
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
               className="hidden lg:block p-1.5 rounded-lg hover:bg-background transition-smooth"
             >
-              <Icon 
-                name={isCollapsed ? 'ChevronRight' : 'ChevronLeft'} 
-                size={16} 
+              <Icon
+                name={isCollapsed ? 'ChevronRight' : 'ChevronLeft'}
+                size={16}
                 className="text-text-secondary"
               />
             </button>
@@ -107,7 +120,7 @@ const AdminSidebar = () => {
                     {section.section}
                   </h3>
                 )}
-                
+
                 <div className="space-y-1">
                   {section.items.map((item) => (
                     <Link
@@ -122,9 +135,9 @@ const AdminSidebar = () => {
                         }
                       `}
                     >
-                      <Icon 
-                        name={item.icon} 
-                        size={20} 
+                      <Icon
+                        name={item.icon}
+                        size={20}
                         strokeWidth={isActive(item.path) ? 2.5 : 2}
                       />
                       {!isCollapsed && (
@@ -132,7 +145,7 @@ const AdminSidebar = () => {
                           {item.label}
                         </span>
                       )}
-                      
+
                       {/* Tooltip for collapsed state */}
                       {isCollapsed && (
                         <div className="absolute left-16 bg-gray-900 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
@@ -155,10 +168,10 @@ const AdminSidebar = () => {
               {!isCollapsed && (
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-text-primary truncate">
-                    Admin User
+                    {userProfile?.name || userProfile?.full_name || 'Admin'}
                   </p>
                   <p className="text-xs text-text-secondary truncate">
-                    admin@demo.com
+                    {userProfile?.email || 'admin@kirilmazlar.com'}
                   </p>
                 </div>
               )}

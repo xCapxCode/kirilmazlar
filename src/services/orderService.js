@@ -1,5 +1,6 @@
 import storage from '@core/storage';
 
+import logger from '@utils/logger';
 /**
  * Sipariş yönetimi için servis sınıfı
  * Sipariş CRUD işlemleri ve senkronizasyon için kullanılır
@@ -52,7 +53,7 @@ class OrderService {
 
       return this.normalizeOrders(allOrders, options);
     } catch (error) {
-      console.error('Siparişler yüklenirken hata:', error);
+      logger.error('Siparişler yüklenirken hata:', error);
       throw error;
     }
   }
@@ -187,7 +188,7 @@ class OrderService {
         source: order.source || 'customer'
       };
     } catch (error) {
-      console.error(`ID'si ${id} olan sipariş yüklenirken hata:`, error);
+      logger.error(`ID'si ${id} olan sipariş yüklenirken hata:`, error);
       throw error;
     }
   }
@@ -228,7 +229,7 @@ class OrderService {
         updatedAt: new Date().toISOString()
       };
 
-      console.log('📦 Yeni sipariş oluşturuluyor:', {
+      logger.info('📦 Yeni sipariş oluşturuluyor:', {
         orderId: newId,
         orderNumber,
         customerId: orderData.customerId,
@@ -246,7 +247,7 @@ class OrderService {
 
       return newOrder;
     } catch (error) {
-      console.error('Sipariş oluşturulurken hata:', error);
+      logger.error('Sipariş oluşturulurken hata:', error);
       throw error;
     }
   }
@@ -270,7 +271,7 @@ class OrderService {
       const sellerOrder = sellerOrders.find(order => order.id === id);
 
       if (!customerOrder && !sellerOrder) {
-        console.error(`ID'si ${id} olan sipariş bulunamadı`);
+        logger.error(`ID'si ${id} olan sipariş bulunamadı`);
         return null;
       }
 
@@ -337,11 +338,11 @@ class OrderService {
       const updatedOrder = updatedCustomerOrders.find(order => order.id === id) ||
         updatedSellerOrders.find(order => order.id === id);
 
-      console.log(`✅ Sipariş durumu güncellendi: ${id} -> ${normalizedStatus}`);
+      logger.info(`✅ Sipariş durumu güncellendi: ${id} -> ${normalizedStatus}`);
 
       return updatedOrder;
     } catch (error) {
-      console.error(`❌ ID'si ${id} olan sipariş durumu güncellenirken hata:`, error);
+      logger.error(`❌ ID'si ${id} olan sipariş durumu güncellenirken hata:`, error);
       throw error;
     }
   }
@@ -370,7 +371,7 @@ class OrderService {
 
       return true;
     } catch (error) {
-      console.error(`ID'si ${id} olan sipariş silinirken hata:`, error);
+      logger.error(`ID'si ${id} olan sipariş silinirken hata:`, error);
       throw error;
     }
   }
@@ -385,7 +386,7 @@ class OrderService {
     try {
       return await this.updateStatus(id, 'cancelled', reason);
     } catch (error) {
-      console.error(`ID'si ${id} olan sipariş iptal edilirken hata:`, error);
+      logger.error(`ID'si ${id} olan sipariş iptal edilirken hata:`, error);
       throw error;
     }
   }
@@ -411,7 +412,7 @@ class OrderService {
 
       return customerOrders.length - realOrders.length;
     } catch (error) {
-      console.error('Test siparişleri temizlenirken hata:', error);
+      logger.error('Test siparişleri temizlenirken hata:', error);
       throw error;
     }
   }
@@ -449,7 +450,6 @@ class OrderService {
 
       const customerOrders = orders.filter(order => {
         const orderCustomerId = String(order.customerId || order.customer_id || '');
-        const orderCustomerEmail = order.customerEmail || order.customer_email || '';
 
         // İlk şart: exact ID match
         if (orderCustomerId === customerIdStr) {
@@ -461,10 +461,10 @@ class OrderService {
         return false;
       });
 
-      console.log(`🔍 Customer ${customerId} için ${customerOrders.length} sipariş bulundu`);
+      logger.info(`🔍 Customer ${customerId} için ${customerOrders.length} sipariş bulundu`);
       return customerOrders;
     } catch (error) {
-      console.error(`Müşteri ID'si ${customerId} olan siparişler yüklenirken hata:`, error);
+      logger.error(`Müşteri ID'si ${customerId} olan siparişler yüklenirken hata:`, error);
       throw error;
     }
   }
@@ -479,7 +479,7 @@ class OrderService {
       const orders = await this.getAll({ sortBy: 'newest' });
       return orders.slice(0, limit);
     } catch (error) {
-      console.error('Son siparişler yüklenirken hata:', error);
+      logger.error('Son siparişler yüklenirken hata:', error);
       throw error;
     }
   }

@@ -77,7 +77,7 @@ const MusteriGecmisiModali = ({ customer, onClose }) => {
       
       setLoading(false);
     } catch (error) {
-      console.error('Müşteri geçmişi yüklenirken hata:', error);
+      logger.error('Müşteri geçmişi yüklenirken hata:', error);
       setLoading(false);
     }
   };

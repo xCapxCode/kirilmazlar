@@ -1,11 +1,12 @@
 {
-  "name": "kirilmazlar-monorepo",
+  "name": "kirilmazlar-panel",
   "version": "1.0.0",
   "type": "module",
   "private": true,
-  "description": "Kırılmazlar Monorepo",
+  "description": "Kırılmazlar Panel System",
   "author": "Kırılmazlar Team",
   "scripts": {
+    "build:auto-task": "cd packages/auto-task-progression && npm run build",
     "dev": "vite --mode development --port 5500",
     "dev:staging": "vite --mode staging --port 5501",
     "build": "vite build --mode production",
@@ -16,6 +17,9 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint:prod": "NODE_ENV=production eslint .",
     "env:check": "node scripts/check-environment.js",
     "env:validate": "node scripts/validate-environment.js",
     "docker:build": "node scripts/docker-manager.js build",
@@ -30,6 +34,8 @@
     "docker:down": "node scripts/docker-manager.js down"
   },
   "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
     "lucide-react": "^0.525.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

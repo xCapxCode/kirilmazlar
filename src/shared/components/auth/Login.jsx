@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { logger } from '../../../utils/productionLogger.js';
 
-const Login = ({ onClose }) => {
+const Login = ({ onClose, isMobile = false }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -25,10 +25,10 @@ const Login = ({ onClose }) => {
         logger.debug('🔄 Kullanıcı rolü:', role);
         if (role === 'admin' || role === 'seller' || role === 'owner') {
           logger.debug('🏃‍♂️ Seller dashboard\'a yönlendiriliyor...');
-          navigate('/seller/dashboard');
+          navigate(isMobile ? '/m/catalog' : '/seller/dashboard');
         } else if (role === 'customer') {
           logger.debug('🏃‍♂️ Customer catalog\'a yönlendiriliyor...');
-          navigate('/customer/catalog');
+          navigate(isMobile ? '/m/catalog' : '/customer/catalog');
         } else {
           logger.debug('🏃‍♂️ Ana sayfaya yönlendiriliyor...');
           navigate('/');
@@ -43,6 +43,122 @@ const Login = ({ onClose }) => {
       setLoading(false);
     }
   };
+
+  // Test hesapları kaldırıldı - Gerçek kullanıcı oluşturma sistemi kullanılıyor
+
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-500 to-green-700 flex flex-col">
+        {/* Mobile Header */}
+        <div className="flex-shrink-0 pt-safe">
+          <div className="px-6 pt-8 pb-4">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <User size={40} className="text-white" />
+              </div>
+              <h1 className="text-2xl font-bold text-white mb-2">Kırılmazlar Mobile</h1>
+              <p className="text-green-100 text-sm">Hesabınızla giriş yapın</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Login Form */}
+        <div className="flex-1 bg-white rounded-t-3xl mt-8 px-6 py-8">
+          <form onSubmit={handleLogin} className="space-y-6">
+            {/* Email Input */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                Kullanıcı Adı veya Email
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <User size={20} className="text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="admin@test.com"
+                  className="w-full pl-12 pr-4 py-4 text-lg border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Password Input */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                Şifre
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Lock size={20} className="text-gray-400" />
+                </div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••"
+                  className="w-full pl-12 pr-12 py-4 text-lg border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center"
+                >
+                  {showPassword ? <EyeOff size={20} className="text-gray-400" /> : <Eye size={20} className="text-gray-400" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
+                <div className="flex items-center space-x-2">
+                  <AlertCircle size={16} className="text-red-500" />
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Login Button */}
+            <button
+              type="submit"
+              disabled={loading || !username || !password}
+              className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-2xl font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-lg"
+            >
+              {loading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Giriş yapılıyor...</span>
+                </>
+              ) : (
+                <>
+                  <ArrowRight size={20} />
+                  <span>Giriş Yap</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Registration Info */}
+          <div className="mt-8 pt-6 border-t border-gray-100">
+            <p className="text-sm text-gray-500 text-center mb-4">
+              Henüz hesabınız yok mu? Kayıt olmak için yönetici ile iletişime geçin.
+            </p>
+          </div>
+
+          {/* Version Info */}
+          <div className="mt-8 text-center">
+            <p className="text-xs text-gray-400">
+              Kırılmazlar Mobile v1.0.0
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -144,10 +260,9 @@ const Login = ({ onClose }) => {
         <div className="mt-6 bg-gray-900 bg-opacity-50 border border-gray-700 rounded-lg p-4 flex items-start space-x-3">
           <Info className="text-gray-400 mt-1" size={20} />
           <div>
-            <h4 className="font-semibold text-gray-200">Test Hesapları:</h4>
+            <h4 className="font-semibold text-gray-200">Bilgi:</h4>
             <p className="text-sm text-gray-400">
-              <strong>Satıcı:</strong> satici@test.com / 1234<br />
-              <strong>Müşteri:</strong> musteri@test.com / 1234
+              Hesap oluşturmak için lütfen yönetici ile iletişime geçin.
             </p>
           </div>
         </div>

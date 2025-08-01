@@ -40,7 +40,7 @@ const RolYonetimiModali = ({ role, onClose, onSave }) => {
       showSuccess(`Rol başarıyla ${role ? 'güncellendi' : 'oluşturuldu'}`);
       onClose();
     } catch (error) {
-      console.error('Rol işlemi hatası:', error);
+      logger.error('Rol işlemi hatası:', error);
       showError(`Rol ${role ? 'güncellenirken' : 'oluşturulurken'} bir hata oluştu`);
     } finally {
       setIsSubmitting(false);

@@ -2,17 +2,17 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { useCart } from '../../../../contexts/CartContext';
+import { useBreakpoint } from '../../../../hooks/useBreakpoint';
 import Icon from '../../../../shared/components/AppIcon';
-import BottomTabNavigation from '../../../../shared/components/ui/BottomTabNavigation';
-import Header from '../../../../shared/components/ui/Header';
 
-console.log('🔥 MusteriProfil module loaded!');
+logger.info('🔥 MusteriProfil module loaded!');
 
 const MusteriProfil = () => {
-  console.log('🔥 MusteriProfil component rendering!');
+  logger.info('🔥 MusteriProfil component rendering!');
 
   const navigate = useNavigate();
   const { userProfile, signOut } = useAuth();
+  const { isMobile } = useBreakpoint();
   const { orders, clearCart } = useCart();
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -31,7 +31,7 @@ const MusteriProfil = () => {
     // Scroll'u en üste taşı
     window.scrollTo(0, 0);
 
-    console.log('👤 Customer Profile useEffect - userProfile:', userProfile);
+    logger.info('👤 Customer Profile useEffect - userProfile:', userProfile);
 
     // Eğer giriş yapmış kullanıcı varsa, onun bilgilerini kullan
     if (userProfile) {
@@ -41,7 +41,7 @@ const MusteriProfil = () => {
         address: userProfile.address || 'Atatürk Caddesi No: 123, Kadıköy, İstanbul'
       };
 
-      console.log('📋 Customer business info from userProfile:', customerBusinessInfo);
+      logger.info('📋 Customer business info from userProfile:', customerBusinessInfo);
       setBusinessInfo(customerBusinessInfo);
     } else {
       // Fallback: localStorage'dan yükle
@@ -109,9 +109,6 @@ const MusteriProfil = () => {
 
   return (
     <div className="min-h-screen bg-slate-200">
-      <Header />
-      <BottomTabNavigation />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
           {/* Profil Başlığı */}

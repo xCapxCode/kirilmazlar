@@ -1,0 +1,11 @@
+{
+  "autonomousPath": "C:\\Users\\BLT\\.autonomous",
+  "projectId": "kirilmazlar-panel",
+  "projectType": "web-application",
+  "config": {
+    "memorySync": 5000,
+    "autoSave": true,
+    "backupOnCrash": true,
+    "logLevel": "DEBUG"
+  }
+}

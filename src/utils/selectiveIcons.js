@@ -4,6 +4,8 @@
  * Sadece kullanılan icon'ları export eder
  */
 
+import logger from '@utils/logger';
+
 // Proje genelinde kullanılan tüm icon'lar
 import {
   AlertCircle,
@@ -220,7 +222,7 @@ export const getIconComponent = (iconName) => {
   if (!icon) {
     // Production'da sessiz fallback, development'ta uyarı
     if (process.env.NODE_ENV === 'development') {
-      console.warn(`⚠️ Icon "${iconName}" bulunamadı! HelpCircle fallback kullanılıyor.`);
+      logger.warn(`⚠️ Icon "${iconName}" bulunamadı! HelpCircle fallback kullanılıyor.`);
     }
     return HelpCircle;
   }

@@ -41,7 +41,7 @@ const GenelAyarlar = () => {
       }
 
     } catch (error) {
-      console.error('❌ Ayarlar yüklenirken hata:', error);
+      logger.error('❌ Ayarlar yüklenirken hata:', error);
       showError?.('Hata', 'Ayarlar yüklenirken bir sorun oluştu');
     } finally {
       setLoading(false);
@@ -54,7 +54,7 @@ const GenelAyarlar = () => {
       await storage.set(settingsType, data);
       showSuccess?.('Kaydedildi', 'Ayarlarınız başarıyla kaydedildi');
     } catch (error) {
-      console.error('❌ Ayar kaydetme hatası:', error);
+      logger.error('❌ Ayar kaydetme hatası:', error);
       showError?.('Hata', 'Ayarlar kaydedilirken bir sorun oluştu');
     } finally {
       setIsSaving(false);

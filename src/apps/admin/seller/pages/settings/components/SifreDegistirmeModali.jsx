@@ -41,7 +41,7 @@ const SifreDegistirmeModali = ({ account, onClose, onSave }) => {
       showSuccess('Şifre başarıyla güncellendi');
       onClose();
     } catch (error) {
-      console.error('Şifre güncelleme hatası:', error);
+      logger.error('Şifre güncelleme hatası:', error);
       showError('Şifre güncellenirken bir hata oluştu');
     } finally {
       setIsSubmitting(false);

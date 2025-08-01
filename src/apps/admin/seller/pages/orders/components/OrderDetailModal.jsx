@@ -45,7 +45,7 @@ const OrderDetailModal = ({ order, onClose, onStatusUpdate }) => {
 
   const handlePrintInvoice = () => {
     // In real app, this would generate and print invoice
-    console.log('Printing invoice for order:', order.id);
+    logger.info('Printing invoice for order:', order.id);
     alert('Print functionality would be implemented here');
   };
 

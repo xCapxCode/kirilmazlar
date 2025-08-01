@@ -5,6 +5,7 @@
  */
 
 import storage from '@core/storage';
+import logger from '@utils/logger';
 import { schemaVersions } from '../schema';
 
 class BackupManager {
@@ -31,7 +32,7 @@ class BackupManager {
    */
   async createBackup() {
     try {
-      console.log('🔄 Veri yedekleme başlatılıyor...');
+      logger.info('🔄 Veri yedekleme başlatılıyor...');
 
       // Tüm verileri topla
       const backupData = {
@@ -62,10 +63,10 @@ class BackupManager {
       // Dosyayı indir
       this.downloadBlob(blob, fileName);
 
-      console.log('✅ Veri yedekleme tamamlandı');
+      logger.info('✅ Veri yedekleme tamamlandı');
       return true;
     } catch (error) {
-      console.error('❌ Veri yedekleme sırasında hata:', error);
+      logger.error('❌ Veri yedekleme sırasında hata:', error);
       return false;
     }
   }
@@ -75,7 +76,7 @@ class BackupManager {
    */
   async restoreBackup(backupFile) {
     try {
-      console.log('🔄 Veri geri yükleme başlatılıyor...');
+      logger.info('🔄 Veri geri yükleme başlatılıyor...');
 
       // Dosyayı oku
       const backupData = await this.readBackupFile(backupFile);
@@ -88,7 +89,7 @@ class BackupManager {
       const backupSchemaVersions = backupData.metadata.schemaVersions || {};
       for (const [dataType, version] of Object.entries(schemaVersions)) {
         if (backupSchemaVersions[dataType] !== version) {
-          console.warn(`⚠️ ${dataType} için şema versiyonu uyumsuz: ${backupSchemaVersions[dataType]} -> ${version}`);
+          logger.warn(`⚠️ ${dataType} için şema versiyonu uyumsuz: ${backupSchemaVersions[dataType]} -> ${version}`);
         }
       }
 
@@ -96,17 +97,17 @@ class BackupManager {
       for (const [dataType, data] of Object.entries(backupData.data)) {
         if (this.dataTypes.includes(dataType)) {
           storage.set(dataType, data);
-          console.log(`✅ ${dataType} verisi geri yüklendi`);
+          logger.info(`✅ ${dataType} verisi geri yüklendi`);
         }
       }
 
       // Şema versiyonlarını güncelle
       storage.set('schema_versions', schemaVersions);
 
-      console.log('✅ Veri geri yükleme tamamlandı');
+      logger.info('✅ Veri geri yükleme tamamlandı');
       return true;
     } catch (error) {
-      console.error('❌ Veri geri yükleme sırasında hata:', error);
+      logger.error('❌ Veri geri yükleme sırasında hata:', error);
       return false;
     }
   }
@@ -127,7 +128,7 @@ class BackupManager {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } else {
-      console.warn('⚠️ Tarayıcı ortamı dışında indirme işlemi yapılamaz');
+      logger.warn('⚠️ Tarayıcı ortamı dışında indirme işlemi yapılamaz');
     }
   }
 

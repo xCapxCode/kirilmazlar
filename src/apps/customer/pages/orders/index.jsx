@@ -1,11 +1,11 @@
 import storage from '@core/storage';
 import Icon from '@shared/components/AppIcon';
-import Header from '@shared/components/ui/Header';
 import { useCallback, useEffect, useState } from 'react';
 import { PageLoading } from '../../../../components/ui/LoadingSystem';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { useModal } from '../../../../contexts/ModalContext';
 import { useNotification } from '../../../../contexts/NotificationContext';
+import { useBreakpoint } from '../../../../hooks/useBreakpoint';
 import orderService from '../../../../services/orderService';
 import orderCleanupUtil from '../../../../utils/orderCleanupUtil';
 import ArsivlenmisModali from './components/ArsivlenmisModali';
@@ -16,6 +16,7 @@ const CustomerOrders = () => {
   const { user, userProfile, loading: authLoading } = useAuth();
   const { showConfirm } = useModal();
   const { showSuccess, showError } = useNotification();
+  const { isMobile } = useBreakpoint();
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -60,28 +61,28 @@ const CustomerOrders = () => {
       setLoading(true);
 
       if (!userProfile?.id) {
-        console.log('⚠️  User profile veya ID yok, siparişler yüklenemez');
+        logger.info('⚠️  User profile veya ID yok, siparişler yüklenemez');
         setOrders([]);
         return;
       }
 
       // Tüm siparişleri al ve debug et
       const allOrders = await storage.get('customer_orders', []);
-      console.log('🔍 DEBUG - Tüm customer_orders:', allOrders);
-      console.log('🔍 DEBUG - Current user ID:', userProfile.id);
+      logger.info('🔍 DEBUG - Tüm customer_orders:', allOrders);
+      logger.info('🔍 DEBUG - Current user ID:', userProfile.id);
 
       // OrderService kullanarak müşteriye özel siparişleri yükle
       const loadedOrders = await orderService.getByCustomerId(userProfile.id);
-      console.log('🔍 DEBUG - Filtered orders for user:', loadedOrders);
+      logger.info('🔍 DEBUG - Filtered orders for user:', loadedOrders);
 
       setOrders(loadedOrders);
 
       // İstatistikleri hesapla
       calculateStats(loadedOrders);
 
-      console.log(`✅ Customer ${userProfile.id} için ${loadedOrders.length} sipariş yüklendi`);
+      logger.info(`✅ Customer ${userProfile.id} için ${loadedOrders.length} sipariş yüklendi`);
     } catch (error) {
-      console.error('❌ Sipariş yükleme hatası:', error);
+      logger.error('❌ Sipariş yükleme hatası:', error);
       showError('Siparişler yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);
@@ -115,7 +116,7 @@ const CustomerOrders = () => {
       showSuccess('Sipariş başarıyla iptal edildi');
       return true;
     } catch (error) {
-      console.error('Error cancelling order:', error);
+      logger.error('Error cancelling order:', error);
       showError('Sipariş iptal edilirken bir hata oluştu');
       return false;
     }
@@ -141,7 +142,7 @@ const CustomerOrders = () => {
 
         showSuccess(`${cleanedCount} eski sipariş başarıyla temizlendi`);
       } catch (error) {
-        console.error('Error cleaning up old orders:', error);
+        logger.error('Error cleaning up old orders:', error);
         showError('Eski siparişler temizlenirken bir hata oluştu');
       }
     }
@@ -167,7 +168,7 @@ const CustomerOrders = () => {
 
         showSuccess(`${archivedCount} tamamlanan sipariş başarıyla arşivlendi`);
       } catch (error) {
-        console.error('Error archiving completed orders:', error);
+        logger.error('Error archiving completed orders:', error);
         showError('Tamamlanan siparişler arşivlenirken bir hata oluştu');
       }
     }
@@ -198,8 +199,6 @@ const CustomerOrders = () => {
 
   return (
     <div className="min-h-screen bg-slate-200">
-      <Header />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Başlık Bandı */}
         <div className="bg-slate-100 rounded-lg shadow-sm border border-gray-200 p-6 mb-8">

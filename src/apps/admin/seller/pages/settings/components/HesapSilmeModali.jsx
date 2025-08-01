@@ -22,7 +22,7 @@ const HesapSilmeModali = ({ account, onClose, onDelete }) => {
       showSuccess('Hesap başarıyla silindi');
       onClose();
     } catch (error) {
-      console.error('Hesap silme hatası:', error);
+      logger.error('Hesap silme hatası:', error);
       showError('Hesap silinirken bir hata oluştu');
     } finally {
       setIsSubmitting(false);

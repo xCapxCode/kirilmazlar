@@ -22,7 +22,7 @@ const SiparisIptalModali = ({ order, onClose, onCancel }) => {
       showSuccess('Siparişiniz başarıyla iptal edildi');
       onClose();
     } catch (error) {
-      console.error('Order cancellation error:', error);
+      logger.error('Order cancellation error:', error);
       showError('Sipariş iptal edilirken bir hata oluştu');
     } finally {
       setIsSubmitting(false);

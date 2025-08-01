@@ -43,7 +43,7 @@ const SellerDashboard = () => {
   const loadDashboardData = async () => {
     try {
       setError(null);
-      console.log('🔄 Dashboard verileri yükleniyor...');
+      logger.info('🔄 Dashboard verileri yükleniyor...');
 
       const [products, orders, customerOrders, customers] = await Promise.all([
         storage.get('products', []),
@@ -61,7 +61,7 @@ const SellerDashboard = () => {
         }
       });
 
-      console.log('📊 Dashboard veriler alındı:', {
+      logger.info('📊 Dashboard veriler alındı:', {
         productsCount: products.length,
         ordersCount: orders.length,
         customerOrdersCount: customerOrders.length,
@@ -73,7 +73,7 @@ const SellerDashboard = () => {
       setDashboardData(dashboardStats);
 
     } catch (error) {
-      console.error('❌ Dashboard data loading error:', error);
+      logger.error('❌ Dashboard data loading error:', error);
       setError('Dashboard verileri yüklenirken hata oluştu');
     } finally {
       setLoading(false);
@@ -165,7 +165,7 @@ const SellerDashboard = () => {
       return dashboardData;
 
     } catch (error) {
-      console.error('Dashboard istatistik hesaplama hatası:', error);
+      logger.error('Dashboard istatistik hesaplama hatası:', error);
 
       // Fallback demo verileri
       return {

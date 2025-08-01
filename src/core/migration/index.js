@@ -6,6 +6,7 @@
  */
 
 import storage from '@core/storage';
+import logger from '@utils/logger';
 import { schemaVersions } from '../schema';
 
 class MigrationManager {
@@ -23,19 +24,19 @@ class MigrationManager {
    * Tüm veri tiplerinin migrasyonunu gerçekleştirir
    */
   async migrateAll() {
-    console.log('🔄 Veri migrasyonu başlatılıyor...');
+    logger.info('🔄 Veri migrasyonu başlatılıyor...');
 
     try {
       // Mevcut versiyon bilgilerini al
       const currentVersions = storage.get('schema_versions', {});
-      console.log('📊 Mevcut şema versiyonları:', currentVersions);
+      logger.info('📊 Mevcut şema versiyonları:', currentVersions);
 
       // Her veri tipi için migrasyon yap
       for (const [dataType, latestVersion] of Object.entries(schemaVersions)) {
         const currentVersion = currentVersions[dataType] || '0.0';
 
         if (currentVersion !== latestVersion) {
-          console.log(`🔄 ${dataType} verisi için migrasyon yapılıyor: ${currentVersion} -> ${latestVersion}`);
+          logger.info(`🔄 ${dataType} verisi için migrasyon yapılıyor: ${currentVersion} -> ${latestVersion}`);
           await this.migrateDataType(dataType, currentVersion, latestVersion);
 
           // Versiyon bilgisini güncelle
@@ -45,11 +46,11 @@ class MigrationManager {
 
       // Güncellenmiş versiyon bilgilerini kaydet
       storage.set('schema_versions', currentVersions);
-      console.log('✅ Veri migrasyonu tamamlandı');
+      logger.info('✅ Veri migrasyonu tamamlandı');
 
       return true;
     } catch (error) {
-      console.error('❌ Veri migrasyonu sırasında hata:', error);
+      logger.error('❌ Veri migrasyonu sırasında hata:', error);
       return false;
     }
   }
@@ -59,7 +60,7 @@ class MigrationManager {
    */
   async migrateDataType(dataType, fromVersion, toVersion) {
     if (!this.migrations[dataType]) {
-      console.warn(`⚠️ ${dataType} için migrasyon stratejisi bulunamadı`);
+      logger.warn(`⚠️ ${dataType} için migrasyon stratejisi bulunamadı`);
       return false;
     }
 
@@ -68,7 +69,7 @@ class MigrationManager {
       const data = storage.get(dataType, []);
 
       if (!data || (Array.isArray(data) && data.length === 0)) {
-        console.log(`ℹ️ ${dataType} için veri bulunamadı, migrasyon gerekmiyor`);
+        logger.info(`ℹ️ ${dataType} için veri bulunamadı, migrasyon gerekmiyor`);
         return true;
       }
 
@@ -78,10 +79,10 @@ class MigrationManager {
       // Güncellenmiş veriyi kaydet
       storage.set(dataType, migratedData);
 
-      console.log(`✅ ${dataType} verisi başarıyla migrate edildi`);
+      logger.info(`✅ ${dataType} verisi başarıyla migrate edildi`);
       return true;
     } catch (error) {
-      console.error(`❌ ${dataType} verisi migrate edilirken hata:`, error);
+      logger.error(`❌ ${dataType} verisi migrate edilirken hata:`, error);
       return false;
     }
   }

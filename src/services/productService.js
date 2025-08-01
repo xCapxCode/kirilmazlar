@@ -1,5 +1,6 @@
 import storage from '@core/storage';
 
+import logger from '@utils/logger';
 /**
  * Ürün yönetimi için servis sınıfı
  * Ürün CRUD işlemleri ve senkronizasyon için kullanılır
@@ -24,7 +25,7 @@ class ProductService {
       
       return products;
     } catch (error) {
-      console.error('Ürünler yüklenirken hata:', error);
+      logger.error('Ürünler yüklenirken hata:', error);
       throw error;
     }
   }
@@ -39,7 +40,7 @@ class ProductService {
       const products = await storage.get('products', []);
       return products.find(product => product.id === id) || null;
     } catch (error) {
-      console.error(`ID'si ${id} olan ürün yüklenirken hata:`, error);
+      logger.error(`ID'si ${id} olan ürün yüklenirken hata:`, error);
       throw error;
     }
   }
@@ -84,11 +85,11 @@ class ProductService {
       // Gerçek zamanlı senkronizasyon için storage event'i tetikle
       storage.notify('products', updatedProducts);
       
-      console.log(`✅ Yeni ürün oluşturuldu: ${newId} -> ${newProduct.name}`);
+      logger.info(`✅ Yeni ürün oluşturuldu: ${newId} -> ${newProduct.name}`);
       
       return newProduct;
     } catch (error) {
-      console.error('Ürün oluşturulurken hata:', error);
+      logger.error('Ürün oluşturulurken hata:', error);
       throw error;
     }
   }
@@ -133,11 +134,11 @@ class ProductService {
       // Gerçek zamanlı senkronizasyon için storage event'i tetikle
       storage.notify('products', updatedProducts);
       
-      console.log(`✅ Ürün güncellendi: ${id} -> ${updatedProduct.name}`);
+      logger.info(`✅ Ürün güncellendi: ${id} -> ${updatedProduct.name}`);
       
       return updatedProduct;
     } catch (error) {
-      console.error(`ID'si ${id} olan ürün güncellenirken hata:`, error);
+      logger.error(`ID'si ${id} olan ürün güncellenirken hata:`, error);
       throw error;
     }
   }
@@ -179,11 +180,11 @@ class ProductService {
       // Gerçek zamanlı senkronizasyon için storage event'i tetikle
       storage.notify('products', updatedProducts);
       
-      console.log(`✅ Ürün durumu güncellendi: ${id} -> ${status} (isActive: ${isActive})`);
+      logger.info(`✅ Ürün durumu güncellendi: ${id} -> ${status} (isActive: ${isActive})`);
       
       return updatedProduct;
     } catch (error) {
-      console.error(`ID'si ${id} olan ürün durumu güncellenirken hata:`, error);
+      logger.error(`ID'si ${id} olan ürün durumu güncellenirken hata:`, error);
       throw error;
     }
   }
@@ -207,11 +208,11 @@ class ProductService {
       // Gerçek zamanlı senkronizasyon için storage event'i tetikle
       storage.notify('products', updatedProducts);
       
-      console.log(`✅ Ürün silindi: ${id}`);
+      logger.info(`✅ Ürün silindi: ${id}`);
       
       return true;
     } catch (error) {
-      console.error(`ID'si ${id} olan ürün silinirken hata:`, error);
+      logger.error(`ID'si ${id} olan ürün silinirken hata:`, error);
       throw error;
     }
   }
@@ -226,7 +227,7 @@ class ProductService {
       const products = await storage.get('products', []);
       return products.filter(product => product.category === categoryName);
     } catch (error) {
-      console.error(`Kategori ${categoryName} için ürünler yüklenirken hata:`, error);
+      logger.error(`Kategori ${categoryName} için ürünler yüklenirken hata:`, error);
       throw error;
     }
   }
@@ -242,7 +243,7 @@ class ProductService {
         product.stock <= (product.minStock || 5)
       );
     } catch (error) {
-      console.error('Düşük stoklu ürünler yüklenirken hata:', error);
+      logger.error('Düşük stoklu ürünler yüklenirken hata:', error);
       throw error;
     }
   }

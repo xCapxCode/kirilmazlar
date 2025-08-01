@@ -38,7 +38,7 @@ const LandingPage = () => {
           });
         }
       } catch (error) {
-        console.error('Business info loading error:', error);
+        logger.error('Business info loading error:', error);
         setBusinessInfo({
           name: 'KIRILMAZLAR',
           logo: null,
@@ -69,7 +69,7 @@ const LandingPage = () => {
           setPopularProducts([]);
         }
       } catch (error) {
-        console.error('Ürünler yüklenirken hata:', error);
+        logger.error('Ürünler yüklenirken hata:', error);
         setPopularProducts([]);
       }
     };

@@ -58,7 +58,7 @@ const YeniHesapModali = ({ onClose, onSave }) => {
       showSuccess('Yeni hesap başarıyla oluşturuldu');
       onClose();
     } catch (error) {
-      console.error('Hesap oluşturma hatası:', error);
+      logger.error('Hesap oluşturma hatası:', error);
       showError('Hesap oluşturulurken bir hata oluştu');
     } finally {
       setIsSubmitting(false);

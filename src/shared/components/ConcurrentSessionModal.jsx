@@ -40,7 +40,7 @@ const ConcurrentSessionModal = () => {
       await signOut();
       setIsVisible(false);
     } catch (error) {
-      console.error('Force logout failed:', error);
+      logger.error('Force logout failed:', error);
     } finally {
       setIsLoggingOut(false);
     }

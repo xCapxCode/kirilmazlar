@@ -22,7 +22,7 @@ const CustomerStatusModal = ({ customer, onClose, onUpdateStatus }) => {
       await onUpdateStatus(customer.id, selectedStatus, reason);
       onClose();
     } catch (error) {
-      console.error('Error updating customer status:', error);
+      logger.error('Error updating customer status:', error);
       showError('Müşteri durumu güncellenirken bir hata oluştu');
     } finally {
       setIsSubmitting(false);

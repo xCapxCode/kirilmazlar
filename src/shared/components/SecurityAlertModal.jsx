@@ -50,10 +50,10 @@ const SecurityAlertModal = () => {
   const handleViewDetails = () => {
     // Show detailed security information
     const recentEvents = securityMonitorService.getRecentSecurityEvents(10);
-    console.log('🔒 Recent Security Events:', recentEvents);
+    logger.info('🔒 Recent Security Events:', recentEvents);
 
     const stats = securityMonitorService.getSecurityStatistics();
-    console.log('🔒 Security Statistics:', stats);
+    logger.info('🔒 Security Statistics:', stats);
   };
 
   const getSeverityColor = (severity) => {

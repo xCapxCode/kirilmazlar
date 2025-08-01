@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import Icon from '../AppIcon';
 import NotificationDropdown from './NotificationDropdown';
@@ -43,7 +43,7 @@ const SaticiHeader = () => {
       // Çıkış yaptıktan sonra ana sayfaya yönlendir
       navigate('/', { replace: true });
     } catch (error) {
-      console.error('Logout error:', error);
+      logger.error('Logout error:', error);
     }
   };
 
@@ -98,7 +98,7 @@ const SaticiHeader = () => {
 
                 {/* Dropdown Menu */}
                 {isUserMenuOpen && (
-                  <div 
+                  <div
                     className="absolute right-0 mt-2 w-56 rounded-lg shadow-lg border border-gray-200 py-2 z-dropdown"
                     style={{ backgroundColor: '#FFFFFF' }}
                   >
@@ -107,7 +107,7 @@ const SaticiHeader = () => {
                         {userProfile?.full_name || userProfile?.name || userProfile?.email || 'Kullanıcı'}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {userProfile?.email || 'demo@kirilmazlar.com'}
+                        {userProfile?.email || 'kullanici@example.com'}
                       </p>
                     </div>
 

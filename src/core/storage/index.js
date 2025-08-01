@@ -4,26 +4,33 @@
  * Bu dosya TÜMEL uygulamanın tek veri kaynağıdır
  */
 
+import logger from '@utils/logger';
+
 class KirilmazlarStorage {
   constructor() {
+    // Force consistent prefix regardless of environment
     this.prefix = 'kirilmazlar_';
     this.version = '1.0.0';
     this.channel = null;
-    
+
     // Development mode - use localStorage but with enhanced sync
     this.isDevelopment = import.meta.env.DEV || window.location.hostname === 'localhost';
-    
-    console.log('🔧 Storage Mode:', this.isDevelopment ? 'LOCALSTORAGE (Development with Enhanced Sync)' : 'LOCALSTORAGE (Production)');
-    
+
+    logger.info('🔧 Storage Mode:', this.isDevelopment ? 'LOCALSTORAGE (Development with Enhanced Sync)' : 'LOCALSTORAGE (Production)');
+    logger.info('🏷️ Storage Prefix:', this.prefix);
+    logger.info('🌐 Current Host:', window.location.hostname + ':' + window.location.port);
+
     this.init();
-    this.setupCrossDeviceSync();
+    // TEMPORARILY DISABLE cross-device sync to fix infinite loop
+    // this.setupCrossDeviceSync();
+    this.setupStorageHealthMonitor();
   }
 
   init() {
     // Versiyon kontrolü
     const currentVersion = this.getRaw('data_version');
     if (currentVersion !== this.version) {
-      console.log('🔄 Storage version update:', currentVersion, '->', this.version);
+      logger.info('🔄 Storage version update:', currentVersion, '->', this.version);
       this.migrate();
       this.setRaw('data_version', this.version);
     }
@@ -34,30 +41,30 @@ class KirilmazlarStorage {
     try {
       // BroadcastChannel for same-origin communication
       this.channel = new BroadcastChannel('kirilmazlar_sync');
-      
+
       this.channel.addEventListener('message', (event) => {
-        console.log('📡 Cross-device sync received:', event.data);
+        logger.info('📡 Cross-device sync received:', event.data);
         this.handleRemoteUpdate(event.data);
       });
 
       // Storage event for cross-tab sync
       window.addEventListener('storage', (event) => {
         if (event.key && event.key.startsWith(this.prefix)) {
-          console.log('🔄 Storage event detected:', event.key);
+          logger.info('🔄 Storage event detected:', event.key);
           this.notifyStorageChange(event.key, event.newValue);
         }
       });
 
-      console.log('✅ Cross-device sync enabled');
+      logger.info('✅ Cross-device sync enabled');
     } catch (error) {
-      console.warn('⚠️ Cross-device sync not available:', error);
+      logger.warn('⚠️ Cross-device sync not available:', error);
     }
   }
 
   // Handle remote updates from other devices
   handleRemoteUpdate(data) {
     const { key, value, timestamp, deviceId, source } = data;
-    
+
     // Don't process our own updates
     const currentDeviceId = this.getDeviceId();
     if (deviceId === currentDeviceId) return;
@@ -70,15 +77,15 @@ class KirilmazlarStorage {
       } else {
         localStorage.setItem(this.prefix + key, value);
       }
-      console.log('✅ Applied localStorage update from remote:', key, 'source:', source || 'unknown');
-      
+      logger.info('✅ Applied localStorage update from remote:', key, 'source:', source || 'unknown');
+
       // Notify local components
       window.dispatchEvent(new CustomEvent('storage_remote_update', {
         detail: { key: this.prefix + key, value, timestamp, deviceId, source }
       }));
-      
+
     } catch (error) {
-      console.error('❌ Failed to apply remote update:', error);
+      logger.error('❌ Failed to apply remote update:', error);
     }
   }
 
@@ -96,14 +103,14 @@ class KirilmazlarStorage {
         type: 'storage_update',
         source: 'localStorage'
       };
-      
+
       this.channel.postMessage(message);
-      
+
       if (this.isDevelopment) {
-        console.log('📡 Broadcasting localStorage change:', key);
+        logger.info('📡 Broadcasting localStorage change:', key);
       }
     } catch (error) {
-      console.error('❌ Broadcast failed:', error);
+      logger.error('❌ Broadcast failed:', error);
     }
   }
 
@@ -113,6 +120,9 @@ class KirilmazlarStorage {
     if (!deviceId) {
       deviceId = 'device_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
       this.setRaw('device_id', deviceId);
+
+      // İlk kez cihaz ID oluşturulduğunda storage'ı temizle
+      this.clearAllData();
     }
     return deviceId;
   }
@@ -120,8 +130,8 @@ class KirilmazlarStorage {
   // Notify about storage changes
   notifyStorageChange(fullKey, newValue) {
     window.dispatchEvent(new CustomEvent('kirilmazlar_storage_change', {
-      detail: { 
-        key: fullKey, 
+      detail: {
+        key: fullKey,
         value: newValue,
         timestamp: Date.now()
       }
@@ -130,13 +140,18 @@ class KirilmazlarStorage {
 
   // Raw storage operations - always use localStorage
   getRaw(key) {
-    return localStorage.getItem(this.prefix + key);
+    const value = localStorage.getItem(this.prefix + key);
+    if (this.isDevelopment) {
+      logger.debug(`🔍 Storage Read: ${key}`, value);
+    }
+    return value;
   }
 
   setRaw(key, value) {
     localStorage.setItem(this.prefix + key, value);
     // Enhanced sync in development
     if (this.isDevelopment) {
+      logger.debug(`💾 Storage Write: ${key}`, value);
       this.broadcastChange(key, value);
     }
   }
@@ -144,8 +159,64 @@ class KirilmazlarStorage {
   removeRaw(key) {
     localStorage.removeItem(this.prefix + key);
     if (this.isDevelopment) {
+      logger.debug(`🗑️ Storage Delete: ${key}`);
       this.broadcastChange(key, null);
     }
+  }
+
+  // Storage sağlığını izle
+  setupStorageHealthMonitor() {
+    if (this.isDevelopment) {
+      setInterval(() => {
+        this.checkStorageHealth();
+      }, 5000); // Her 5 saniyede bir kontrol et
+    }
+  }
+
+  // Storage sağlık kontrolü
+  checkStorageHealth() {
+    try {
+      const totalItems = Object.keys(localStorage)
+        .filter(key => key.startsWith(this.prefix))
+        .length;
+
+      const usedSpace = this.getStorageUsage();
+      const maxSpace = 5 * 1024 * 1024; // 5MB
+
+      logger.info('📊 Storage Health Check:', {
+        totalItems,
+        usedSpace: `${(usedSpace / 1024 / 1024).toFixed(2)}MB`,
+        maxSpace: '5MB',
+        usage: `${((usedSpace / maxSpace) * 100).toFixed(2)}%`
+      });
+
+      if (usedSpace > maxSpace * 0.8) {
+        logger.warn('⚠️ Storage space is running low!');
+      }
+    } catch (error) {
+      logger.error('❌ Storage health check failed:', error);
+    }
+  }
+
+  // Storage kullanımını hesapla
+  getStorageUsage() {
+    let totalSize = 0;
+    Object.keys(localStorage)
+      .filter(key => key.startsWith(this.prefix))
+      .forEach(key => {
+        totalSize += localStorage.getItem(key).length * 2; // UTF-16
+      });
+    return totalSize;
+  }
+
+  // Tüm storage verilerini temizle
+  clearAllData() {
+    Object.keys(localStorage)
+      .filter(key => key.startsWith(this.prefix))
+      .forEach(key => {
+        localStorage.removeItem(key);
+      });
+    logger.info('🧹 Storage cleared');
   }
 
   // JSON operations with error handling
@@ -155,16 +226,16 @@ class KirilmazlarStorage {
       if (raw === null || raw === 'undefined' || raw === 'null') {
         return defaultValue;
       }
-      
+
       // Raw string değerler için (data_version, device_id vb.)
       if (key === 'data_version' || key === 'device_id') {
         return raw;
       }
-      
+
       // JSON olarak parse et
       return JSON.parse(raw);
     } catch (error) {
-      console.error(`Storage get error for key "${key}":`, error);
+      logger.error(`Storage get error for key "${key}":`, error);
       // Parse hatası durumunda raw değeri döndür
       const raw = this.getRaw(key);
       if (raw && typeof raw === 'string') {
@@ -177,36 +248,36 @@ class KirilmazlarStorage {
   set(key, value) {
     try {
       let finalValue;
-      
+
       // Raw string değerler için (data_version, device_id vb.)
       if (key === 'data_version' || key === 'device_id') {
         finalValue = value.toString();
       } else {
         finalValue = JSON.stringify(value);
       }
-      
+
       this.setRaw(key, finalValue);
-      
+
       // Broadcast to other devices
       this.broadcastChange(key, finalValue);
-      
+
       // Trigger local events
       this.triggerChangeEvent(key, value);
-      
-      console.log('💾 Stored with cross-device sync:', key);
+
+      logger.info('💾 Stored with cross-device sync:', key);
       return true;
     } catch (error) {
-      console.error(`Storage set error for key "${key}":`, error);
+      logger.error(`Storage set error for key "${key}":`, error);
       return false;
     }
   }
 
   remove(key) {
     this.removeRaw(key);
-    
+
     // Broadcast removal to other devices  
     this.broadcastChange(key, null);
-    
+
     // Trigger local events
     this.triggerChangeEvent(key, null);
   }
@@ -214,11 +285,11 @@ class KirilmazlarStorage {
   // Cross-tab communication
   triggerChangeEvent(key, value) {
     window.dispatchEvent(new CustomEvent('kirilmazlar_storage_change', {
-      detail: { 
-        key, 
+      detail: {
+        key,
         fullKey: this.prefix + key,
-        value, 
-        timestamp: Date.now() 
+        value,
+        timestamp: Date.now()
       }
     }));
 
@@ -239,8 +310,8 @@ class KirilmazlarStorage {
 
   // Migration from old keys
   migrate() {
-    console.log('🔄 Migrating storage data...');
-    
+    logger.info('🔄 Migrating storage data...');
+
     const migrations = [
       { from: 'products', to: 'products' },
       { from: 'orders', to: 'orders' },
@@ -254,7 +325,7 @@ class KirilmazlarStorage {
     migrations.forEach(({ from, to }) => {
       const oldData = localStorage.getItem(from);
       if (oldData && !this.getRaw(to)) {
-        console.log(`📦 Migrating ${from} -> ${to}`);
+        logger.info(`📦 Migrating ${from} -> ${to}`);
         this.setRaw(to, oldData);
         localStorage.removeItem(from);
       }
@@ -266,8 +337,8 @@ class KirilmazlarStorage {
     // Always clear localStorage
     const keys = Object.keys(localStorage).filter(key => key.startsWith(this.prefix));
     keys.forEach(key => localStorage.removeItem(key));
-    console.log(`🧹 Cleared ${keys.length} localStorage keys`);
-    
+    logger.info(`🧹 Cleared ${keys.length} localStorage keys`);
+
     // Broadcast clear to other windows
     if (this.isDevelopment) {
       this.broadcastChange('storage_cleared', { timestamp: Date.now() });
@@ -284,33 +355,33 @@ class KirilmazlarStorage {
   // Debug info
   debug() {
     const keys = this.getAllKeys();
-    console.log('🔍 KIRILMAZLAR STORAGE DEBUG');
-    console.log('============================');
-    console.log('Mode:', this.isDevelopment ? 'LOCALSTORAGE (Enhanced Dev Sync)' : 'LOCALSTORAGE (Production)');
-    console.log('Version:', this.version);
-    console.log('Keys:', keys.length);
-    
+    logger.info('🔍 KIRILMAZLAR STORAGE DEBUG');
+    logger.info('============================');
+    logger.info('Mode:', this.isDevelopment ? 'LOCALSTORAGE (Enhanced Dev Sync)' : 'LOCALSTORAGE (Production)');
+    logger.info('Version:', this.version);
+    logger.info('Keys:', keys.length);
+
     keys.forEach(key => {
       const rawValue = this.getRaw(key);
-      
+
       // Raw string değerler için
       if (key === 'data_version' || key === 'device_id') {
-        console.log(`  ${key}:`, rawValue);
+        logger.info(`  ${key}:`, rawValue);
         return;
       }
-      
+
       // JSON değerler için parse etmeye çalış
       try {
         const value = JSON.parse(rawValue);
         if (Array.isArray(value)) {
-          console.log(`  ${key}: Array[${value.length}]`);
+          logger.info(`  ${key}: Array[${value.length}]`);
         } else if (typeof value === 'object' && value !== null) {
-          console.log(`  ${key}: Object[${Object.keys(value).length} keys]`);
+          logger.info(`  ${key}: Object[${Object.keys(value).length} keys]`);
         } else {
-          console.log(`  ${key}:`, value);
+          logger.info(`  ${key}:`, value);
         }
       } catch (error) {
-        console.log(`  ${key}: Raw[${rawValue?.length || 0} chars]`);
+        logger.info(`  ${key}: Raw[${rawValue?.length || 0} chars]`);
       }
     });
   }
@@ -323,9 +394,9 @@ class KirilmazlarStorage {
         callback(data);
       }
     };
-    
+
     window.addEventListener('kirilmazlar_storage_change', handler);
-    
+
     return () => {
       window.removeEventListener('kirilmazlar_storage_change', handler);
     };
@@ -346,7 +417,7 @@ let globalStorageInstance = null;
 function getStorageInstance() {
   if (!globalStorageInstance) {
     globalStorageInstance = new KirilmazlarStorage();
-    console.log('🔧 Created SINGLETON storage instance');
+    logger.info('🔧 Created SINGLETON storage instance');
   }
   return globalStorageInstance;
 }
@@ -358,6 +429,37 @@ const storageInstance = getStorageInstance();
 if (typeof window !== 'undefined') {
   window.KirilmazlarStorage = KirilmazlarStorage;
   window.storage = storageInstance;
+
+  // Debug utilities
+  window.storageDebug = {
+    clearAllStorageData: () => {
+      const keys = Object.keys(localStorage);
+      const kirilmazlarKeys = keys.filter(key => key.startsWith('kirilmazlar_'));
+      kirilmazlarKeys.forEach(key => localStorage.removeItem(key));
+      logger.info('🧹 Cleared all Kırılmazlar storage data:', kirilmazlarKeys.length + ' keys');
+      return kirilmazlarKeys;
+    },
+
+    listAllStorageKeys: () => {
+      const keys = Object.keys(localStorage);
+      const kirilmazlarKeys = keys.filter(key => key.startsWith('kirilmazlar_'));
+      logger.info('🔍 All Kırılmazlar storage keys:', kirilmazlarKeys);
+      return kirilmazlarKeys;
+    },
+
+    getStorageInfo: () => {
+      const info = {
+        prefix: storageInstance.prefix,
+        hostname: window.location.hostname,
+        port: window.location.port,
+        isDevelopment: storageInstance.isDevelopment,
+        totalKeys: Object.keys(localStorage).filter(key => key.startsWith('kirilmazlar_')).length
+      };
+      logger.info('📊 Storage Info:', info);
+      return info;
+    }
+  };
+
   window.getStorageInstance = getStorageInstance;
 }
 

@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { useCart } from '../../../../contexts/CartContext';
+import { useBreakpoint } from '../../../../hooks/useBreakpoint';
 import Icon from '../../../../shared/components/AppIcon';
 import Image from '../../../../shared/components/AppImage';
-import Header from '../../../../shared/components/ui/Header';
-import BottomTabNavigation from '../../../../shared/components/ui/BottomTabNavigation';
 
 const ShoppingCartCheckout = () => {
   const navigate = useNavigate();
   const { user, userProfile } = useAuth(); // Auth context'den user bilgisini al
-  const { 
-    cartItems, 
-    updateQuantity, 
-    removeFromCart, 
-    getCartTotal, 
+  const { isMobile } = useBreakpoint();
+  const {
+    cartItems,
+    updateQuantity,
+    removeFromCart,
+    getCartTotal,
     clearCart,
-    addNewOrder 
+    addNewOrder
   } = useCart();
   const [isLoading, setIsLoading] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
@@ -95,7 +95,7 @@ const ShoppingCartCheckout = () => {
     if (!isMinimumMet) return;
 
     setIsLoading(true);
-    
+
     // Create order data with customer information
     const orderData = {
       customerId: userProfile?.id, // Müşteri ID'sini ekle
@@ -122,18 +122,18 @@ const ShoppingCartCheckout = () => {
     // Simulate checkout process
     setTimeout(async () => {
       try {
-        console.log('Sipariş veriliyor - Customer ID:', userProfile?.id, orderData);
+        logger.info('Sipariş veriliyor - Customer ID:', userProfile?.id, orderData);
         const orderNumber = await addNewOrder(orderData);
-        console.log('Sipariş numarası:', orderNumber);
-        
+        logger.info('Sipariş numarası:', orderNumber);
+
         setOrderNumber(orderNumber);
         setOrderConfirmed(true);
         setIsLoading(false);
         clearCart();
-        
-        console.log('Checkout tamamlandı');
+
+        logger.info('Checkout tamamlandı');
       } catch (error) {
-        console.error('Checkout hatası:', error);
+        logger.error('Checkout hatası:', error);
         setIsLoading(false);
       }
     }, 2000);
@@ -142,9 +142,6 @@ const ShoppingCartCheckout = () => {
   if (orderConfirmed) {
     return (
       <div className="min-h-screen bg-slate-200">
-        <Header />
-        <BottomTabNavigation />
-        
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Başlık Bandı */}
           <div className="bg-slate-100 rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
@@ -186,7 +183,7 @@ const ShoppingCartCheckout = () => {
               <Icon name="Package" size={20} />
               <span>Sipariş Takibi</span>
             </Link>
-            
+
             <Link
               to="/customer/catalog"
               className="bg-white border-2 border-green-600 text-green-600 py-4 px-6 rounded-lg font-medium text-center hover:bg-green-50 transition-colors flex items-center justify-center space-x-2"
@@ -203,8 +200,6 @@ const ShoppingCartCheckout = () => {
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-slate-200">
-        <Header />
-        
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Başlık Bandı - Boş sepet için de göster */}
           <div className="bg-slate-100 rounded-lg shadow-sm border border-gray-200 p-6 mb-4">
@@ -227,7 +222,7 @@ const ShoppingCartCheckout = () => {
             </div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Sepetiniz boş</h2>
             <p className="text-gray-600 mb-8">Başlamak için taze ürünler ekleyin</p>
-            
+
             <Link
               to="/customer/catalog"
               className="inline-flex items-center justify-center space-x-2 bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 transition-all"
@@ -237,17 +232,12 @@ const ShoppingCartCheckout = () => {
             </Link>
           </div>
         </div>
-        
-        <BottomTabNavigation />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-slate-200">
-      <Header />
-      <BottomTabNavigation />
-      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Başlık Bandı */}
         <div className="bg-slate-100 rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -298,7 +288,7 @@ const ShoppingCartCheckout = () => {
                       price: Number(item.price) || 0,
                       total: Number(item.total) || (Number(item.price) || 0) * (Number(item.quantity) || 1)
                     };
-                    
+
                     return (
                       <div key={validItem.id} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
                         <div className="flex-shrink-0">
@@ -309,7 +299,7 @@ const ShoppingCartCheckout = () => {
                             fallback="/assets/images/placeholders/product-placeholder.png"
                           />
                         </div>
-                        
+
                         <div className="flex-1 min-w-0">
                           <h3 className="text-sm font-semibold text-gray-900 truncate">{validItem.name}</h3>
                           <p className="text-sm text-gray-500">{validItem.unit}</p>
@@ -317,7 +307,7 @@ const ShoppingCartCheckout = () => {
                             <p className="text-sm font-semibold text-green-600">{formatPrice(validItem.price)}</p>
                           )}
                         </div>
-                        
+
                         <div className="flex items-center space-x-3">
                           <button
                             onClick={() => handleQuantityChange(validItem.id, validItem.quantity - 1)}
@@ -325,11 +315,11 @@ const ShoppingCartCheckout = () => {
                           >
                             <Icon name="Minus" size={16} />
                           </button>
-                          
+
                           <span className="w-12 text-center font-semibold text-gray-900">
                             {validItem.quantity}
                           </span>
-                          
+
                           <button
                             onClick={() => handleQuantityChange(validItem.id, validItem.quantity + 1)}
                             className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-green-100 hover:text-green-600 transition-colors"
@@ -337,13 +327,13 @@ const ShoppingCartCheckout = () => {
                             <Icon name="Plus" size={16} />
                           </button>
                         </div>
-                        
+
                         {showPrices && (
                           <div className="text-right">
                             <p className="text-sm font-semibold text-gray-900">{formatPrice(validItem.total)}</p>
                           </div>
                         )}
-                        
+
                         <button
                           onClick={() => removeFromCart(validItem.id)}
                           className="text-red-500 hover:text-red-700 transition-colors p-1 rounded-lg hover:bg-red-50"
@@ -361,7 +351,7 @@ const ShoppingCartCheckout = () => {
             <div className="space-y-4">
               <div className="bg-slate-100 rounded-lg shadow-sm border border-gray-200 p-4 lg:p-6 sticky top-24">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">Sipariş Özeti</h2>
-                
+
                 <div className="space-y-3 mb-4">
                   {showPrices && (
                     <>
@@ -386,7 +376,7 @@ const ShoppingCartCheckout = () => {
                 {!isMinimumMet && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
                     <p className="text-sm text-yellow-800">
-                      Minimum sipariş tutarı {formatPrice(minimumOrderAmount)}. 
+                      Minimum sipariş tutarı {formatPrice(minimumOrderAmount)}.
                       {formatPrice(minimumOrderAmount - subtotal)} daha eklemelisiniz.
                     </p>
                   </div>
@@ -410,11 +400,10 @@ const ShoppingCartCheckout = () => {
                 <button
                   onClick={handleCheckout}
                   disabled={!isMinimumMet || isLoading}
-                  className={`w-full py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 ${
-                    isMinimumMet && !isLoading
+                  className={`w-full py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 ${isMinimumMet && !isLoading
                       ? 'bg-green-600 text-white hover:bg-green-700'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
+                    }`}
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center space-x-2">

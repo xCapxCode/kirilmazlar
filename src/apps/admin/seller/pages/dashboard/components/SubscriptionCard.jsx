@@ -1,4 +1,3 @@
-import React from 'react';
 import Icon from 'components/AppIcon';
 
 const SubscriptionCard = ({ subscription }) => {
@@ -18,16 +17,16 @@ const SubscriptionCard = ({ subscription }) => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-GB');
+    if (!dateString) return 'Belirtilmemiş';
+    return new Date(dateString).toLocaleDateString('tr-TR');
   };
 
-  const planName = subscription?.plan_name || 'Basic';
-  const status = subscription?.status || 'trial';
-  const monthlyFee = subscription?.monthly_fee || 29.99;
+  const planName = subscription?.plan_name || 'Starter';
+  const status = subscription?.status || 'active';
+  const monthlyFee = subscription?.monthly_fee || 0;
   const expiresAt = subscription?.expires_at;
 
-  const daysUntilExpiry = expiresAt ? 
+  const daysUntilExpiry = expiresAt ?
     Math.ceil((new Date(expiresAt) - new Date()) / (1000 * 60 * 60 * 24)) : 0;
 
   return (
@@ -43,10 +42,10 @@ const SubscriptionCard = ({ subscription }) => {
           {planName} Plan
         </h4>
         <p className="text-3xl font-bold text-primary mb-2">
-          ${monthlyFee}
-          <span className="text-sm text-text-secondary font-normal">/month</span>
+          ₺{monthlyFee.toLocaleString('tr-TR')}
+          <span className="text-sm text-text-secondary font-normal">/ay</span>
         </p>
-        
+
         <div className="flex items-center justify-center">
           <span className={`px-3 py-1 rounded-full text-sm font-medium capitalize ${getStatusColor(status)}`}>
             {status}
@@ -62,14 +61,14 @@ const SubscriptionCard = ({ subscription }) => {
             {subscription?.credits_limit?.toLocaleString() || 'N/A'}
           </span>
         </div>
-        
+
         <div className="flex items-center justify-between text-sm">
           <span className="text-text-secondary">Started</span>
           <span className="font-medium text-text-primary">
             {formatDate(subscription?.started_at)}
           </span>
         </div>
-        
+
         <div className="flex items-center justify-between text-sm">
           <span className="text-text-secondary">
             {status === 'trial' ? 'Trial Expires' : 'Next Billing'}
@@ -120,7 +119,7 @@ const SubscriptionCard = ({ subscription }) => {
             Manage Subscription
           </button>
         )}
-        
+
         <button className="w-full text-text-secondary hover:text-text-primary transition-smooth text-sm">
           View Billing History
         </button>

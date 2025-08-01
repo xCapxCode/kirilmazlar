@@ -23,24 +23,24 @@ const SiparisGecmisi = ({ customerId }) => {
       setLoading(true);
       
       if (!customerId) {
-        console.log('⚠️  Customer ID yok, siparişler yüklenemez');
+        logger.info('⚠️  Customer ID yok, siparişler yüklenemez');
         setOrders([]);
         return;
       }
       
       // Tüm siparişleri al ve debug et
       const allOrders = await storage.get('customer_orders', []);
-      console.log('🔍 SiparisGecmisi DEBUG - Tüm orders:', allOrders);
-      console.log('🔍 SiparisGecmisi DEBUG - Customer ID:', customerId);
+      logger.info('🔍 SiparisGecmisi DEBUG - Tüm orders:', allOrders);
+      logger.info('🔍 SiparisGecmisi DEBUG - Customer ID:', customerId);
       
       // OrderService kullanarak müşteriye özel siparişleri yükle
       const customerOrders = await orderService.getByCustomerId(customerId);
-      console.log('🔍 SiparisGecmisi DEBUG - Filtered orders:', customerOrders);
+      logger.info('🔍 SiparisGecmisi DEBUG - Filtered orders:', customerOrders);
       
       setOrders(customerOrders);
-      console.log(`✅ Customer ${customerId} için ${customerOrders.length} sipariş yüklendi`);
+      logger.info(`✅ Customer ${customerId} için ${customerOrders.length} sipariş yüklendi`);
     } catch (error) {
-      console.error('❌ Error loading orders:', error);
+      logger.error('❌ Error loading orders:', error);
       showError('Siparişler yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);
@@ -83,7 +83,7 @@ const SiparisGecmisi = ({ customerId }) => {
       showSuccess('Sipariş başarıyla iptal edildi');
       return true;
     } catch (error) {
-      console.error('Error cancelling order:', error);
+      logger.error('Error cancelling order:', error);
       showError('Sipariş iptal edilirken bir hata oluştu');
       return false;
     }

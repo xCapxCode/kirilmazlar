@@ -131,6 +131,11 @@ class ErrorTracker {
       try {
         const response = await originalFetch(...args);
 
+        // Development modunda edge-storage hatalarını ignore et
+        if (import.meta.env.DEV && args[0] && args[0].includes('/api/edge-storage')) {
+          return response;
+        }
+
         // Track failed HTTP requests
         if (!response.ok) {
           this.trackError({

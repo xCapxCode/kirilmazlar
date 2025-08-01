@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+import logger from '@utils/logger';
 /**
  * Security Monitor Service
  * P1.3.3 - Session invalidation on security issues
@@ -29,7 +30,7 @@ class SecurityMonitorService {
   startMonitoring() {
     this.monitoringActive = true;
     this.initializeSecurityListeners();
-    console.log('🔒 P1.3.3: Security monitoring started');
+    logger.info('🔒 P1.3.3: Security monitoring started');
   }
 
   /**
@@ -37,7 +38,7 @@ class SecurityMonitorService {
    */
   stopMonitoring() {
     this.monitoringActive = false;
-    console.log('🔒 P1.3.3: Security monitoring stopped');
+    logger.info('🔒 P1.3.3: Security monitoring stopped');
   }
 
   /**
@@ -98,7 +99,7 @@ class SecurityMonitorService {
     };
 
     this.securityEvents.push(event);
-    console.warn(`🚨 P1.3.3: Security event recorded:`, event);
+    logger.warn(`🚨 P1.3.3: Security event recorded:`, event);
 
     // Keep only last 100 events to prevent memory bloat
     if (this.securityEvents.length > 100) {
@@ -344,7 +345,7 @@ class SecurityMonitorService {
     if (newThreatLevel !== this.threatLevel) {
       const previousLevel = this.threatLevel;
       this.threatLevel = newThreatLevel;
-      console.warn(`🚨 P1.3.3: Threat level changed from ${previousLevel} to ${newThreatLevel}`);
+      logger.warn(`🚨 P1.3.3: Threat level changed from ${previousLevel} to ${newThreatLevel}`);
     }
   }
 
@@ -362,7 +363,7 @@ class SecurityMonitorService {
       threatLevel: this.threatLevel
     };
 
-    console.error(`🚨 P1.3.3: Session invalidation triggered:`, invalidationEvent);
+    logger.error(`🚨 P1.3.3: Session invalidation triggered:`, invalidationEvent);
 
     // Dispatch custom event for session invalidation
     const customEvent = new CustomEvent('securitySessionInvalidation', {
@@ -387,7 +388,7 @@ class SecurityMonitorService {
       try {
         callback(event);
       } catch (error) {
-        console.error('🚨 P1.3.3: Error in security callback:', error);
+        logger.error('🚨 P1.3.3: Error in security callback:', error);
       }
     });
   }
@@ -416,7 +417,7 @@ class SecurityMonitorService {
     this.securityEvents = [];
     this.threats.clear();
     this.threatLevel = 'LOW';
-    console.log('🔒 P1.3.3: Security events cleared');
+    logger.info('🔒 P1.3.3: Security events cleared');
   }
 
   /**

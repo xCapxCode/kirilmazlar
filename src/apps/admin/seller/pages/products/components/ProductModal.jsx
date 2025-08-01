@@ -124,7 +124,7 @@ const ProductModal = ({ product, categories, units, onSave, onClose }) => {
       
       onSave(productData);
     } catch (error) {
-      console.error('Error saving product:', error);
+      logger.error('Error saving product:', error);
     } finally {
       setIsSubmitting(false);
     }

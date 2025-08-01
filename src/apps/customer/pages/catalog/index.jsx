@@ -1,7 +1,7 @@
 import storage from '@core/storage';
 import { getProductImagePath } from '@utils/imagePathHelper';
 import { useMemoizedCalculations, useMemoizedCallbacks } from '@utils/memoizationHelpers';
-import { migrateCategoryIds } from '@utils/productLoader';
+// import { migrateCategoryIds } from '@utils/productLoader'; // DEVRE DIŞI - HARDCODED DATA KULLANILMAZ
 import { logger } from '@utils/productionLogger';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -12,8 +12,6 @@ import { useNotification } from '../../../../contexts/NotificationContext';
 import { useBreakpoint } from '../../../../hooks/useBreakpoint';
 
 import Icon from '@shared/components/AppIcon';
-import BottomTabNavigation from '@shared/components/ui/BottomTabNavigation';
-import Header from '@shared/components/ui/Header';
 import CategoryChips from './components/CategoryChips';
 import FilterPanel from './components/FilterPanel';
 import ProductCard from './components/ProductCard';
@@ -62,7 +60,7 @@ const CustomerProductCatalog = () => {
   useEffect(() => {
     // Storage değişikliklerini dinle (unified storage events)
     const handleProductsUpdate = (data) => {
-      console.log('📢 Ürünler güncellendi event alındı');
+      logger.info('📢 Ürünler güncellendi event alındı');
       loadProducts();
     };
 
@@ -99,39 +97,39 @@ const CustomerProductCatalog = () => {
   }, [filteredProductsMemo]);
 
   useEffect(() => {
-    console.log('🔗 URL params useEffect');
+    logger.info('🔗 URL params useEffect');
     // Handle URL search params
     const search = searchParams.get('search');
     const view = searchParams.get('view');
 
     if (search) {
-      console.log('🔍 Search param found:', search);
+      logger.info('🔍 Search param found:', search);
       // Handle search query
     }
 
     if (view === 'categories') {
-      console.log('📂 Categories view requested');
+      logger.info('📂 Categories view requested');
       // Handle categories view
     }
   }, [searchParams]); // URL değiştiğinde çalışsın
 
   const loadProducts = async () => {
-    console.log('🔄 loadProducts called');
-    console.log('📊 DEBUG - Customer Storage durumu:');
-    console.log('Storage mode:', storage.isDevelopment ? 'MEMORY' : 'LOCALSTORAGE');
+    logger.info('🔄 loadProducts called');
+    logger.info('📊 DEBUG - Customer Storage durumu:');
+    logger.info('Storage mode:', storage.isDevelopment ? 'MEMORY' : 'LOCALSTORAGE');
     storage.debug();
 
     setIsLoading(true);
 
     try {
       // CategoryId migration çalıştır
-      await migrateCategoryIds();
+      // await migrateCategoryIds(); // DEVRE DIŞI - HARDCODED DATA KULLANILMAZ
 
       let loadedProducts = [];
 
       // Storage'dan ürünleri yükle (unified storage kullan)
       const savedProducts = storage.get('products', []);
-      console.log('📦 Storage\'dan ürünler alındı:', savedProducts.length, 'adet');
+      logger.info('📦 Storage\'dan ürünler alındı:', savedProducts.length, 'adet');
 
       if (savedProducts && savedProducts.length > 0) {
         // Aktif ürünleri müşteriye göster - daha esnek filtreleme
@@ -146,7 +144,7 @@ const CustomerProductCatalog = () => {
             // Stok kontrolü - 0 stok da göster ama "stokta yok" olarak işaretle
             const hasValidStock = product.stock >= 0; // Negatif stok hariç
 
-            console.log(`Ürün ${product.name}: isActive=${isActive}, stock=${product.stock}, hasValidStock=${hasValidStock}`);
+            logger.info(`Ürün ${product.name}: isActive=${isActive}, stock=${product.stock}, hasValidStock=${hasValidStock}`);
 
             return isActive && hasValidStock;
           })
@@ -169,12 +167,12 @@ const CustomerProductCatalog = () => {
             gallery: [getProductImagePath(product.name)]
           }));
 
-        console.log('📦 Müşteri ürünleri hazırlandı:', loadedProducts.length, 'adet');
+        logger.info('📦 Müşteri ürünleri hazırlandı:', loadedProducts.length, 'adet');
 
         // Image path kontrolü
         if (loadedProducts.length > 0) {
-          console.log('🖼️ Müşteri - İlk ürün image:', loadedProducts[0].image);
-          console.log('🖼️ Müşteri - İlk 3 ürün:', loadedProducts.slice(0, 3).map(p => ({ name: p.name, image: p.image })));
+          logger.info('🖼️ Müşteri - İlk ürün image:', loadedProducts[0].image);
+          logger.info('🖼️ Müşteri - İlk 3 ürün:', loadedProducts.slice(0, 3).map(p => ({ name: p.name, image: p.image })));
         }
       }
 
@@ -182,7 +180,7 @@ const CustomerProductCatalog = () => {
 
       // Eğer hiç ürün yoksa boş array kullan
       if (loadedProducts.length === 0) {
-        console.log('📦 Hiç ürün bulunamadı - satıcı henüz ürün eklememiş');
+        logger.info('📦 Hiç ürün bulunamadı - satıcı henüz ürün eklememiş');
         loadedProducts = [];
       }
 
@@ -209,7 +207,7 @@ const CustomerProductCatalog = () => {
       setCategories(Array.from(categoryMap.values()));
 
     } catch (error) {
-      console.error('Ürünler yüklenirken hata:', error);
+      logger.error('Ürünler yüklenirken hata:', error);
 
       // Hata durumunda boş array kullan
       setProducts([]);
@@ -235,7 +233,7 @@ const CustomerProductCatalog = () => {
   };
 
   const handleRefresh = async () => {
-    console.log('🔄 handleRefresh called');
+    logger.info('🔄 handleRefresh called');
     setIsRefreshing(true);
     await loadProducts();
     setTimeout(() => {
@@ -258,7 +256,7 @@ const CustomerProductCatalog = () => {
     setSelectedProduct
   });
 
-  console.log('🎨 RENDER - Müşteri Ürün Kataloğu', {
+  logger.info('🎨 RENDER - Müşteri Ürün Kataloğu', {
     isLoading,
     productsLength: products.length,
     filteredProductsLength: filteredProducts.length,
@@ -269,9 +267,6 @@ const CustomerProductCatalog = () => {
 
   return (
     <div className="min-h-screen bg-slate-200">
-      <Header />
-      <BottomTabNavigation />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Başlık Bandı */}
         <div className="bg-slate-100 rounded-lg shadow-sm border border-gray-200 p-6 mb-8">

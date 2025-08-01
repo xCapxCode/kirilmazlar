@@ -18,7 +18,7 @@ const ArsivlenmisModali = ({ onClose }) => {
       const orders = await orderCleanupUtil.getArchivedOrders();
       setArchivedOrders(orders);
     } catch (error) {
-      console.error('Error loading archived orders:', error);
+      logger.error('Error loading archived orders:', error);
       showError('Arşivlenmiş siparişler yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);
@@ -32,7 +32,7 @@ const ArsivlenmisModali = ({ onClose }) => {
       setArchivedOrders([]);
       showSuccess(`${clearedCount} arşivlenmiş sipariş başarıyla temizlendi`);
     } catch (error) {
-      console.error('Error clearing archived orders:', error);
+      logger.error('Error clearing archived orders:', error);
       showError('Arşivlenmiş siparişler temizlenirken bir hata oluştu');
     } finally {
       setLoading(false);

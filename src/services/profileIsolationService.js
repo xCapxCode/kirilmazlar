@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+import logger from '@utils/logger';
 /**
  * Profile Isolation Service
  * P1.2.4 - Cross-profile data bleeding prevention
@@ -20,7 +21,7 @@ class ProfileIsolationService {
    */
   setActiveProfile(profileId) {
     if (!profileId) {
-      console.warn('ProfileIsolationService: Profile ID cannot be empty');
+      logger.warn('ProfileIsolationService: Profile ID cannot be empty');
       return;
     }
 
@@ -32,7 +33,7 @@ class ProfileIsolationService {
       this.clearProfileCache();
     }
 
-    console.log(`ProfileIsolationService: Active profile set to ${profileId}`);
+    logger.info(`ProfileIsolationService: Active profile set to ${profileId}`);
   }
 
   /**
@@ -50,7 +51,7 @@ class ProfileIsolationService {
    */
   getProfileKey(key) {
     if (!this.currentProfile) {
-      console.warn('ProfileIsolationService: No active profile set');
+      logger.warn('ProfileIsolationService: No active profile set');
       return key;
     }
 
@@ -69,7 +70,7 @@ class ProfileIsolationService {
    */
   setProfileData(key, value) {
     if (!this.currentProfile) {
-      console.warn('ProfileIsolationService: Cannot store data without active profile');
+      logger.warn('ProfileIsolationService: Cannot store data without active profile');
       return;
     }
 
@@ -78,7 +79,7 @@ class ProfileIsolationService {
       const serializedValue = typeof value === 'string' ? value : JSON.stringify(value);
       localStorage.setItem(profileKey, serializedValue);
     } catch (error) {
-      console.error('ProfileIsolationService: Error storing profile data:', error);
+      logger.error('ProfileIsolationService: Error storing profile data:', error);
     }
   }
 
@@ -90,7 +91,7 @@ class ProfileIsolationService {
    */
   getProfileData(key, defaultValue = null) {
     if (!this.currentProfile) {
-      console.warn('ProfileIsolationService: Cannot retrieve data without active profile');
+      logger.warn('ProfileIsolationService: Cannot retrieve data without active profile');
       return defaultValue;
     }
 
@@ -106,7 +107,7 @@ class ProfileIsolationService {
         return value;
       }
     } catch (error) {
-      console.error('ProfileIsolationService: Error retrieving profile data:', error);
+      logger.error('ProfileIsolationService: Error retrieving profile data:', error);
       return defaultValue;
     }
   }
@@ -117,7 +118,7 @@ class ProfileIsolationService {
    */
   removeProfileData(key) {
     if (!this.currentProfile) {
-      console.warn('ProfileIsolationService: Cannot remove data without active profile');
+      logger.warn('ProfileIsolationService: Cannot remove data without active profile');
       return;
     }
 
@@ -125,7 +126,7 @@ class ProfileIsolationService {
     try {
       localStorage.removeItem(profileKey);
     } catch (error) {
-      console.error('ProfileIsolationService: Error removing profile data:', error);
+      logger.error('ProfileIsolationService: Error removing profile data:', error);
     }
   }
 
@@ -134,7 +135,7 @@ class ProfileIsolationService {
    */
   clearCurrentProfile() {
     if (!this.currentProfile) {
-      console.warn('ProfileIsolationService: No active profile to clear');
+      logger.warn('ProfileIsolationService: No active profile to clear');
       return;
     }
 
@@ -154,11 +155,11 @@ class ProfileIsolationService {
       try {
         localStorage.removeItem(key);
       } catch (error) {
-        console.error(`ProfileIsolationService: Error removing key ${key}:`, error);
+        logger.error(`ProfileIsolationService: Error removing key ${key}:`, error);
       }
     });
 
-    console.log(`ProfileIsolationService: Cleared ${keysToRemove.length} items for profile ${this.currentProfile}`);
+    logger.info(`ProfileIsolationService: Cleared ${keysToRemove.length} items for profile ${this.currentProfile}`);
   }
 
   /**
@@ -180,11 +181,11 @@ class ProfileIsolationService {
       try {
         localStorage.removeItem(key);
       } catch (error) {
-        console.error(`ProfileIsolationService: Error removing key ${key}:`, error);
+        logger.error(`ProfileIsolationService: Error removing key ${key}:`, error);
       }
     });
 
-    console.log(`ProfileIsolationService: Cleared all profiles (${keysToRemove.length} items)`);
+    logger.info(`ProfileIsolationService: Cleared all profiles (${keysToRemove.length} items)`);
   }
 
   /**
@@ -213,7 +214,7 @@ class ProfileIsolationService {
    */
   switchProfile(newProfileId) {
     if (!newProfileId) {
-      console.warn('ProfileIsolationService: New profile ID cannot be empty');
+      logger.warn('ProfileIsolationService: New profile ID cannot be empty');
       return;
     }
 
@@ -223,7 +224,7 @@ class ProfileIsolationService {
     // Clear cached data
     this.clearProfileCache();
 
-    console.log(`ProfileIsolationService: Switched from ${previousProfile} to ${newProfileId}`);
+    logger.info(`ProfileIsolationService: Switched from ${previousProfile} to ${newProfileId}`);
   }
 
   /**

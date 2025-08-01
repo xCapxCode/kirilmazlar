@@ -50,7 +50,7 @@ class ProductionLogger {
    */
   info(...args) {
     if (this.currentLevel <= this.levels.INFO) {
-      console.log('ℹ️ [INFO]', ...args);
+      console.info('ℹ️ [INFO]', ...args);
       this.metrics.info++;
     }
   }
@@ -88,7 +88,7 @@ class ProductionLogger {
    */
   success(...args) {
     if (this.currentLevel <= this.levels.INFO) {
-      console.log('✅ [SUCCESS]', ...args);
+      logger.info('✅ [SUCCESS]', ...args);
     }
   }
 
@@ -133,7 +133,7 @@ class ProductionLogger {
   system(system, message, data = null) {
     if (this.currentLevel <= this.levels.INFO) {
       const emoji = this.getSystemEmoji(system);
-      console.log(`${emoji} [${system.toUpperCase()}]`, message, data || '');
+      logger.info(`${emoji} [${system.toUpperCase()}]`, message, data || '');
     }
   }
 

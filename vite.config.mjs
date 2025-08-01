@@ -17,7 +17,7 @@ export default defineConfig({
     strictPort: true,
     host: 'localhost',
     fs: {
-      allow: ['..']
+      strict: true
     }
   },
   test: {

@@ -78,7 +78,7 @@ export const NavigationProvider = ({ children }) => {
     
     // Analytics tracking
     if (analytics.event) {
-      console.log('Navigation Analytics:', {
+      logger.info('Navigation Analytics:', {
         event: analytics.event,
         path,
         userRole,

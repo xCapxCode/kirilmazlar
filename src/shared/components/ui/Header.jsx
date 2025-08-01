@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
+import storage from '../../../core/storage';
 import { trackRender, useMemoizedCallbacks } from '../../../utils/memoizationHelpers';
 import Icon from '../AppIcon';
 import NotificationDropdown from './NotificationDropdown';
@@ -16,6 +17,16 @@ const Header = () => {
   const userMenuRef = useRef(null);
   const [businessLogo, setBusinessLogo] = useState('/assets/images/logo/KirilmazlarLogo.png');
   const [businessName, setBusinessName] = useState('KIRILMAZLAR');
+
+  // Real-time user data update
+  useEffect(() => {
+    const unsubscribe = storage.subscribe('currentUser', () => {
+      // Force re-render when user data changes
+      window.dispatchEvent(new Event('userDataUpdated'));
+    });
+
+    return unsubscribe;
+  }, []);
 
   // Optimized callbacks
   const { handleLogout, handleProfileClick } = useMemoizedCallbacks.useHeaderCallbacks({
@@ -101,7 +112,7 @@ const Header = () => {
                         {userProfile?.full_name || userProfile?.name || userProfile?.email || 'Kullanıcı'}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {userProfile?.email || 'demo@mail.com'}
+                        {userProfile?.email || 'email@kirilmazlar.com'}
                       </p>
                     </div>
 

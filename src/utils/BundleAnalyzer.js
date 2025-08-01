@@ -82,7 +82,7 @@ class BundleAnalyzer {
   static async optimizedImport(modulePath) {
     try {
       const startTime = performance.now();
-      const module = await import(modulePath);
+      const module = await import(/* @vite-ignore */ modulePath);
       const loadTime = performance.now() - startTime;
 
       logger.debug(`Dynamic import ${modulePath} loaded in ${loadTime.toFixed(2)}ms`);
@@ -274,7 +274,7 @@ export const TreeShaking = {
     } catch (error) {
       logger.warn(`Failed to import Lucide icon ${iconName}, falling back to default import`);
       // Fallback to regular import
-      const { [iconName]: Icon } = await import('lucide-react');
+      const { [iconName]: Icon } = await import(/* @vite-ignore */ 'lucide-react');
       return Icon;
     }
   },

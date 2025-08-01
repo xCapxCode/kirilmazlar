@@ -1,4 +1,5 @@
 import storage from '@core/storage';
+import logger from '@utils/logger';
 
 /**
  * Kategori yönetimi için servis sınıfı
@@ -12,17 +13,17 @@ class CategoryService {
   async getAll() {
     try {
       const categories = await storage.get('categories', []);
-      
+
       // Eğer kategori yoksa varsayılan kategorileri oluştur
       if (categories.length === 0) {
         const defaultCategories = this.getDefaultCategories();
         await storage.set('categories', defaultCategories);
         return defaultCategories;
       }
-      
+
       return categories;
     } catch (error) {
-      console.error('Kategoriler yüklenirken hata:', error);
+      logger.error('Kategoriler yüklenirken hata:', error);
       throw error;
     }
   }
@@ -37,7 +38,7 @@ class CategoryService {
       const categories = await storage.get('categories', []);
       return categories.find(category => category.id === id) || null;
     } catch (error) {
-      console.error(`ID'si ${id} olan kategori yüklenirken hata:`, error);
+      logger.error(`ID'si ${id} olan kategori yüklenirken hata:`, error);
       throw error;
     }
   }
@@ -50,12 +51,12 @@ class CategoryService {
   async create(categoryData) {
     try {
       const categories = await storage.get('categories', []);
-      
+
       // Yeni ID oluştur
-      const newId = categories.length > 0 
-        ? Math.max(...categories.map(c => typeof c.id === 'number' ? c.id : 0)) + 1 
+      const newId = categories.length > 0
+        ? Math.max(...categories.map(c => typeof c.id === 'number' ? c.id : 0)) + 1
         : 1;
-      
+
       // Kategori nesnesini oluştur
       const newCategory = {
         ...categoryData,
@@ -64,14 +65,14 @@ class CategoryService {
         icon: categoryData.icon || 'Package',
         color: categoryData.color || 'blue'
       };
-      
+
       // Storage'a kaydet
       const updatedCategories = [...categories, newCategory];
       await storage.set('categories', updatedCategories);
-      
+
       return newCategory;
     } catch (error) {
-      console.error('Kategori oluşturulurken hata:', error);
+      logger.error('Kategori oluşturulurken hata:', error);
       throw error;
     }
   }
@@ -86,28 +87,28 @@ class CategoryService {
     try {
       const categories = await storage.get('categories', []);
       const index = categories.findIndex(category => category.id === id);
-      
+
       if (index === -1) {
         return null;
       }
-      
+
       // Kategoriyi güncelle
       const updatedCategory = {
         ...categories[index],
         ...categoryData
       };
-      
+
       const updatedCategories = [
         ...categories.slice(0, index),
         updatedCategory,
         ...categories.slice(index + 1)
       ];
-      
+
       await storage.set('categories', updatedCategories);
-      
+
       return updatedCategory;
     } catch (error) {
-      console.error(`ID'si ${id} olan kategori güncellenirken hata:`, error);
+      logger.error(`ID'si ${id} olan kategori güncellenirken hata:`, error);
       throw error;
     }
   }
@@ -120,23 +121,23 @@ class CategoryService {
   async delete(id) {
     try {
       const categories = await storage.get('categories', []);
-      
+
       // "Tüm Ürünler" kategorisini silmeye izin verme
       const categoryToDelete = categories.find(category => category.id === id);
       if (categoryToDelete && categoryToDelete.name === 'Tüm Ürünler') {
         return false;
       }
-      
+
       const updatedCategories = categories.filter(category => category.id !== id);
-      
+
       if (updatedCategories.length === categories.length) {
         return false; // Kategori bulunamadı
       }
-      
+
       await storage.set('categories', updatedCategories);
       return true;
     } catch (error) {
-      console.error(`ID'si ${id} olan kategori silinirken hata:`, error);
+      logger.error(`ID'si ${id} olan kategori silinirken hata:`, error);
       throw error;
     }
   }
@@ -151,35 +152,35 @@ class CategoryService {
     try {
       const categories = await storage.get('categories', []);
       const index = categories.findIndex(category => category.id === categoryId);
-      
+
       if (index === -1) {
         return null;
       }
-      
+
       const category = categories[index];
-      
+
       // Alt kategori zaten varsa ekleme
       if (category.subcategories.includes(subcategory)) {
         return category;
       }
-      
+
       // Alt kategoriyi ekle
       const updatedCategory = {
         ...category,
         subcategories: [...category.subcategories, subcategory]
       };
-      
+
       const updatedCategories = [
         ...categories.slice(0, index),
         updatedCategory,
         ...categories.slice(index + 1)
       ];
-      
+
       await storage.set('categories', updatedCategories);
-      
+
       return updatedCategory;
     } catch (error) {
-      console.error(`ID'si ${categoryId} olan kategoriye alt kategori eklenirken hata:`, error);
+      logger.error(`ID'si ${categoryId} olan kategoriye alt kategori eklenirken hata:`, error);
       throw error;
     }
   }
@@ -194,35 +195,35 @@ class CategoryService {
     try {
       const categories = await storage.get('categories', []);
       const index = categories.findIndex(category => category.id === categoryId);
-      
+
       if (index === -1) {
         return null;
       }
-      
+
       const category = categories[index];
-      
+
       // En az bir alt kategori kalmalı
       if (category.subcategories.length <= 1) {
         return category;
       }
-      
+
       // Alt kategoriyi sil
       const updatedCategory = {
         ...category,
         subcategories: category.subcategories.filter(sc => sc !== subcategory)
       };
-      
+
       const updatedCategories = [
         ...categories.slice(0, index),
         updatedCategory,
         ...categories.slice(index + 1)
       ];
-      
+
       await storage.set('categories', updatedCategories);
-      
+
       return updatedCategory;
     } catch (error) {
-      console.error(`ID'si ${categoryId} olan kategoriden alt kategori silinirken hata:`, error);
+      logger.error(`ID'si ${categoryId} olan kategoriden alt kategori silinirken hata:`, error);
       throw error;
     }
   }

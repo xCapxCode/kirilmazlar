@@ -25,7 +25,7 @@ const DurumGuncellemeModali = ({ order, onClose, onUpdate }) => {
       showSuccess('Sipariş durumu başarıyla güncellendi');
       onClose(); // Modal'ı kapat
     } catch (error) {
-      console.error('Status update error:', error);
+      logger.error('Status update error:', error);
       showError('Sipariş durumu güncellenirken bir hata oluştu');
     } finally {
       setIsSubmitting(false);

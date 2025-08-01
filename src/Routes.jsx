@@ -1,13 +1,14 @@
-import React, { lazy, Suspense } from "react";
-import { BrowserRouter, Routes as RouterRoutes, Route, Navigate } from "react-router-dom";
-import ScrollToTop from "./shared/components/ScrollToTop";
-import ErrorBoundary from "./shared/components/ErrorBoundary";
+import { lazy, Suspense } from "react";
+import { BrowserRouter, Navigate, Route, Routes as RouterRoutes } from "react-router-dom";
 import { useAuth } from "./contexts/AuthContext";
+import ErrorBoundary from "./shared/components/ErrorBoundary";
+import ScrollToTop from "./shared/components/ScrollToTop";
 
 // Lazy loaded components
 const LandingRoutes = lazy(() => import("./apps/web/landing/LandingRoutes"));
 const SellerRoutes = lazy(() => import("./apps/admin/seller/SellerRoutes"));
 const CustomerRoutes = lazy(() => import("./apps/customer/CustomerRoutes"));
+const MobileRoutes = lazy(() => import("./apps/mobile/MobileRoutes"));
 const Login = lazy(() => import("./shared/components/auth/Login"));
 
 // Loading component
@@ -23,7 +24,7 @@ const LoadingComponent = () => (
 // General Protected Route Component (both seller and customer)
 const GeneralProtectedRoute = ({ children }) => {
   const { user, userProfile, loading } = useAuth();
-  
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -34,11 +35,11 @@ const GeneralProtectedRoute = ({ children }) => {
       </div>
     );
   }
-  
+
   if (!user || !userProfile) {
     return <Navigate to="/login" replace />;
   }
-  
+
   return children;
 };
 
@@ -46,7 +47,7 @@ const GeneralProtectedRoute = ({ children }) => {
 const SellerProtectedRoute = ({ children }) => {
   try {
     const { user, userProfile, loading } = useAuth();
-    
+
     if (loading) {
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -57,18 +58,18 @@ const SellerProtectedRoute = ({ children }) => {
         </div>
       );
     }
-    
+
     if (!user || !userProfile) {
       return <Navigate to="/login" replace />;
     }
-    
+
     if (userProfile.role !== 'seller' && userProfile.role !== 'admin' && userProfile.role !== 'owner') {
       return <Navigate to="/customer/catalog" replace />;
     }
-    
+
     return children;
   } catch (error) {
-    console.error('SellerProtectedRoute error:', error);
+    logger.error('SellerProtectedRoute error:', error);
     return <Navigate to="/login" replace />;
   }
 };
@@ -77,7 +78,7 @@ const SellerProtectedRoute = ({ children }) => {
 const CustomerProtectedRoute = ({ children }) => {
   try {
     const { user, userProfile, loading } = useAuth();
-    
+
     if (loading) {
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -88,25 +89,25 @@ const CustomerProtectedRoute = ({ children }) => {
         </div>
       );
     }
-    
+
     if (!user || !userProfile) {
       return <Navigate to="/login" replace />;
     }
-    
+
     if (userProfile.role !== 'customer') {
       return <Navigate to="/seller/dashboard" replace />;
     }
-    
+
     return children;
   } catch (error) {
-    console.error('CustomerProtectedRoute error:', error);
+    logger.error('CustomerProtectedRoute error:', error);
     return <Navigate to="/login" replace />;
   }
 };
 
 const Routes = () => {
   return (
-    <BrowserRouter 
+    <BrowserRouter
       future={{
         v7_startTransition: true,
         v7_relativeSplatPath: true
@@ -121,31 +122,41 @@ const Routes = () => {
               <Login />
             </Suspense>
           } />
-          
+
           {/* Seller App Routes - Production */}
-          <Route 
-            path="/seller/*" 
+          <Route
+            path="/seller/*"
             element={
               <SellerProtectedRoute>
                 <Suspense fallback={<LoadingComponent />}>
                   <SellerRoutes />
                 </Suspense>
               </SellerProtectedRoute>
-            } 
+            }
           />
-          
+
           {/* Customer App Routes */}
-          <Route 
-            path="/customer/*" 
+          <Route
+            path="/customer/*"
             element={
               <CustomerProtectedRoute>
                 <Suspense fallback={<LoadingComponent />}>
                   <CustomerRoutes />
                 </Suspense>
               </CustomerProtectedRoute>
-            } 
+            }
           />
-          
+
+          {/* Mobile App Routes */}
+          <Route
+            path="/m/*"
+            element={
+              <Suspense fallback={<LoadingComponent />}>
+                <MobileRoutes />
+              </Suspense>
+            }
+          />
+
           {/* Landing Page */}
           <Route path="/*" element={
             <Suspense fallback={<LoadingComponent />}>

@@ -1,6 +1,15 @@
-// Test kullanıcıları - Yerel geliştirme için
+// Test kullanıcıları kaldırıldı - Sadece admin kullanıcısı
 export const TEST_USERS = [
-  // Test kullanıcıları silindi - gerçek kullanıcılar panel üzerinden oluşturulacak
+  {
+    id: 'admin-1',
+    email: 'admin@example.com',
+    username: 'admin',
+    password: 'admin123',
+    role: 'admin',
+    isActive: true,
+    name: 'Admin',
+    createdAt: new Date().toISOString()
+  }
 ];
 
 export const TEST_BUSINESS = {
@@ -9,7 +18,7 @@ export const TEST_BUSINESS = {
   description: 'Gıda Yönetim Sistemi',
   address: 'Test İşletme Adresi',
   phone: '0212 123 4567',
-  email: 'info@kirilmazlar.com',
+  email: 'info@example.com',
   logo: null,
   settings: {
     currency: 'TL',

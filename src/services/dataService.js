@@ -1,27 +1,32 @@
 // Merkezi Veri Yönetim Servisi
 import storage from '@core/storage';
-import { TEST_BUSINESS } from '../data/testUsers.js';
 import dataValidator from '../utils/dataValidator.js';
-import { logger } from '../utils/productionLogger.js';
+import logger from '../utils/logger.js';
 
 class DataService {
     constructor() {
         this.isInitialized = false;
-        this.initializeData();
+        // Constructor'da initializeData çağırmayalım
     }
 
     // Veri başlatma - Sadece bir kez çalışır
     initializeData() {
-        if (this.isInitialized) return;
+        if (this.isInitialized) {
+            logger.debug('DataService zaten initialize edilmiş, atlanıyor');
+            return;
+        }
 
         try {
+            logger.info('🚀 DataService initialization başlıyor...');
+            this.isInitialized = true; // Hemen başlangıçta true yapalım
             // Veri versiyonu kontrolü
             const currentVersion = '1.0.0';
             const savedVersion = storage.get('dataVersion');
 
             if (savedVersion !== currentVersion) {
                 logger.info('🔄 Veri versiyonu güncelleniyor:', savedVersion, '→', currentVersion);
-                this.resetAllData();
+                // VERSİYON GÜNCELLEMEDE KULLANICI VERİLERİNİ SİLME
+                // this.resetAllData(); // KALDIRILDI - Kullanıcı verilerini koruyalım
                 storage.set('dataVersion', currentVersion);
             }
 
@@ -53,58 +58,43 @@ class DataService {
 
     // Temel verilerin varlığını kontrol et
     ensureBaseData() {
-        // Kullanıcılar - Ana yönetici hesabı otomatik oluştur
-        let users = storage.get('users', []);
-        logger.debug('🔍 Mevcut users tablosu:', users);
-        logger.debug('🔍 Users tablosu uzunluğu:', users?.length);
+        // SADECE boş kontrol - ASLA otomatik veri ekleme yapma
+        // Kullanıcının oluşturduğu veriler korunur
 
-        if (!users || users.length === 0) {
-            // Ana yönetici hesabı oluştur
-            const defaultOwner = {
-                id: 'owner-' + Date.now(),
-                username: 'admin',
-                email: 'admin@kirilmazlar.com',
-                password: 'admin123', // İlk kurulumda, değiştirilebilir
-                name: 'Ana Yönetici',
-                role: 'owner',
-                businessId: 'business-1',
-                createdAt: new Date().toISOString(),
-                isActive: true,
-                isDefaultAccount: true // Varsayılan hesap işareti
-            };
-
-            users = [defaultOwner];
-            storage.set('users', users);
-            logger.info('� Ana yönetici hesabı oluşturuldu - Kullanıcı Adı: admin, Şifre: admin123');
-        }
-
-        // İşletme bilgileri
-        if (!storage.get('business')) {
-            storage.set('business', TEST_BUSINESS);
-            logger.info('🏢 İşletme bilgileri yüklendi');
+        // Sadece temel yapıları kontrol et, veri ekleme
+        if (!storage.get('users')) {
+            storage.set('users', []);
+            logger.info('� Kullanıcı storage başlatıldı');
         }
 
         // Kategoriler
-        if (!storage.get('categories') || storage.get('categories').length === 0) {
+        if (!storage.get('categories')) {
             storage.set('categories', []);
-            logger.info('📂 Kategoriler başlatıldı');
+            logger.info('📂 Kategori storage başlatıldı');
         }
 
-        // Ürünler
-        if (!storage.get('products') || storage.get('products').length === 0) {
+        // Ürünler  
+        if (!storage.get('products')) {
             storage.set('products', []);
-            logger.info('📦 Ürünler başlatıldı');
+            logger.info('� Ürün storage başlatıldı');
         }
 
         // Siparişler
         if (!storage.get('orders')) {
             storage.set('orders', []);
-            logger.info('📋 Siparişler başlatıldı');
+            logger.info('� Sipariş storage başlatıldı');
         }
 
         // Sepet
         if (!storage.get('cart')) {
             storage.set('cart', []);
+        }
+
+        // GERÇEK kullanıcı sayısını logla
+        const realUsers = storage.get('users', []);
+        logger.info(`👥 GERÇEK kullanıcı sayısı: ${realUsers.length}`);
+        if (realUsers.length > 0) {
+            logger.info(`📋 Kullanıcılar: ${realUsers.map(u => u.username || u.email).join(', ')}`);
         }
     }
 

@@ -1,5 +1,6 @@
 import storage from '@core/storage';
 import { createContext, useContext, useEffect, useState } from 'react';
+import notificationService from '../services/notificationService';
 import orderService from '../services/orderService';
 import { logger } from '../utils/productionLogger.js';
 import { useAuth } from './AuthContext';
@@ -67,10 +68,10 @@ export const CartProvider = ({ children }) => {
           })) : []
         }));
 
-        console.log('🛒 CartContext - Customer orders loaded:', ordersWithDates.length);
+        logger.info('🛒 CartContext - Customer orders loaded:', ordersWithDates.length);
         setOrders(ordersWithDates);
       } catch (error) {
-        console.error('🛒 CartContext - Error loading customer orders:', error);
+        logger.error('🛒 CartContext - Error loading customer orders:', error);
         setOrders([]);
       }
     };
@@ -238,7 +239,7 @@ export const CartProvider = ({ children }) => {
 
     setCartItems([]);
     storage.remove('cart');
-    console.log('Cart cleared from unified storage');
+    logger.info('Cart cleared from unified storage');
   };
 
   const getCartTotal = () => {
@@ -271,12 +272,12 @@ export const CartProvider = ({ children }) => {
   // Yeni sipariş ekleme fonksiyonu
   const addNewOrder = async (orderData) => {
     try {
-      console.log('🛒 CartContext - OrderService ile sipariş oluşturuluyor:', orderData);
+      logger.info('🛒 CartContext - OrderService ile sipariş oluşturuluyor:', orderData);
 
       // OrderService kullanarak sipariş oluştur
       const newOrder = await orderService.create(orderData);
 
-      console.log('✅ CartContext - Sipariş başarıyla oluşturuldu:', newOrder);
+      logger.info('✅ CartContext - Sipariş başarıyla oluşturuldu:', newOrder);
 
       // Local state'i güncelle
       const stateOrder = {
@@ -304,10 +305,20 @@ export const CartProvider = ({ children }) => {
 
       setOrders(prev => [stateOrder, ...prev]);
 
-      console.log('Yeni sipariş eklendi ve senkronize edildi:', newOrder.orderNumber);
+      // Bildirim sistemi - Yeni sipariş bildirimi
+      try {
+        notificationService.notifyNewOrder({
+          id: newOrder.orderNumber,
+          customerName: orderData.customerName || orderData.customerId || 'Müşteri'
+        });
+      } catch (notifError) {
+        logger.warn('Sipariş bildirimi gönderilemedi:', notifError);
+      }
+
+      logger.info('Yeni sipariş eklendi ve senkronize edildi:', newOrder.orderNumber);
       return newOrder.orderNumber; // Order number'ı döndür
     } catch (error) {
-      console.error('❌ CartContext - Sipariş oluşturma hatası:', error);
+      logger.error('❌ CartContext - Sipariş oluşturma hatası:', error);
       throw error;
     }
   };
@@ -327,7 +338,7 @@ export const CartProvider = ({ children }) => {
     // Güncellenmiş ürünleri kaydet
     storage.set('products', updatedProducts);
 
-    console.log(`Ürün ${productId} stoku güncellendi: ${newStock}`);
+    logger.info(`Ürün ${productId} stoku güncellendi: ${newStock}`);
   };
 
   const reduceStock = (productId, quantity) => {
@@ -340,21 +351,27 @@ export const CartProvider = ({ children }) => {
 
       // Stok biterse toast göster
       if (newStock === 0) {
-        const event = new CustomEvent('showToast', {
-          detail: {
-            message: `${product.name} ürününün stoku bitti!`,
-            type: 'warning'
-          }
-        });
-        window.dispatchEvent(event);
+        // Stok tükendi bildirimi
+        try {
+          notificationService.notifySystem(
+            'Stok Tükendi',
+            `${product.name} ürününün stoku bitti!`,
+            'warning'
+          );
+        } catch (error) {
+          logger.warn('Stok tükenme bildirimi gönderilemedi:', error);
+        }
       } else if (newStock <= 10) {
-        const event = new CustomEvent('showToast', {
-          detail: {
-            message: `${product.name} ürününde az stok kaldı! (${newStock} ${product.unit})`,
-            type: 'info'
-          }
-        });
-        window.dispatchEvent(event);
+        // Düşük stok uyarısı
+        try {
+          notificationService.notifyLowStock({
+            id: productId,
+            name: product.name,
+            stock: newStock
+          });
+        } catch (error) {
+          logger.warn('Düşük stok bildirimi gönderilemedi:', error);
+        }
       }
     }
   };

@@ -53,7 +53,7 @@
         "javascript": "javascriptreact",
         "typescript": "typescriptreact"
     },
-    "typescript.preferences.includePackageJsonAutoImports": "auto",
+    "typescript.preferences.includePackageJsonAutoImports": "off",
     "javascript.preferences.includePackageJsonAutoImports": "auto",
     // Search and File Exclusions
     "search.exclude": {
@@ -69,7 +69,8 @@
         "**/.DS_Store": true,
         "**/node_modules": true,
         "**/dist": true,
-        "**/build": true
+        "**/build": true,
+        "**/node_modules/@bcoe/v8-coverage/dist/lib/tsconfig.json": true
     },
     // Explorer and Navigation
     "explorer.compactFolders": false,
@@ -105,5 +106,9 @@
     "prettier.useTabs": false,
     "prettier.semi": true,
     "prettier.singleQuote": true,
-    "prettier.trailingComma": "es5"
+    "prettier.trailingComma": "es5",
+    // TypeScript Configuration - Suppress node_modules warnings
+    "typescript.reportStyleChecksAsWarnings": false,
+    "typescript.preferences.diagnostics.showAdvanced": false,
+    "typescript.workspaceSymbols.excludeLibrarySymbols": true
 }

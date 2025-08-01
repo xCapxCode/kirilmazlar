@@ -5,23 +5,44 @@
 
 import storage from '@core/storage';
 
+import logger from '@utils/logger';
 class CustomerUserMappingService {
   constructor() {
     this.isRepairing = false;
+    this.setupAutoRepair();
   }
 
   /**
    * Customer-User mapping tutarlılığını kontrol eder ve onarır
    * @returns {Promise<Object>} - Repair report
    */
-  async repairAllMappings() {
+  setupAutoRepair() {
+    // Storage değişikliklerini dinle
+    window.addEventListener('kirilmazlar_storage_change', async (event) => {
+      const { key } = event.detail;
+      
+      // Customer veya user verisi değiştiğinde mapping'i kontrol et
+      if (key.includes('customers') || key.includes('users')) {
+        await this.repairAllMappings(true);
+      }
+    });
+
+    // Periyodik kontrol (5 dakikada bir)
+    setInterval(async () => {
+      await this.repairAllMappings(true);
+    }, 5 * 60 * 1000);
+  }
+
+  async repairAllMappings(silent = false) {
     if (this.isRepairing) {
-      console.log('⚠️ Mapping repair zaten çalışıyor...');
+      if (!silent) {
+        logger.info('⚠️ Mapping repair zaten çalışıyor...');
+      }
       return { success: false, message: 'Repair already in progress' };
     }
 
     this.isRepairing = true;
-    console.log('🔧 P1.2.2: Customer-User mapping repair başlatılıyor...');
+    logger.info('🔧 P1.2.2: Customer-User mapping repair başlatılıyor...');
 
     try {
       const customers = await storage.get('customers', []);
@@ -49,12 +70,12 @@ class CustomerUserMappingService {
       // 4. Data inconsistencies düzeltme
       await this._fixDataInconsistencies(users, customers, repairReport);
 
-      console.log('✅ P1.2.2: Customer-User mapping repair tamamlandı');
-      console.log('📊 Repair Summary:', repairReport);
+      logger.info('✅ P1.2.2: Customer-User mapping repair tamamlandı');
+      logger.info('📊 Repair Summary:', repairReport);
 
       return { success: true, report: repairReport };
     } catch (error) {
-      console.error('❌ P1.2.2: Mapping repair failed:', error);
+      logger.error('❌ P1.2.2: Mapping repair failed:', error);
       return { success: false, error: error.message };
     } finally {
       this.isRepairing = false;
@@ -65,7 +86,7 @@ class CustomerUserMappingService {
    * Orphaned user accounts'ları düzeltir
    */
   async _fixOrphanedUsers(users, customers, report) {
-    console.log('🔍 P1.2.2: Orphaned users kontrolü...');
+    logger.info('🔍 P1.2.2: Orphaned users kontrolü...');
 
     const customerUsers = users.filter(u => u.role === 'customer');
     const orphanedUsers = [];
@@ -91,14 +112,14 @@ class CustomerUserMappingService {
           // CustomerId'yi düzelt
           const userIndex = users.findIndex(u => u.id === orphanedUser.id);
           users[userIndex].customerId = potentialCustomer.id;
-          console.log(`✅ Orphaned user fixed: ${orphanedUser.email} -> ${potentialCustomer.id}`);
+          logger.info(`✅ Orphaned user fixed: ${orphanedUser.email} -> ${potentialCustomer.id}`);
           report.orphanedUsersFixed++;
         } else {
-          console.log(`⚠️ Orphaned user could not be matched: ${orphanedUser.email}`);
+          logger.info(`⚠️ Orphaned user could not be matched: ${orphanedUser.email}`);
           report.errors.push(`Orphaned user: ${orphanedUser.email}`);
         }
       } catch (error) {
-        console.error(`❌ Error fixing orphaned user ${orphanedUser.email}:`, error);
+        logger.error(`❌ Error fixing orphaned user ${orphanedUser.email}:`, error);
         report.errors.push(`Orphaned user error: ${orphanedUser.email}`);
       }
     }
@@ -112,7 +133,7 @@ class CustomerUserMappingService {
    * Missing customerId fields'ları düzeltir
    */
   async _fixMissingCustomerIds(users, customers, report) {
-    console.log('🔍 P1.2.2: Missing customerId kontrolü...');
+    logger.info('🔍 P1.2.2: Missing customerId kontrolü...');
 
     const customerUsers = users.filter(u => u.role === 'customer' && !u.customerId);
 
@@ -127,14 +148,14 @@ class CustomerUserMappingService {
         if (matchingCustomer) {
           const userIndex = users.findIndex(u => u.id === user.id);
           users[userIndex].customerId = matchingCustomer.id;
-          console.log(`✅ Missing customerId fixed: ${user.email} -> ${matchingCustomer.id}`);
+          logger.info(`✅ Missing customerId fixed: ${user.email} -> ${matchingCustomer.id}`);
           report.missingCustomerIdsFixed++;
         } else {
-          console.log(`⚠️ No matching customer for user: ${user.email}`);
+          logger.info(`⚠️ No matching customer for user: ${user.email}`);
           report.errors.push(`No customer match: ${user.email}`);
         }
       } catch (error) {
-        console.error(`❌ Error fixing customerId for ${user.email}:`, error);
+        logger.error(`❌ Error fixing customerId for ${user.email}:`, error);
         report.errors.push(`CustomerId fix error: ${user.email}`);
       }
     }
@@ -148,7 +169,7 @@ class CustomerUserMappingService {
    * Missing user accounts oluşturur
    */
   async _createMissingUserAccounts(customers, users, report) {
-    console.log('🔍 P1.2.2: Missing user accounts kontrolü...');
+    logger.info('🔍 P1.2.2: Missing user accounts kontrolü...');
 
     for (const customer of customers) {
       try {
@@ -174,11 +195,11 @@ class CustomerUserMappingService {
           };
 
           users.push(newUser);
-          console.log(`✅ Missing user account created: ${customer.email}`);
+          logger.info(`✅ Missing user account created: ${customer.email}`);
           report.missingUsersCreated++;
         }
       } catch (error) {
-        console.error(`❌ Error creating user for ${customer.email}:`, error);
+        logger.error(`❌ Error creating user for ${customer.email}:`, error);
         report.errors.push(`User creation error: ${customer.email}`);
       }
     }
@@ -192,7 +213,7 @@ class CustomerUserMappingService {
    * Data inconsistencies'leri düzeltir
    */
   async _fixDataInconsistencies(users, customers, report) {
-    console.log('🔍 P1.2.2: Data inconsistencies kontrolü...');
+    logger.info('🔍 P1.2.2: Data inconsistencies kontrolü...');
 
     const customerUsers = users.filter(u => u.role === 'customer' && u.customerId);
 
@@ -208,14 +229,14 @@ class CustomerUserMappingService {
         if (customer.phone !== user.phone && customer.phone) {
           users[userIndex].phone = customer.phone;
           hasChanges = true;
-          console.log(`🔄 Phone synced for ${user.email}: ${user.phone} -> ${customer.phone}`);
+          logger.info(`🔄 Phone synced for ${user.email}: ${user.phone} -> ${customer.phone}`);
         }
 
         // Name sync 
         if (customer.name !== user.name && customer.name) {
           users[userIndex].name = customer.name;
           hasChanges = true;
-          console.log(`🔄 Name synced for ${user.email}: ${user.name} -> ${customer.name}`);
+          logger.info(`🔄 Name synced for ${user.email}: ${user.name} -> ${customer.name}`);
         }
 
         // Address sync (user'da yoksa customer'dan al)
@@ -224,14 +245,14 @@ class CustomerUserMappingService {
           users[userIndex].city = customer.city;
           users[userIndex].district = customer.district;
           hasChanges = true;
-          console.log(`🔄 Address synced for ${user.email}`);
+          logger.info(`🔄 Address synced for ${user.email}`);
         }
 
         if (hasChanges) {
           report.dataInconsistenciesFixed++;
         }
       } catch (error) {
-        console.error(`❌ Error fixing inconsistencies for ${user.email}:`, error);
+        logger.error(`❌ Error fixing inconsistencies for ${user.email}:`, error);
         report.errors.push(`Data sync error: ${user.email}`);
       }
     }
@@ -246,7 +267,7 @@ class CustomerUserMappingService {
    * @returns {Promise<Object>} - Health report
    */
   async healthCheck() {
-    console.log('🔍 P1.2.2: Customer-User mapping health check...');
+    logger.info('🔍 P1.2.2: Customer-User mapping health check...');
 
     try {
       const customers = await storage.get('customers', []);
@@ -314,10 +335,10 @@ class CustomerUserMappingService {
         healthReport.overallHealth = 'critical';
       }
 
-      console.log('📊 Mapping Health Report:', healthReport);
+      logger.info('📊 Mapping Health Report:', healthReport);
       return { success: true, health: healthReport };
     } catch (error) {
-      console.error('❌ Health check failed:', error);
+      logger.error('❌ Health check failed:', error);
       return { success: false, error: error.message };
     }
   }

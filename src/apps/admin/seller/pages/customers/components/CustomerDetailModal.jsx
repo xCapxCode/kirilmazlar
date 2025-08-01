@@ -33,7 +33,7 @@ const CustomerDetailModal = ({ customer, onClose }) => {
       setCustomerOrders(orders);
 
     } catch (error) {
-      console.error('Müşteri ek bilgileri yüklenirken hata:', error);
+      logger.error('Müşteri ek bilgileri yüklenirken hata:', error);
       showError('Müşteri ek bilgileri yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);

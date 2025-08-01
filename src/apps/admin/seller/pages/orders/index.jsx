@@ -38,7 +38,7 @@ const SiparisYonetimi = () => {
 
       // Müşteri siparişlerini dinle - customer_orders ana veri kaynağı
       const unsubscribeCustomerOrders = storage.subscribe('customer_orders', (newOrders) => {
-        console.log('🔄 Customer orders updated:', newOrders?.length || 0);
+        logger.info('🔄 Customer orders updated:', newOrders?.length || 0);
         setOrders(newOrders || []);
       });
 
@@ -54,18 +54,18 @@ const SiparisYonetimi = () => {
 
   const loadOrders = async () => {
     try {
-      console.log('🔄 Sipariş verileri yükleniyor...');
+      logger.info('🔄 Sipariş verileri yükleniyor...');
 
       // OrderService kullanarak siparişleri yükle
       const loadedOrders = await orderService.getAll({
         sortBy: 'newest'
       });
 
-      console.log('✅ Sipariş verileri yüklendi:', loadedOrders.length);
+      logger.info('✅ Sipariş verileri yüklendi:', loadedOrders.length);
       setOrders(loadedOrders);
 
     } catch (error) {
-      console.error('❌ Sipariş yükleme hatası:', error);
+      logger.error('❌ Sipariş yükleme hatası:', error);
       setError('Siparişler yüklenirken hata oluştu');
     } finally {
       setLoading(false);
@@ -88,7 +88,7 @@ const SiparisYonetimi = () => {
 
   const handleUpdateOrderStatus = async (orderId, newStatus, notes = '') => {
     try {
-      console.log('🔄 Sipariş durumu güncelleniyor:', orderId, newStatus);
+      logger.info('🔄 Sipariş durumu güncelleniyor:', orderId, newStatus);
 
       // OrderService kullanarak sipariş durumunu güncelle
       const updatedOrder = await orderService.updateStatus(orderId, newStatus, notes);
@@ -111,13 +111,13 @@ const SiparisYonetimi = () => {
         )
       );
 
-      console.log('✅ Sipariş durumu güncellendi - sipariş listede kalacak');
+      logger.info('✅ Sipariş durumu güncellendi - sipariş listede kalacak');
       showSuccess('Sipariş durumu başarıyla güncellendi');
       setShowStatusUpdate(false);
       setSelectedOrder(null);
 
     } catch (error) {
-      console.error('❌ Sipariş durumu güncelleme hatası:', error);
+      logger.error('❌ Sipariş durumu güncelleme hatası:', error);
       setError('Sipariş durumu güncellenirken hata oluştu');
       showError('Sipariş durumu güncellenirken hata oluştu');
     }
@@ -136,7 +136,7 @@ const SiparisYonetimi = () => {
 
     if (confirmed) {
       try {
-        console.log('🗑️ Sipariş siliniyor:', orderId);
+        logger.info('🗑️ Sipariş siliniyor:', orderId);
 
         // OrderService kullanarak siparişi sil
         const success = await orderService.delete(orderId);
@@ -148,11 +148,11 @@ const SiparisYonetimi = () => {
         // Local state'i güncelle
         setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
 
-        console.log('✅ Sipariş silindi');
+        logger.info('✅ Sipariş silindi');
         showSuccess('Sipariş başarıyla silindi');
 
       } catch (error) {
-        console.error('❌ Sipariş silme hatası:', error);
+        logger.error('❌ Sipariş silme hatası:', error);
         showError('Sipariş silinirken hata oluştu');
       }
     }
@@ -171,7 +171,7 @@ const SiparisYonetimi = () => {
 
     if (confirmed) {
       try {
-        console.log('🧹 Tüm test siparişleri temizleniyor...');
+        logger.info('🧹 Tüm test siparişleri temizleniyor...');
 
         // OrderService kullanarak test siparişlerini temizle
         const deletedCount = await orderService.clearTestOrders();
@@ -179,11 +179,11 @@ const SiparisYonetimi = () => {
         // Siparişleri yeniden yükle
         await loadOrders();
 
-        console.log(`✅ ${deletedCount} test siparişi temizlendi, gerçek siparişler korundu`);
+        logger.info(`✅ ${deletedCount} test siparişi temizlendi, gerçek siparişler korundu`);
         showSuccess(`${deletedCount} test siparişi başarıyla temizlendi`);
 
       } catch (error) {
-        console.error('❌ Sipariş temizleme hatası:', error);
+        logger.error('❌ Sipariş temizleme hatası:', error);
         showError('Siparişler temizlenirken hata oluştu');
       }
     }

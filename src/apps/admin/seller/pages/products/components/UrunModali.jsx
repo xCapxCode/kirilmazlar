@@ -56,18 +56,18 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
   };
 
   const handleImageUpload = (e) => {
-    console.log('handleImageUpload çağrıldı', e.target.files);
+    logger.info('handleImageUpload çağrıldı', e.target.files);
     const file = e.target.files[0];
     if (file) {
-      console.log('Dosya seçildi:', file.name, file.type);
+      logger.info('Dosya seçildi:', file.name, file.type);
       processImageFile(file);
     } else {
-      console.log('Dosya seçilmedi');
+      logger.info('Dosya seçilmedi');
     }
   };
 
   const processImageFile = (file) => {
-    console.log('processImageFile çağrıldı:', file);
+    logger.info('processImageFile çağrıldı:', file);
     
     // Dosya boyutu kontrolü (2MB = 2 * 1024 * 1024 bytes)
     const maxSize = 2 * 1024 * 1024;
@@ -77,16 +77,16 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
     }
     
     if (file && file.type.startsWith('image/')) {
-      console.log('Dosya tipi uygun, boyutlandırma başlıyor...');
+      logger.info('Dosya tipi uygun, boyutlandırma başlıyor...');
       const reader = new FileReader();
       reader.onload = (event) => {
-        console.log('Dosya okundu, yeniden boyutlandırılıyor...');
+        logger.info('Dosya okundu, yeniden boyutlandırılıyor...');
         const imageData = event.target.result;
         resizeImage(imageData, 500, 400);
       };
       reader.readAsDataURL(file);
     } else {
-      console.log('Geçersiz dosya tipi:', file?.type);
+      logger.info('Geçersiz dosya tipi:', file?.type);
       showError('Lütfen geçerli bir resim dosyası seçiniz (PNG, JPG, JPEG)');
     }
   };
@@ -114,7 +114,7 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
         image: resizedImage
       }));
       
-      console.log('Resim başarıyla yeniden boyutlandırıldı:', targetWidth + 'x' + targetHeight);
+      logger.info('Resim başarıyla yeniden boyutlandırıldı:', targetWidth + 'x' + targetHeight);
     };
     
     img.src = imageDataUrl;
@@ -189,17 +189,17 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submit edildi');
-    console.log('Form data:', formData);
+    logger.info('Form submit edildi');
+    logger.info('Form data:', formData);
     
     if (!validateForm()) {
-      console.log('Form validation başarısız');
-      console.log('Hatalar:', errors);
+      logger.info('Form validation başarısız');
+      logger.info('Hatalar:', errors);
       showError('Lütfen tüm gerekli alanları doldurun.');
       return;
     }
 
-    console.log('Form validation başarılı, kaydetme işlemi başlıyor...');
+    logger.info('Form validation başarılı, kaydetme işlemi başlıyor...');
     setIsSubmitting(true);
 
     try {
@@ -210,13 +210,13 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
         minStock: parseInt(formData.minStock)
       };
 
-      console.log('Kaydedilecek ürün verisi:', productData);
+      logger.info('Kaydedilecek ürün verisi:', productData);
       await onSave(productData);
-      console.log('Ürün başarıyla kaydedildi');
+      logger.info('Ürün başarıyla kaydedildi');
       
       showSuccess(product ? 'Ürün başarıyla güncellendi!' : 'Ürün başarıyla eklendi!');
     } catch (error) {
-      console.error('Ürün kaydetme hatası:', error);
+      logger.error('Ürün kaydetme hatası:', error);
       showError('Ürün kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setIsSubmitting(false);

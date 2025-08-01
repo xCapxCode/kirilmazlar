@@ -20,7 +20,36 @@ class EnvironmentService {
    * @returns {string} Environment name
    */
   detectEnvironment() {
-    const env = import.meta.env.VITE_APP_ENVIRONMENT || import.meta.env.MODE || 'development';
+    // Force consistent environment detection
+    // Check for explicit environment variable first
+    let env = import.meta.env.VITE_APP_ENVIRONMENT ||
+      import.meta.env.VITE_ENVIRONMENT ||
+      import.meta.env.MODE;
+
+    // If no explicit environment, use hostname/location to determine
+    if (!env && typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      const port = window.location.port;
+
+      // Localhost development detection
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        env = 'development';
+      }
+      // Port-based detection for dev server
+      else if (port === '5500' || port === '3000') {
+        env = 'development';
+      }
+      // Default fallback
+      else {
+        env = 'development';
+      }
+    }
+
+    // Final fallback
+    if (!env) {
+      env = 'development';
+    }
+
     const validEnvironments = ['development', 'staging', 'production'];
 
     if (!validEnvironments.includes(env)) {
@@ -28,6 +57,8 @@ class EnvironmentService {
       return 'development';
     }
 
+    // Log environment detection for debugging
+    logger.debug(`Environment detected: ${env}`);
     return env;
   }
 
@@ -77,7 +108,7 @@ class EnvironmentService {
       // Storage Configuration
       storage: {
         type: import.meta.env.VITE_STORAGE_TYPE || 'localStorage',
-        prefix: import.meta.env.VITE_STORAGE_PREFIX || 'kirilmazlar_dev_',
+        prefix: import.meta.env.VITE_STORAGE_PREFIX || this.getStoragePrefix(),
         encrypt: this.parseBoolean(import.meta.env.VITE_STORAGE_ENCRYPT, false)
       },
 
@@ -127,6 +158,16 @@ class EnvironmentService {
       logger.error('Environment configuration validation errors:', errors);
       throw new Error(`Environment configuration validation failed: ${errors.join(', ')}`);
     }
+  }
+
+  /**
+   * Get storage prefix based on environment
+   * @returns {string} Storage prefix
+   */
+  getStoragePrefix() {
+    // Always use consistent prefix regardless of environment
+    // This ensures data consistency across different environments
+    return 'kirilmazlar_';
   }
 
   /**
@@ -240,3 +281,4 @@ const environmentService = new EnvironmentService();
 
 export default environmentService;
 export { EnvironmentService };
+

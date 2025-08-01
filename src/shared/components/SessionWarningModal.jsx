@@ -49,7 +49,7 @@ const SessionWarningModal = () => {
         setIsVisible(false);
       }
     } catch (error) {
-      console.error('Session extension failed:', error);
+      logger.error('Session extension failed:', error);
     } finally {
       setIsExtending(false);
     }
@@ -60,7 +60,7 @@ const SessionWarningModal = () => {
       await signOut();
       setIsVisible(false);
     } catch (error) {
-      console.error('Logout failed:', error);
+      logger.error('Logout failed:', error);
     }
   };
 

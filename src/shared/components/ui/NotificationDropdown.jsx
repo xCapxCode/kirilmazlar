@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNotification } from '../../../contexts/NotificationContext';
+import notificationService from '../../../services/notificationService';
 import Icon from '../AppIcon';
 
 const NotificationDropdown = () => {
@@ -21,49 +22,53 @@ const NotificationDropdown = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Demo bildirimleri yükle
+  // Gerçek bildirim sisteminden bildirimleri yükle
   useEffect(() => {
-    const demoNotifications = [
-      {
-        id: 1,
-        title: 'Yeni Sipariş',
-        message: 'Ahmet Yılmaz tarafından yeni bir sipariş verildi.',
-        type: 'info',
-        timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 dakika önce
-        read: false,
-        icon: 'ShoppingCart'
-      },
-      {
-        id: 2,
-        title: 'Stok Uyarısı',
-        message: 'Elma ürününün stoku azalıyor (3 adet kaldı).',
-        type: 'warning',
-        timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 dakika önce
-        read: false,
-        icon: 'AlertTriangle'
-      },
-      {
-        id: 3,
-        title: 'Sipariş Tamamlandı',
-        message: 'SIP-2024-001 numaralı sipariş teslim edildi.',
-        type: 'success',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 saat önce
-        read: true,
-        icon: 'CheckCircle'
-      },
-      {
-        id: 4,
-        title: 'Yeni Müşteri',
-        message: 'Fatma Demir sisteme yeni müşteri olarak kaydoldu.',
-        type: 'info',
-        timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 saat önce
-        read: true,
-        icon: 'UserPlus'
-      }
-    ];
+    // Initial load from NotificationService
+    const loadNotifications = () => {
+      const systemNotifications = notificationService.getNotifications();
+      setNotifications(systemNotifications);
+      setUnreadCount(notificationService.getUnreadCount());
+    };
 
-    setNotifications(demoNotifications);
-    setUnreadCount(demoNotifications.filter(n => !n.read).length);
+    loadNotifications();
+
+    // Service listener ekle
+    const handleNotificationUpdate = (action, data) => {
+      switch (action) {
+        case 'added':
+          setNotifications(prev => [data, ...prev]);
+          if (!data.read) {
+            setUnreadCount(prev => prev + 1);
+          }
+          break;
+        case 'read':
+          setNotifications(prev =>
+            prev.map(n => n.id === data.id ? { ...n, read: true } : n)
+          );
+          setUnreadCount(prev => Math.max(0, prev - 1));
+          break;
+        case 'allRead':
+          setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+          setUnreadCount(0);
+          break;
+        case 'removed':
+          setNotifications(prev => prev.filter(n => n.id !== data));
+          break;
+        case 'cleared':
+          setNotifications([]);
+          setUnreadCount(0);
+          break;
+        default:
+          loadNotifications(); // Fallback full reload
+      }
+    };
+
+    notificationService.addListener(handleNotificationUpdate);
+
+    return () => {
+      notificationService.removeListener(handleNotificationUpdate);
+    };
   }, []);
 
   const formatTimestamp = (timestamp) => {
@@ -93,25 +98,16 @@ const NotificationDropdown = () => {
   };
 
   const markAsRead = (notificationId) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === notificationId 
-          ? { ...notification, read: true }
-          : notification
-      )
-    );
-    setUnreadCount(prev => Math.max(0, prev - 1));
+    notificationService.markAsRead(notificationId);
   };
 
   const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    setUnreadCount(0);
+    notificationService.markAllAsRead();
     showSuccess('Tüm bildirimler okundu olarak işaretlendi');
   };
 
   const clearAllNotifications = () => {
-    setNotifications([]);
-    setUnreadCount(0);
+    notificationService.clearAll();
     showSuccess('Tüm bildirimler temizlendi');
   };
 
@@ -167,9 +163,8 @@ const NotificationDropdown = () => {
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
-                    !notification.read ? 'bg-blue-50' : ''
-                  }`}
+                  className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${!notification.read ? 'bg-blue-50' : ''
+                    }`}
                   onClick={() => markAsRead(notification.id)}
                 >
                   <div className="flex items-start space-x-3">

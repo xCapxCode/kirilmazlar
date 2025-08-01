@@ -142,7 +142,9 @@ class SecurityService {
 
     if (isSecure) {
       // Override document.cookie setter to enforce secure cookies
-      const originalCookieSetter = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie').set;
+      const originalCookieDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
+      const originalCookieSetter = originalCookieDescriptor.set;
+      const originalCookieGetter = originalCookieDescriptor.get;
 
       Object.defineProperty(document, 'cookie', {
         set(value) {
@@ -166,7 +168,7 @@ class SecurityService {
           originalCookieSetter.call(this, secureValue);
         },
         get() {
-          return originalCookieSetter.call(this);
+          return originalCookieGetter.call(this);
         }
       });
     }

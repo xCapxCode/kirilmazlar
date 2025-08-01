@@ -1,31 +1,33 @@
 // Retry utility for async operations
+import logger from '@utils/logger';
+
 export const withRetry = async (fn, maxRetries = 3, delay = 1000) => {
   let lastError;
-  
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (error) {
       lastError = error;
-      
+
       // Don't retry on client-side errors (4xx)
       if (error.status >= 400 && error.status < 500) {
         throw error;
       }
-      
+
       // If this was the last attempt, throw the error
       if (attempt === maxRetries) {
         throw error;
       }
-      
+
       // Wait before retrying (exponential backoff)
       const waitTime = delay * Math.pow(2, attempt - 1);
       await new Promise(resolve => setTimeout(resolve, waitTime));
-      
-      console.log(`Retrying operation (attempt ${attempt + 1}/${maxRetries})...`);
+
+      logger.info(`Retrying operation (attempt ${attempt + 1}/${maxRetries})...`);
     }
   }
-  
+
   throw lastError;
 };
 
@@ -38,7 +40,7 @@ export const checkNetworkStatus = () => {
 export const setupNetworkListeners = (onOnline, onOffline) => {
   window.addEventListener('online', onOnline);
   window.addEventListener('offline', onOffline);
-  
+
   return () => {
     window.removeEventListener('online', onOnline);
     window.removeEventListener('offline', onOffline);

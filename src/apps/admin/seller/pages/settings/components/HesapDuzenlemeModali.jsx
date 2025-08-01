@@ -38,7 +38,7 @@ const HesapDuzenlemeModali = ({ account, onClose, onSave }) => {
       showSuccess('Hesap bilgileri başarıyla güncellendi');
       onClose();
     } catch (error) {
-      console.error('Hesap güncelleme hatası:', error);
+      logger.error('Hesap güncelleme hatası:', error);
       showError('Hesap bilgileri güncellenirken bir hata oluştu');
     } finally {
       setIsSubmitting(false);

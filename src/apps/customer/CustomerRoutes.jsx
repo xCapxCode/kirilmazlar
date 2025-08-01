@@ -1,6 +1,8 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
+import MobileBottomNavigation from "../../shared/components/mobile/MobileBottomNavigation";
 import BottomTabNavigation from "../../shared/components/ui/BottomTabNavigation";
+import Header from "../../shared/components/ui/Header";
 
 // Customer Pages - Lazy loaded for code splitting
 const ProductCatalog = lazy(() => import("./pages/catalog"));
@@ -21,30 +23,46 @@ const PageLoader = () => (
 const CustomerRoutes = () => {
   return (
     <>
-      <Routes>
-        <Route index element={<Navigate to="catalog" replace />} />
-        <Route path="catalog" element={
-          <Suspense fallback={<PageLoader />}>
-            <ProductCatalog />
-          </Suspense>
-        } />
-        <Route path="cart" element={
-          <Suspense fallback={<PageLoader />}>
-            <Cart />
-          </Suspense>
-        } />
-        <Route path="orders" element={
-          <Suspense fallback={<PageLoader />}>
-            <OrderHistory />
-          </Suspense>
-        } />
-        <Route path="profile" element={
-          <Suspense fallback={<PageLoader />}>
-            <CustomerProfile />
-          </Suspense>
-        } />
-      </Routes>
-      <BottomTabNavigation />
+      {/* Desktop Header - Sadece desktop'ta görünsün */}
+      <div className="hidden md:block">
+        <Header />
+      </div>
+
+      <div className="pb-16 md:pb-0">
+        <Routes>
+          <Route index element={<Navigate to="catalog" replace />} />
+          <Route path="catalog" element={
+            <Suspense fallback={<PageLoader />}>
+              <ProductCatalog />
+            </Suspense>
+          } />
+          <Route path="cart" element={
+            <Suspense fallback={<PageLoader />}>
+              <Cart />
+            </Suspense>
+          } />
+          <Route path="orders" element={
+            <Suspense fallback={<PageLoader />}>
+              <OrderHistory />
+            </Suspense>
+          } />
+          <Route path="profile" element={
+            <Suspense fallback={<PageLoader />}>
+              <CustomerProfile />
+            </Suspense>
+          } />
+        </Routes>
+      </div>
+
+      {/* Mobile Navigation - Sadece mobile'da görünsün */}
+      <div className="md:hidden">
+        <MobileBottomNavigation />
+      </div>
+
+      {/* Desktop Navigation - Sadece desktop'ta görünsün */}
+      <div className="hidden md:block">
+        <BottomTabNavigation />
+      </div>
     </>
   );
 };

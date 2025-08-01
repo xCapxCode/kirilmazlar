@@ -151,7 +151,7 @@ const YetkiMatrisiModali = ({ role, onClose, onSave }) => {
       showSuccess('Rol yetkileri başarıyla güncellendi');
       onClose();
     } catch (error) {
-      console.error('Rol güncelleme hatası:', error);
+      logger.error('Rol güncelleme hatası:', error);
       showError('Rol yetkileri güncellenirken bir hata oluştu');
     } finally {
       setIsSubmitting(false);

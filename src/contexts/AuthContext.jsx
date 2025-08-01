@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import storage from "../core/storage";
 import authService from "../services/authService";
 import profileIsolationService from "../services/profileIsolationService";
 import securityMonitorService from "../services/securityMonitorService";
@@ -35,28 +36,44 @@ export function AuthProvider({ children }) {
             // P1.2.4: Set active profile for existing user
             try {
               profileIsolationService.setActiveProfile(currentUser.id);
-              console.log('🔒 P1.2.4: Profile isolation activated for existing user:', currentUser.id);
+              logger.info('🔒 P1.2.4: Profile isolation activated for existing user:', currentUser.id);
             } catch (error) {
-              console.warn('⚠️ P1.2.4: Profile activation warning:', error);
+              logger.warn('⚠️ P1.2.4: Profile activation warning:', error);
             }
 
             // P1.3.1: Initialize session management for authenticated user
             try {
               await sessionManagementService.initializeSession(currentUser.id);
-              console.log('🔒 P1.3.1: Session management initialized for existing user');
+              logger.info('🔒 P1.3.1: Session management initialized for existing user');
             } catch (error) {
-              console.warn('⚠️ P1.3.1: Session management init warning:', error);
+              logger.warn('⚠️ P1.3.1: Session management init warning:', error);
             }
           }
         }
 
+        // Listen for real-time user updates
+        const unsubscribeUser = storage.subscribe('currentUser', (newUserData) => {
+          if (newUserData && isMounted) {
+            setUser({
+              id: newUserData.id,
+              email: newUserData.email,
+              created_at: newUserData.createdAt
+            });
+            setUserProfile(newUserData);
+          }
+        });
+
         if (isMounted) {
           setLoading(false);
         }
+
+        return () => {
+          unsubscribeUser();
+        };
       } catch (error) {
         if (isMounted) {
           setAuthError("Kimlik doğrulama başlatılamadı");
-          console.error("Auth initialization error:", error);
+          logger.error("Auth initialization error:", error);
           setLoading(false);
         }
       }
@@ -66,13 +83,20 @@ export function AuthProvider({ children }) {
 
     // P1.3.1: Session event listeners
     const handleSessionWarning = (event) => {
-      console.warn('⚠️ P1.3.1: Session warning received:', event.detail);
+      logger.warn('⚠️ P1.3.1: Session warning received:', event.detail);
       // UI component'lari session warning'i dinleyebilir
     };
 
     const handleSessionExpired = async (event) => {
-      console.warn('🚨 P1.3.1: Session expired:', event.detail);
-      // Auto logout when session expires
+      logger.warn('🚨 P1.3.1: Session expired:', event.detail);
+
+      // Skip auto logout for manual termination to prevent infinite loop
+      if (event.detail.reason === 'manual_termination') {
+        logger.debug('🔄 Skipping auto logout for manual termination');
+        return;
+      }
+
+      // Auto logout when session expires (not manual)
       try {
         setLoading(true);
         setAuthError(null);
@@ -83,20 +107,20 @@ export function AuthProvider({ children }) {
           setUserProfile(null);
         }
         setLoading(false);
-        console.log('🔒 P1.3.1: Auto logout completed due to session expiry');
+        logger.info('🔒 P1.3.1: Auto logout completed due to session expiry');
       } catch (error) {
-        console.error('❌ P1.3.1: Auto logout error:', error);
+        logger.error('❌ P1.3.1: Auto logout error:', error);
         setLoading(false);
       }
     };
 
     const handleSessionExtended = (event) => {
-      console.log('✅ P1.3.1: Session extended:', event.detail);
+      logger.info('✅ P1.3.1: Session extended:', event.detail);
     };
 
     // P1.3.3: Handle security-triggered session invalidation
     const handleSecurityInvalidation = (event) => {
-      console.warn('🚨 P1.3.3: Security invalidation detected:', event.detail);
+      logger.warn('🚨 P1.3.3: Security invalidation detected:', event.detail);
       // Auto logout when session is invalidated due to security issues
       try {
         setLoading(true);
@@ -107,9 +131,9 @@ export function AuthProvider({ children }) {
         setUserProfile(null);
         setLoading(false);
 
-        console.log('🔒 P1.3.3: Auto logout completed due to security invalidation');
+        logger.info('🔒 P1.3.3: Auto logout completed due to security invalidation');
       } catch (error) {
-        console.error('❌ P1.3.3: Security invalidation logout error:', error);
+        logger.error('❌ P1.3.3: Security invalidation logout error:', error);
         setLoading(false);
       }
     };
@@ -152,20 +176,20 @@ export function AuthProvider({ children }) {
 
   // Sign in function
   const signIn = async (email, password) => {
-    console.log('🔐 AuthContext signIn çağrıldı:', { email, password });
+    logger.info('🔐 AuthContext signIn çağrıldı:', { email, password });
     setLoading(true);
     setAuthError(null);
 
     // P1.2.4: Previous user için profile isolation
     const previousUserId = user?.id;
 
-    console.log('📞 authService.login çağrılıyor...');
+    logger.info('📞 authService.login çağrılıyor...');
     const result = await authService.login(email, password);
-    console.log('📋 authService.login sonucu:', result);
+    logger.info('📋 authService.login sonucu:', result);
 
     if (result.success) {
       const userData = result.user;
-      console.log('✅ Giriş başarılı, kullanıcı verisi:', userData);
+      logger.info('✅ Giriş başarılı, kullanıcı verisi:', userData);
 
       // P1.2.4: Cross-profile data bleeding prevention
       if (previousUserId && previousUserId !== userData.id) {
@@ -175,26 +199,26 @@ export function AuthProvider({ children }) {
           if (currentProfile === previousUserId) {
             profileIsolationService.clearCurrentProfile();
           }
-          console.log('🔒 P1.2.4: Previous profile cleared for user switch');
+          logger.info('🔒 P1.2.4: Previous profile cleared for user switch');
         } catch (error) {
-          console.warn('⚠️ P1.2.4: Profile isolation warning:', error);
+          logger.warn('⚠️ P1.2.4: Profile isolation warning:', error);
         }
       }
 
       // P1.2.4: Set active profile for new user
       try {
         profileIsolationService.setActiveProfile(userData.id);
-        console.log('🔒 P1.2.4: Profile isolation activated for user:', userData.id);
+        logger.info('🔒 P1.2.4: Profile isolation activated for user:', userData.id);
       } catch (error) {
-        console.warn('⚠️ P1.2.4: Profile activation warning:', error);
+        logger.warn('⚠️ P1.2.4: Profile activation warning:', error);
       }
 
       // P1.3.1: Initialize session management for new user
       try {
         await sessionManagementService.initializeSession(userData.id);
-        console.log('🔒 P1.3.1: Session management initialized for new login');
+        logger.info('🔒 P1.3.1: Session management initialized for new login');
       } catch (error) {
-        console.warn('⚠️ P1.3.1: Session management init warning:', error);
+        logger.warn('⚠️ P1.3.1: Session management init warning:', error);
       }
 
       setUser({
@@ -206,14 +230,14 @@ export function AuthProvider({ children }) {
       setLoading(false);
       return { success: true, data: { user: userData } };
     } else {
-      console.log('❌ Giriş başarısız:', result.error);
+      logger.info('❌ Giriş başarısız:', result.error);
 
       // P1.3.3: Record failed login attempt for security monitoring
       try {
         securityMonitorService.recordFailedLogin(email, 'unknown');
-        console.log('🔒 P1.3.3: Failed login attempt recorded for security monitoring');
+        logger.info('🔒 P1.3.3: Failed login attempt recorded for security monitoring');
       } catch (error) {
-        console.warn('⚠️ P1.3.3: Failed login recording warning:', error);
+        logger.warn('⚠️ P1.3.3: Failed login recording warning:', error);
       }
 
       setAuthError(result.error);
@@ -247,9 +271,9 @@ export function AuthProvider({ children }) {
     // P1.3.1: Terminate session before logout
     try {
       await sessionManagementService.terminateSession();
-      console.log('🔒 P1.3.1: Session terminated before logout');
+      logger.info('🔒 P1.3.1: Session terminated before logout');
     } catch (error) {
-      console.warn('⚠️ P1.3.1: Session termination warning:', error);
+      logger.warn('⚠️ P1.3.1: Session termination warning:', error);
     }
 
     const result = await authService.logout();
@@ -259,9 +283,9 @@ export function AuthProvider({ children }) {
       if (user?.id) {
         try {
           profileIsolationService.clearCurrentProfile();
-          console.log('🔒 P1.2.4: Profile cleared for logout');
+          logger.info('🔒 P1.2.4: Profile cleared for logout');
         } catch (error) {
-          console.warn('⚠️ P1.2.4: Profile clear warning during logout:', error);
+          logger.warn('⚠️ P1.2.4: Profile clear warning during logout:', error);
         }
       }
 
@@ -306,14 +330,14 @@ export function AuthProvider({ children }) {
     try {
       const result = await sessionManagementService.extendSession();
       if (result) {
-        console.log('✅ P1.3.1: Session extended successfully');
+        logger.info('✅ P1.3.1: Session extended successfully');
         return { success: true };
       } else {
-        console.warn('⚠️ P1.3.1: Session extension failed');
+        logger.warn('⚠️ P1.3.1: Session extension failed');
         return { success: false, error: 'Session extension failed' };
       }
     } catch (error) {
-      console.error('❌ P1.3.1: Session extension error:', error);
+      logger.error('❌ P1.3.1: Session extension error:', error);
       return { success: false, error: error.message };
     }
   };
@@ -322,7 +346,7 @@ export function AuthProvider({ children }) {
     try {
       return await sessionManagementService.getSessionStatus();
     } catch (error) {
-      console.error('❌ P1.3.1: Session status error:', error);
+      logger.error('❌ P1.3.1: Session status error:', error);
       return { active: false, reason: 'error', error: error.message };
     }
   };

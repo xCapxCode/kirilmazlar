@@ -66,7 +66,7 @@ const Signup = ({ onClose, onSwitchToLogin }) => {
         onClose?.();
       }
     } catch (error) {
-      console.log('Signup error:', error);
+      logger.info('Signup error:', error);
     } finally {
       setLoading(false);
     }

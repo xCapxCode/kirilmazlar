@@ -314,7 +314,7 @@ const EditCustomerForm = ({ customer, onSave, onCancel }) => {
         updatedAt: new Date().toISOString()
       });
     } catch (error) {
-      console.error('Müşteri güncellenirken hata:', error);
+      logger.error('Müşteri güncellenirken hata:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -542,15 +542,15 @@ const MusteriYonetimi = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      console.log('🔄 loadData başlatılıyor...');
+      logger.info('🔄 loadData başlatılıyor...');
 
       // Müşterileri yükle
       const storedCustomers = await customerService.getAll();
-      console.log('📋 customerService.getAll() sonucu:', storedCustomers.length, 'müşteri');
+      logger.info('📋 customerService.getAll() sonucu:', storedCustomers.length, 'müşteri');
 
       // İlk 3 müşteriyi detaylı logla
       storedCustomers.slice(0, 3).forEach((customer, index) => {
-        console.log(`🔍 Müşteri ${index + 1}:`, {
+        logger.info(`🔍 Müşteri ${index + 1}:`, {
           id: customer.id,
           name: customer.name,
           email: customer.email,
@@ -563,15 +563,15 @@ const MusteriYonetimi = () => {
 
       // Siparişleri yükle
       const storedOrders = await storage.get('customer_orders', []);
-      console.log('📋 storage.get customer_orders sonucu:', storedOrders.length, 'sipariş');
+      logger.info('📋 storage.get customer_orders sonucu:', storedOrders.length, 'sipariş');
 
-      console.log('📝 setCustomers çağrılıyor:', storedCustomers.length, 'müşteri');
+      logger.info('📝 setCustomers çağrılıyor:', storedCustomers.length, 'müşteri');
       setCustomers(storedCustomers);
       setOrders(storedOrders);
-      console.log('✅ Müşteri yönetimi verileri yüklendi');
+      logger.info('✅ Müşteri yönetimi verileri yüklendi');
 
     } catch (error) {
-      console.error('❌ Müşteri yönetimi veri yükleme hatası:', error);
+      logger.error('❌ Müşteri yönetimi veri yükleme hatası:', error);
       showError('Müşteri verileri yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);
@@ -599,7 +599,7 @@ const MusteriYonetimi = () => {
       showSuccess(`Müşteri durumu başarıyla güncellendi: ${getStatusLabel(status)}`);
       return true;
     } catch (error) {
-      console.error('Müşteri durumu güncellenirken hata:', error);
+      logger.error('Müşteri durumu güncellenirken hata:', error);
       showError('Müşteri durumu güncellenirken bir hata oluştu');
       return false;
     }
@@ -749,12 +749,12 @@ const MusteriYonetimi = () => {
   // Yeni müşteri ekleme
   const handleAddCustomer = async (customerData) => {
     try {
-      console.log('🔄 Müşteri ekleme başlatılıyor:');
-      console.log('📝 Form datası:', customerData);
-      console.log('📞 Telefon:', customerData.phone);
-      console.log('📧 Email:', customerData.email);
-      console.log('🏠 Adres:', customerData.address);
-      console.log('🏙️ Şehir:', customerData.city);
+      logger.info('🔄 Müşteri ekleme başlatılıyor:');
+      logger.info('📝 Form datası:', customerData);
+      logger.info('📞 Telefon:', customerData.phone);
+      logger.info('📧 Email:', customerData.email);
+      logger.info('🏠 Adres:', customerData.address);
+      logger.info('🏙️ Şehir:', customerData.city);
 
       const newCustomer = await customerService.create({
         ...customerData,
@@ -764,35 +764,35 @@ const MusteriYonetimi = () => {
         avatar: null
       });
 
-      console.log('✅ CustomerService.create sonucu:');
-      console.log('📝 Yeni müşteri objesi:', newCustomer);
-      console.log('📞 Kaydedilen telefon:', newCustomer.phone);
-      console.log('📧 Kaydedilen email:', newCustomer.email);
-      console.log('🏠 Kaydedilen adres:', newCustomer.address);
-      console.log('🏙️ Kaydedilen şehir:', newCustomer.city);
+      logger.info('✅ CustomerService.create sonucu:');
+      logger.info('📝 Yeni müşteri objesi:', newCustomer);
+      logger.info('📞 Kaydedilen telefon:', newCustomer.phone);
+      logger.info('📧 Kaydedilen email:', newCustomer.email);
+      logger.info('🏠 Kaydedilen adres:', newCustomer.address);
+      logger.info('🏙️ Kaydedilen şehir:', newCustomer.city);
 
       // Storage'dan müşterileri kontrol et
       const allCustomers = await storage.get('customers', []);
-      console.log('📋 Storage\'daki tüm müşteriler sayısı:', allCustomers.length);
+      logger.info('📋 Storage\'daki tüm müşteriler sayısı:', allCustomers.length);
 
       // Son eklenen müşteriyi kontrol et
       const lastCustomer = allCustomers[allCustomers.length - 1];
-      console.log('🔍 Son eklenen müşteri:', lastCustomer);
+      logger.info('🔍 Son eklenen müşteri:', lastCustomer);
       if (lastCustomer) {
-        console.log('📞 Son müşteri telefon:', lastCustomer.phone);
-        console.log('📧 Son müşteri email:', lastCustomer.email);
-        console.log('🏠 Son müşteri adres:', lastCustomer.address);
-        console.log('🏙️ Son müşteri şehir:', lastCustomer.city);
+        logger.info('📞 Son müşteri telefon:', lastCustomer.phone);
+        logger.info('📧 Son müşteri email:', lastCustomer.email);
+        logger.info('🏠 Son müşteri adres:', lastCustomer.address);
+        logger.info('🏙️ Son müşteri şehir:', lastCustomer.city);
       }
 
       // Müşterileri yeniden yükle
       await loadData();
       setShowNewCustomerModal(false);
 
-      console.log('✅ Yeni müşteri eklendi:', newCustomer.name);
+      logger.info('✅ Yeni müşteri eklendi:', newCustomer.name);
       showSuccess(`${newCustomer.name} başarıyla eklendi!`);
     } catch (error) {
-      console.error('❌ Müşteri ekleme hatası:', error);
+      logger.error('❌ Müşteri ekleme hatası:', error);
       showError('Müşteri eklenirken bir hata oluştu');
     }
   };
@@ -829,7 +829,7 @@ const MusteriYonetimi = () => {
         // Müşterileri yeniden yükle
         await loadData();
 
-        console.log('✅ Müşteri silindi:', customerName);
+        logger.info('✅ Müşteri silindi:', customerName);
 
         // Notification debounce - aynı mesajı tekrar gösterme
         const now = Date.now();
@@ -838,7 +838,7 @@ const MusteriYonetimi = () => {
           window.lastDeleteNotification = now;
         }
       } catch (error) {
-        console.error('❌ Müşteri silme hatası:', error);
+        logger.error('❌ Müşteri silme hatası:', error);
         showError('Müşteri silinirken bir hata oluştu');
       }
     }
@@ -858,10 +858,10 @@ const MusteriYonetimi = () => {
       setShowEditCustomerModal(false);
       setEditingCustomer(null);
 
-      console.log('✅ Müşteri güncellendi:', customerData.name);
+      logger.info('✅ Müşteri güncellendi:', customerData.name);
       showSuccess(`${customerData.name} bilgileri başarıyla güncellendi!`);
     } catch (error) {
-      console.error('❌ Müşteri güncelleme hatası:', error);
+      logger.error('❌ Müşteri güncelleme hatası:', error);
       showError('Müşteri güncellenirken bir hata oluştu');
     }
   };
@@ -881,10 +881,10 @@ const MusteriYonetimi = () => {
       setSelectedCustomer(customer);
       setShowDetailModal(true);
 
-      console.log('Müşteri siparişleri:', customerOrders);
+      logger.info('Müşteri siparişleri:', customerOrders);
       showSuccess(`${customer.name} - ${customerOrders.length} sipariş bulundu.`);
     } catch (error) {
-      console.error('Müşteri siparişleri yüklenirken hata:', error);
+      logger.error('Müşteri siparişleri yüklenirken hata:', error);
       showError('Müşteri siparişleri yüklenirken bir hata oluştu');
     }
   };
@@ -941,11 +941,11 @@ const MusteriYonetimi = () => {
               <button
                 onClick={async () => {
                   // Test customers for quick testing
-                  console.log('🔄 Test verileri ekleniyor...');
+                  logger.info('🔄 Test verileri ekleniyor...');
 
                   // Önce mevcut müşterileri kontrol et
                   const existingCustomers = await customerService.getAll();
-                  console.log('📋 Mevcut müşteri sayısı:', existingCustomers.length);
+                  logger.info('📋 Mevcut müşteri sayısı:', existingCustomers.length);
 
                   // Test müşterilerinden sadece mevcut olmayanları ekle
                   const testCustomers = [
@@ -994,11 +994,11 @@ const MusteriYonetimi = () => {
                       await handleAddCustomer(testCustomer);
                       addedCount++;
                     } else {
-                      console.log(`⚠️ ${testCustomer.name} zaten mevcut, atlanıyor`);
+                      logger.info(`⚠️ ${testCustomer.name} zaten mevcut, atlanıyor`);
                     }
                   }
 
-                  console.log(`✅ ${addedCount} test müşterisi eklendi`);
+                  logger.info(`✅ ${addedCount} test müşterisi eklendi`);
 
                   // Veri yüklemeyi tekrar çalıştır
                   await loadData();
@@ -1010,25 +1010,25 @@ const MusteriYonetimi = () => {
               </button>
               <button
                 onClick={() => {
-                  console.log('🔍 Debug Bilgileri:');
-                  console.log('customers state:', customers);
-                  console.log('filteredCustomers:', filteredCustomers);
-                  console.log('currentCustomers:', currentCustomers);
-                  console.log('customerStats:', customerStats);
+                  logger.info('🔍 Debug Bilgileri:');
+                  logger.info('customers state:', customers);
+                  logger.info('filteredCustomers:', filteredCustomers);
+                  logger.info('currentCustomers:', currentCustomers);
+                  logger.info('customerStats:', customerStats);
 
                   // LocalStorage kontrolü
                   const stored = localStorage.getItem('customers');
-                  console.log('localStorage customers:', stored ? JSON.parse(stored) : 'YOK');
+                  logger.info('localStorage customers:', stored ? JSON.parse(stored) : 'YOK');
 
                   // Unified storage kontrolü
                   const unified = localStorage.getItem('unified_storage');
                   if (unified) {
                     const unifiedData = JSON.parse(unified);
-                    console.log('unified_storage customers:', unifiedData.customers || 'YOK');
+                    logger.info('unified_storage customers:', unifiedData.customers || 'YOK');
                   }
 
                   // Gerçek müşteri arama
-                  console.log('🔍 GERÇEK MÜŞTERİ ARAMA:');
+                  logger.info('🔍 GERÇEK MÜŞTERİ ARAMA:');
                   const bulentUner = customers.find(c =>
                     c.name && (
                       c.name.toLowerCase().includes('bülent') ||
@@ -1044,21 +1044,21 @@ const MusteriYonetimi = () => {
                     )
                   );
 
-                  console.log('👤 Bülent Üner:', bulentUner ? '✅ BULUNDU' : '❌ BULUNAMADI');
-                  console.log('👤 Neset Avvuran:', nesetAvvuran ? '✅ BULUNDU' : '❌ BULUNAMADI');
+                  logger.info('👤 Bülent Üner:', bulentUner ? '✅ BULUNDU' : '❌ BULUNAMADI');
+                  logger.info('👤 Neset Avvuran:', nesetAvvuran ? '✅ BULUNDU' : '❌ BULUNAMADI');
 
-                  if (bulentUner) console.log('📋 Bülent Üner detayları:', bulentUner);
-                  if (nesetAvvuran) console.log('📋 Neset Avvuran detayları:', nesetAvvuran);
+                  if (bulentUner) logger.info('📋 Bülent Üner detayları:', bulentUner);
+                  if (nesetAvvuran) logger.info('📋 Neset Avvuran detayları:', nesetAvvuran);
 
                   // Tüm müşteri isimlerini listele
-                  console.log('📋 TÜM MÜŞTERİ İSİMLERİ:');
+                  logger.info('📋 TÜM MÜŞTERİ İSİMLERİ:');
                   customers.forEach((customer, index) => {
-                    console.log(`${index + 1}. ${customer.name} (${customer.email})`);
+                    logger.info(`${index + 1}. ${customer.name} (${customer.email})`);
                   });
 
                   // CustomerService test
                   customerService.getAll().then(result => {
-                    console.log('customerService.getAll() sonucu:', result);
+                    logger.info('customerService.getAll() sonucu:', result);
                   });
                 }}
                 className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2"
@@ -1200,7 +1200,7 @@ const MusteriYonetimi = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
                 {currentCustomers.map((customer, index) => {
                   // Debug: Her müşteri için log
-                  console.log(`🔍 Render edilen müşteri ${index + 1}:`, {
+                  logger.info(`🔍 Render edilen müşteri ${index + 1}:`, {
                     id: customer.id,
                     name: customer.name,
                     email: customer.email,

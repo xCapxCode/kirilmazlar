@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Icon from '../../../../../shared/components/AppIcon';
 import Image from '../../../../../shared/components/AppImage';
 
-const ProductCard = ({ product, onQuickAdd, onAddToCart, onProductClick, layout = 'vertical' }) => {
+const ProductCard = ({ product, onQuickAdd, onAddToCart, onProductClick, layout = 'vertical', isMobile = false }) => {
   // Performance tracking
   trackRender('ProductCard');
 
@@ -31,7 +31,93 @@ const ProductCard = ({ product, onQuickAdd, onAddToCart, onProductClick, layout 
   // Toplam fiyat hesaplama
   const totalPrice = quantity * discountedPrice;
 
-  // Horizontal layout i�in farkl� yap�
+  // Mobile Horizontal Layout için özel tasarım
+  if (layout === 'horizontal' && isMobile) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 group">
+        <div className="p-4">
+          <div className="flex items-center space-x-3">
+            {/* Product Image */}
+            <div
+              className="relative w-16 h-16 flex-shrink-0 overflow-hidden cursor-pointer rounded-lg bg-gray-50"
+              onClick={() => onProductClick(product)}
+            >
+              <Image
+                src={product.image}
+                alt={product.name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                fallback="/assets/images/placeholders/product-placeholder.png"
+              />
+
+              {!product.isAvailable && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-lg">
+                  <span className="text-white text-xs font-semibold bg-black/60 px-2 py-1 rounded">Stokta Yok</span>
+                </div>
+              )}
+
+              {product.discount > 0 && (
+                <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-semibold">
+                  %{product.discount}
+                </div>
+              )}
+            </div>
+
+            {/* Product Info */}
+            <div className="flex-1 min-w-0">
+              <h3
+                className="font-medium text-gray-900 text-sm truncate cursor-pointer hover:text-primary-600 transition-colors"
+                onClick={() => onProductClick(product)}
+              >
+                {product.name}
+              </h3>
+              <p className="text-xs text-gray-500 mt-0.5">{product.unit}</p>
+
+              {/* Price */}
+              <div className="flex items-center mt-1">
+                {product.discount > 0 ? (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-semibold text-primary-600">{formatPrice(discountedPrice)}</span>
+                    <span className="text-xs text-gray-400 line-through">{formatPrice(product.price)}</span>
+                  </div>
+                ) : (
+                  <span className="text-sm font-semibold text-primary-600">{formatPrice(product.price)}</span>
+                )}
+              </div>
+
+              {/* Mobile Stock Status */}
+              <div className="flex items-center mt-1">
+                <div className={`w-2 h-2 rounded-full mr-1.5 ${product.isAvailable ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className={`text-xs ${product.isAvailable ? 'text-green-600' : 'text-red-600'}`}>
+                  {product.isAvailable ? `${product.stock} ${product.unit}` : 'Stokta Yok'}
+                </span>
+              </div>
+            </div>
+
+            {/* Action Button */}
+            <div className="flex-shrink-0">
+              {product.isAvailable ? (
+                <button
+                  onClick={() => onAddToCart(product, 1)}
+                  className="w-9 h-9 bg-primary-600 text-white rounded-full flex items-center justify-center hover:bg-primary-700 transition-colors shadow-sm active:scale-95"
+                >
+                  <Icon name="Plus" size={16} />
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="w-9 h-9 bg-gray-200 text-gray-400 rounded-full flex items-center justify-center cursor-not-allowed"
+                >
+                  <Icon name="X" size={16} />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Horizontal layout için farklı yapı
   if (layout === 'horizontal') {
     return (
       <div className="bg-slate-100 rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 group">
@@ -212,9 +298,9 @@ const ProductCard = ({ product, onQuickAdd, onAddToCart, onProductClick, layout 
   // Vertical layout - responsive tasarım için optimize edilmiş
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 group h-full flex flex-col">
-      {/* Ürün Resmi - 15px küçültüldü */}
+      {/* Ürün Resmi - Hafif küçültme */}
       <div
-        className="relative aspect-[5/4.3] overflow-hidden cursor-pointer bg-gray-50"
+        className="relative aspect-[5/4] overflow-hidden cursor-pointer bg-gray-50"
         onClick={() => onProductClick(product)}
       >
         <Image
@@ -226,12 +312,12 @@ const ProductCard = ({ product, onQuickAdd, onAddToCart, onProductClick, layout 
         {/* Badges */}
         <div className="absolute top-2 left-2 flex flex-col space-y-1">
           {product.isOrganic && (
-            <span className="bg-green-600 text-white text-xs font-medium px-2 py-1 rounded-full">
+            <span className="bg-green-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
               Organik
             </span>
           )}
           {product.discount > 0 && (
-            <span className="bg-red-600 text-white text-xs font-medium px-2 py-1 rounded-full">
+            <span className="bg-red-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
               -{product.discount}%
             </span>
           )}
@@ -240,7 +326,7 @@ const ProductCard = ({ product, onQuickAdd, onAddToCart, onProductClick, layout 
         {/* Stock Status */}
         {!product.isAvailable && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="bg-red-600 text-white text-sm font-medium px-3 py-1 rounded-full">
+            <span className="bg-red-600 text-white text-sm font-medium px-2.5 py-1 rounded-full">
               Stokta Yok
             </span>
           </div>
@@ -248,9 +334,9 @@ const ProductCard = ({ product, onQuickAdd, onAddToCart, onProductClick, layout 
       </div>
 
       {/* Ürün Bilgileri */}
-      <div className="p-4 flex flex-col flex-grow">
+      <div className="p-3.5 flex flex-col flex-grow">
         <h3
-          className="font-bold text-gray-900 mb-2 cursor-pointer hover:text-green-600 transition-colors"
+          className="font-semibold text-base text-gray-900 mb-2 cursor-pointer hover:text-green-600 transition-colors line-clamp-2"
           onClick={() => onProductClick(product)}
         >
           {product.name}
@@ -276,7 +362,7 @@ const ProductCard = ({ product, onQuickAdd, onAddToCart, onProductClick, layout 
         </div>
 
         {/* Price */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-2.5">
           <div className="flex items-center space-x-2">
             {product.discount > 0 ? (
               <>
@@ -318,10 +404,10 @@ const ProductCard = ({ product, onQuickAdd, onAddToCart, onProductClick, layout 
                 }}
                 className="p-2 hover:bg-gray-50 transition-colors"
               >
-                <Icon name="Minus" size={16} />
+                <Icon name="Minus" size={15} />
               </button>
 
-              <span className="px-3 py-2 text-sm font-bold text-gray-900 border-x border-gray-200 min-w-[60px] text-center">
+              <span className="px-3 py-2 text-sm font-bold text-gray-900 border-x border-gray-200 min-w-[55px] text-center">
                 {quantity}
               </span>
 
@@ -332,7 +418,7 @@ const ProductCard = ({ product, onQuickAdd, onAddToCart, onProductClick, layout 
                 }}
                 className="p-2 hover:bg-gray-50 transition-colors"
               >
-                <Icon name="Plus" size={16} />
+                <Icon name="Plus" size={15} />
               </button>
             </div>
 
@@ -345,7 +431,7 @@ const ProductCard = ({ product, onQuickAdd, onAddToCart, onProductClick, layout 
               </div>
             )}
 
-            {/* Sağ: Sepet Butonu - Her zaman yeşil */}
+            {/* Sağ: Sepet Butonu */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -354,12 +440,12 @@ const ProductCard = ({ product, onQuickAdd, onAddToCart, onProductClick, layout 
                 }
               }}
               disabled={!product.isAvailable}
-              className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors flex-shrink-0 ${product.isAvailable
+              className={`w-11 h-11 rounded-lg flex items-center justify-center transition-colors flex-shrink-0 ${product.isAvailable
                 ? 'bg-green-600 text-white hover:bg-green-700'
                 : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                 }`}
             >
-              <Icon name="ShoppingCart" size={20} />
+              <Icon name="ShoppingCart" size={18} />
             </button>
           </div>
         </div>

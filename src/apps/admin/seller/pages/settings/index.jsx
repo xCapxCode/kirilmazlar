@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import storage from '@core/storage';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../../../../contexts/AuthContext';
 import { useModal } from '../../../../../contexts/ModalContext';
 import { useNotification } from '../../../../../contexts/NotificationContext';
-import SaticiHeader from '../../../../../shared/components/ui/SaticiHeader';
 import Icon from '../../../../../shared/components/AppIcon';
-import storage from '@core/storage';
+import SaticiHeader from '../../../../../shared/components/ui/SaticiHeader';
 
 // Toggle Switch Component
 const ToggleSwitch = ({ checked, onChange, color = 'green' }) => {
@@ -41,7 +41,7 @@ const GenelAyarlar = () => {
     companyTitle: 'Gıda Tedarik ve Dağıtım',
     address: 'Merkez Mah. Atatürk Cad. No:123',
     phone: '+90 542 123 4567',
-    email: 'info@kirilmazlar.com',
+    email: 'info@example.com',
     logo: null
   });
 
@@ -88,35 +88,13 @@ const GenelAyarlar = () => {
     {
       id: 1,
       name: 'Ana Yönetici',
-      email: 'admin@kirilmazlar.com',
+      email: 'admin@example.com',
       username: 'admin',
       password: 'admin123',
       role: 'owner',
       active: true,
       createdAt: new Date().toISOString(),
       lastLogin: new Date().toISOString()
-    },
-    {
-      id: 2,
-      name: 'Test Yöneticisi',
-      email: 'test@kirilmazlar.com',
-      username: 'test_admin',
-      password: 'test123',
-      role: 'admin',
-      active: true,
-      createdAt: new Date().toISOString(),
-      lastLogin: new Date(Date.now() - 86400000).toISOString()
-    },
-    {
-      id: 3,
-      name: 'Demo Satıcı',
-      email: 'demo@kirilmazlar.com',
-      username: 'demo_seller',
-      password: 'demo123',
-      role: 'seller',
-      active: true,
-      createdAt: new Date().toISOString(),
-      lastLogin: new Date(Date.now() - 172800000).toISOString()
     }
   ]);
 
@@ -141,7 +119,7 @@ const GenelAyarlar = () => {
   const loadSettings = async () => {
     try {
       setLoading(true);
-      
+
       // Storage'dan ayarları yükle
       const savedBusinessInfo = await storage.get('business_info', {});
       const savedPriceSettings = await storage.get('price_settings', {});
@@ -149,7 +127,7 @@ const GenelAyarlar = () => {
       const savedNotificationSettings = await storage.get('notification_settings', {});
       const savedCustomUnits = await storage.get('custom_units', []);
       const savedAdminAccounts = await storage.get('admin_accounts', []);
-      
+
       if (Object.keys(savedBusinessInfo).length > 0) {
         setBusinessInfo(prev => ({ ...prev, ...savedBusinessInfo }));
       }
@@ -175,7 +153,7 @@ const GenelAyarlar = () => {
       }
 
     } catch (error) {
-      console.error('❌ Ayarlar yüklenirken hata:', error);
+      logger.error('❌ Ayarlar yüklenirken hata:', error);
       showError?.('Hata', 'Ayarlar yüklenirken bir sorun oluştu');
     } finally {
       setLoading(false);
@@ -186,17 +164,17 @@ const GenelAyarlar = () => {
     try {
       setIsSaving(true);
       await storage.set(settingsType, data);
-      
+
       // İşletme bilgileri için özel localStorage sync (bildirim olmadan)
       if (settingsType === 'business_info') {
         localStorage.setItem('businessInfo', JSON.stringify(data));
         window.dispatchEvent(new CustomEvent('businessInfoUpdated'));
-        console.log('✅ Business info updated without duplicate notification');
+        logger.info('✅ Business info updated without duplicate notification');
       }
-      
+
       showSuccess('Kaydedildi', 'Ayarlarınız başarıyla kaydedildi');
     } catch (error) {
-      console.error('❌ Ayar kaydetme hatası:', error);
+      logger.error('❌ Ayar kaydetme hatası:', error);
       showError('Hata', 'Ayarlar kaydedilirken bir sorun oluştu');
     } finally {
       setIsSaving(false);
@@ -230,11 +208,11 @@ const GenelAyarlar = () => {
 
   return (
     <div className="min-h-screen bg-slate-200">
-      <SaticiHeader 
+      <SaticiHeader
         user={user}
         userProfile={userProfile}
       />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Başlık ve Açıklama */}
         <div className="bg-slate-100 rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
@@ -255,11 +233,10 @@ const GenelAyarlar = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`${
-                    activeTab === tab.id
-                      ? 'border-green-600 text-green-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
+                  className={`${activeTab === tab.id
+                    ? 'border-green-600 text-green-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
                 >
                   <Icon name={tab.icon} size={16} />
                   <span>{tab.name}</span>
@@ -274,7 +251,7 @@ const GenelAyarlar = () => {
             {activeTab === 'business' && (
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">İşletme Bilgileri</h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -377,7 +354,7 @@ const GenelAyarlar = () => {
                 {/* Yeni Yönetici Ekleme Formu */}
                 <div className="bg-slate-100 rounded-lg p-6 border border-gray-200">
                   <h4 className="text-md font-medium text-gray-900 mb-4">Yeni Yönetici Hesabı Ekle</h4>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Ad Soyad</label>
@@ -389,7 +366,7 @@ const GenelAyarlar = () => {
                         placeholder="Örn: Ahmet Yılmaz"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">E-posta</label>
                       <input
@@ -397,10 +374,10 @@ const GenelAyarlar = () => {
                         value={newAdmin.email}
                         onChange={(e) => setNewAdmin(prev => ({ ...prev, email: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                        placeholder="admin@kirilmazlar.com"
+                        placeholder="admin@example.com"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Kullanıcı Adı</label>
                       <input
@@ -411,7 +388,7 @@ const GenelAyarlar = () => {
                         placeholder="admin_kullanici"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Şifre</label>
                       <div className="relative">
@@ -431,7 +408,7 @@ const GenelAyarlar = () => {
                         </button>
                       </div>
                     </div>
-                    
+
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
                       <select
@@ -444,26 +421,56 @@ const GenelAyarlar = () => {
                       </select>
                     </div>
                   </div>
-                  
+
                   <div className="flex justify-end">
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         if (!newAdmin.name || !newAdmin.email || !newAdmin.username || !newAdmin.password) {
                           alert('Lütfen tüm alanları doldurun');
                           return;
                         }
-                        
-                        const newAccount = {
-                          id: Math.max(...adminAccounts.map(a => a.id)) + 1,
-                          ...newAdmin,
-                          active: true,
-                          createdAt: new Date().toISOString(),
-                          lastLogin: new Date().toISOString()
-                        };
-                        
-                        setAdminAccounts([...adminAccounts, newAccount]);
-                        setNewAdmin({ name: '', email: '', username: '', password: '', role: 'admin' });
-                        showSuccess('Başarılı', 'Yeni yönetici hesabı eklendi');
+
+                        try {
+                          // 🔧 STORAGE'A GERÇEK KULLANICI EKLEME - ROOT CAUSE FIX!
+                          const users = await storage.get('users', []);
+
+                          const newUserAccount = {
+                            id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                            name: newAdmin.name,
+                            email: newAdmin.email,
+                            username: newAdmin.username,
+                            password: newAdmin.password, // Real apps would hash this
+                            role: newAdmin.role,
+                            isActive: true,
+                            createdAt: new Date().toISOString(),
+                            registeredAt: new Date().toISOString()
+                          };
+
+                          // Users storage'ına ekle
+                          const updatedUsers = [...users, newUserAccount];
+                          await storage.set('users', updatedUsers);
+
+                          // Local state için admin format
+                          const newAccount = {
+                            id: Math.max(...adminAccounts.map(a => a.id), 0) + 1,
+                            name: newAdmin.name,
+                            email: newAdmin.email,
+                            username: newAdmin.username,
+                            role: newAdmin.role,
+                            active: true,
+                            createdAt: new Date().toISOString(),
+                            lastLogin: new Date().toISOString()
+                          };
+
+                          setAdminAccounts([...adminAccounts, newAccount]);
+                          setNewAdmin({ name: '', email: '', username: '', password: '', role: 'admin' });
+                          showSuccess('Başarılı', 'Yeni yönetici hesabı eklendi ve storage\'a kaydedildi');
+
+                          logger.info('✅ Yeni admin storage\'a kaydedildi:', newUserAccount.email);
+                        } catch (error) {
+                          logger.error('❌ Admin ekleme hatası:', error);
+                          showError('Hata', 'Yönetici hesabı eklenirken hata oluştu');
+                        }
                       }}
                       className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
                     >
@@ -487,9 +494,9 @@ const GenelAyarlar = () => {
                                 <input
                                   type="text"
                                   value={currentEditData.name}
-                                  onChange={(e) => setEditData(prev => ({ 
-                                    ...prev, 
-                                    [admin.id]: { ...currentEditData, name: e.target.value } 
+                                  onChange={(e) => setEditData(prev => ({
+                                    ...prev,
+                                    [admin.id]: { ...currentEditData, name: e.target.value }
                                   }))}
                                   className="w-full text-sm font-semibold px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
                                   placeholder="Ad Soyad"
@@ -497,9 +504,9 @@ const GenelAyarlar = () => {
                                 <input
                                   type="text"
                                   value={currentEditData.username}
-                                  onChange={(e) => setEditData(prev => ({ 
-                                    ...prev, 
-                                    [admin.id]: { ...currentEditData, username: e.target.value } 
+                                  onChange={(e) => setEditData(prev => ({
+                                    ...prev,
+                                    [admin.id]: { ...currentEditData, username: e.target.value }
                                   }))}
                                   className="w-full text-xs px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
                                   placeholder="kullanici_adi"
@@ -507,9 +514,9 @@ const GenelAyarlar = () => {
                                 <input
                                   type="email"
                                   value={currentEditData.email}
-                                  onChange={(e) => setEditData(prev => ({ 
-                                    ...prev, 
-                                    [admin.id]: { ...currentEditData, email: e.target.value } 
+                                  onChange={(e) => setEditData(prev => ({
+                                    ...prev,
+                                    [admin.id]: { ...currentEditData, email: e.target.value }
                                   }))}
                                   className="w-full text-xs px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
                                   placeholder="email@domain.com"
@@ -531,11 +538,10 @@ const GenelAyarlar = () => {
                             )}
                           </div>
                           <div className="flex items-center space-x-1">
-                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                              admin.active 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-red-100 text-red-800'
-                            }`}>
+                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${admin.active
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                              }`}>
                               {admin.active ? 'Aktif' : 'Pasif'}
                             </span>
                           </div>
@@ -547,9 +553,9 @@ const GenelAyarlar = () => {
                             {isEditing ? (
                               <select
                                 value={currentEditData.role}
-                                onChange={(e) => setEditData(prev => ({ 
-                                  ...prev, 
-                                  [admin.id]: { ...currentEditData, role: e.target.value } 
+                                onChange={(e) => setEditData(prev => ({
+                                  ...prev,
+                                  [admin.id]: { ...currentEditData, role: e.target.value }
                                 }))}
                                 className="text-xs px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
                                 disabled={admin.role === 'owner'}
@@ -559,13 +565,12 @@ const GenelAyarlar = () => {
                                 <option value="seller">Satıcı</option>
                               </select>
                             ) : (
-                              <span className={`px-2 py-1 rounded-full font-medium ${
-                                admin.role === 'owner' ? 'bg-yellow-100 text-yellow-800' :
+                              <span className={`px-2 py-1 rounded-full font-medium ${admin.role === 'owner' ? 'bg-yellow-100 text-yellow-800' :
                                 admin.role === 'admin' ? 'bg-blue-100 text-blue-800' :
-                                'bg-purple-100 text-purple-800'
-                              }`}>
-                                {admin.role === 'owner' ? 'Sahip' : 
-                                 admin.role === 'admin' ? 'Yönetici' : 'Satıcı'}
+                                  'bg-purple-100 text-purple-800'
+                                }`}>
+                                {admin.role === 'owner' ? 'Sahip' :
+                                  admin.role === 'admin' ? 'Yönetici' : 'Satıcı'}
                               </span>
                             )}
                           </div>
@@ -576,9 +581,9 @@ const GenelAyarlar = () => {
                                 <input
                                   type={showPasswords[admin.id] ? "text" : "password"}
                                   value={currentEditData.password}
-                                  onChange={(e) => setEditData(prev => ({ 
-                                    ...prev, 
-                                    [admin.id]: { ...currentEditData, password: e.target.value } 
+                                  onChange={(e) => setEditData(prev => ({
+                                    ...prev,
+                                    [admin.id]: { ...currentEditData, password: e.target.value }
                                   }))}
                                   className="text-xs px-2 py-1 pr-6 border border-gray-300 rounded font-mono focus:outline-none focus:ring-2 focus:ring-green-500"
                                   placeholder="Yeni şifre"
@@ -624,8 +629,8 @@ const GenelAyarlar = () => {
                                     showError('Eksik Bilgi', 'Lütfen tüm alanları doldurun');
                                     return;
                                   }
-                                  
-                                  setAdminAccounts(adminAccounts.map(a => 
+
+                                  setAdminAccounts(adminAccounts.map(a =>
                                     a.id === admin.id ? { ...a, ...currentEditData } : a
                                   ));
                                   setEditingAdmins(prev => ({ ...prev, [admin.id]: false }));
@@ -659,21 +664,20 @@ const GenelAyarlar = () => {
                                 <Icon name="Edit" size={12} />
                                 <span>Düzenle</span>
                               </button>
-                              
+
                               <button
-                                onClick={() => setAdminAccounts(adminAccounts.map(a => 
+                                onClick={() => setAdminAccounts(adminAccounts.map(a =>
                                   a.id === admin.id ? { ...a, active: !a.active } : a
                                 ))}
-                                className={`flex items-center justify-center px-3 py-2 text-xs rounded font-medium transition-colors ${
-                                  admin.active 
-                                    ? 'bg-transparent border border-orange-600 text-orange-600 hover:bg-orange-600/10'
-                                    : 'bg-transparent border border-green-600 text-green-600 hover:bg-green-600/10'
-                                }`}
+                                className={`flex items-center justify-center px-3 py-2 text-xs rounded font-medium transition-colors ${admin.active
+                                  ? 'bg-transparent border border-orange-600 text-orange-600 hover:bg-orange-600/10'
+                                  : 'bg-transparent border border-green-600 text-green-600 hover:bg-green-600/10'
+                                  }`}
                                 title={admin.active ? 'Devre Dışı Bırak' : 'Aktif Et'}
                               >
                                 <Icon name={admin.active ? "UserX" : "UserCheck"} size={12} />
                               </button>
-                              
+
                               {admin.role !== 'owner' && (
                                 <button
                                   onClick={() => {
@@ -923,7 +927,7 @@ const GenelAyarlar = () => {
                 {/* Yeni Birim Ekleme Formu */}
                 <div className="bg-slate-100 rounded-lg p-6 border border-gray-200">
                   <h4 className="text-md font-medium text-gray-900 mb-4">Yeni Birim Ekle</h4>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Birim Kodu</label>
@@ -935,7 +939,7 @@ const GenelAyarlar = () => {
                         placeholder="Örn: kg, adet, lt"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Birim Adı</label>
                       <input
@@ -946,25 +950,25 @@ const GenelAyarlar = () => {
                         placeholder="Örn: Kilogram, Adet, Litre"
                       />
                     </div>
-                    
+
                     <div className="flex items-end">
                       <button
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          
+
                           if (!newUnit.name.trim() || !newUnit.display.trim()) {
                             showError('Eksik Bilgi', 'Lütfen birim kodu ve adını girin');
                             return;
                           }
-                          
+
                           const newUnitData = {
                             id: Math.max(...customUnits.map(u => u.id)) + 1,
                             name: newUnit.name.toLowerCase().trim(),
                             display: newUnit.display.trim(),
                             active: true
                           };
-                          
+
                           setCustomUnits([...customUnits, newUnitData]);
                           setNewUnit({ name: '', display: '' });
                           showSuccess('Başarılı', 'Yeni birim eklendi');
@@ -992,9 +996,9 @@ const GenelAyarlar = () => {
                                 <input
                                   type="text"
                                   value={currentEditData.display}
-                                  onChange={(e) => setUnitEditData(prev => ({ 
-                                    ...prev, 
-                                    [unit.id]: { ...currentEditData, display: e.target.value } 
+                                  onChange={(e) => setUnitEditData(prev => ({
+                                    ...prev,
+                                    [unit.id]: { ...currentEditData, display: e.target.value }
                                   }))}
                                   className="w-full text-sm font-semibold px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
                                   placeholder="Birim adı"
@@ -1002,9 +1006,9 @@ const GenelAyarlar = () => {
                                 <input
                                   type="text"
                                   value={currentEditData.name}
-                                  onChange={(e) => setUnitEditData(prev => ({ 
-                                    ...prev, 
-                                    [unit.id]: { ...currentEditData, name: e.target.value } 
+                                  onChange={(e) => setUnitEditData(prev => ({
+                                    ...prev,
+                                    [unit.id]: { ...currentEditData, name: e.target.value }
                                   }))}
                                   className="w-full text-xs px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
                                   placeholder="Birim kodu"
@@ -1018,11 +1022,10 @@ const GenelAyarlar = () => {
                             )}
                           </div>
                           <div className="flex items-center space-x-1">
-                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                              unit.active 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-red-100 text-red-800'
-                            }`}>
+                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${unit.active
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                              }`}>
                               {unit.active ? 'Aktif' : 'Pasif'}
                             </span>
                           </div>
@@ -1037,8 +1040,8 @@ const GenelAyarlar = () => {
                                     showError('Eksik Bilgi', 'Lütfen tüm alanları doldurun');
                                     return;
                                   }
-                                  
-                                  setCustomUnits(customUnits.map(u => 
+
+                                  setCustomUnits(customUnits.map(u =>
                                     u.id === unit.id ? { ...u, ...currentEditData } : u
                                   ));
                                   setEditingUnits(prev => ({ ...prev, [unit.id]: false }));
@@ -1072,21 +1075,20 @@ const GenelAyarlar = () => {
                                 <Icon name="Edit" size={12} />
                                 <span>Düzenle</span>
                               </button>
-                              
+
                               <button
-                                onClick={() => setCustomUnits(customUnits.map(u => 
+                                onClick={() => setCustomUnits(customUnits.map(u =>
                                   u.id === unit.id ? { ...u, active: !u.active } : u
                                 ))}
-                                className={`flex items-center justify-center px-3 py-2 text-xs rounded font-medium transition-colors ${
-                                  unit.active 
-                                    ? 'bg-transparent border border-orange-600 text-orange-600 hover:bg-orange-600/10'
-                                    : 'bg-transparent border border-green-600 text-green-600 hover:bg-green-600/10'
-                                }`}
+                                className={`flex items-center justify-center px-3 py-2 text-xs rounded font-medium transition-colors ${unit.active
+                                  ? 'bg-transparent border border-orange-600 text-orange-600 hover:bg-orange-600/10'
+                                  : 'bg-transparent border border-green-600 text-green-600 hover:bg-green-600/10'
+                                  }`}
                                 title={unit.active ? 'Devre Dışı Bırak' : 'Aktif Et'}
                               >
                                 <Icon name={unit.active ? "ToggleLeft" : "ToggleRight"} size={12} />
                               </button>
-                              
+
                               <button
                                 onClick={() => {
                                   showConfirm(

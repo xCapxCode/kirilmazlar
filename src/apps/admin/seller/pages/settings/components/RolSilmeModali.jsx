@@ -22,7 +22,7 @@ const RolSilmeModali = ({ role, onClose, onDelete }) => {
       showSuccess('Rol başarıyla silindi');
       onClose();
     } catch (error) {
-      console.error('Rol silme hatası:', error);
+      logger.error('Rol silme hatası:', error);
       showError('Rol silinirken bir hata oluştu');
     } finally {
       setIsSubmitting(false);

@@ -24,7 +24,7 @@ const BusinessLogo = ({ size = 'md', showName = false, className = '' }) => {
           setBusinessName('İşletme');
         }
       } catch (error) {
-        console.error('BusinessLogo - Loading error:', error);
+        logger.error('BusinessLogo - Loading error:', error);
         setLogo(null);
         setBusinessName('İşletme');
       }
@@ -79,7 +79,7 @@ const BusinessLogo = ({ size = 'md', showName = false, className = '' }) => {
             alt={businessName}
             className={`${logoSizeClasses[size]} object-contain rounded-lg shadow-sm`}
             onError={(e) => {
-              console.error('BusinessLogo - Image load error:', e);
+              logger.error('BusinessLogo - Image load error:', e);
               setLogo(null);
             }}
           />
