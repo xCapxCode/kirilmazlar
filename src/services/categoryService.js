@@ -1,5 +1,5 @@
 import storage from '@core/storage';
-import logger from '@utils/logger';
+import logger from '@utils/productionLogger';
 
 /**
  * Kategori yönetimi için servis sınıfı

@@ -84,19 +84,7 @@ const GenelAyarlar = () => {
   const [editingUnits, setEditingUnits] = useState({});
   const [unitEditData, setUnitEditData] = useState({});
 
-  const [adminAccounts, setAdminAccounts] = useState([
-    {
-      id: 1,
-      name: 'Ana Yönetici',
-      email: 'admin@example.com',
-      username: 'admin',
-      password: 'admin123',
-      role: 'owner',
-      active: true,
-      createdAt: new Date().toISOString(),
-      lastLogin: new Date().toISOString()
-    }
-  ]);
+  const [adminAccounts, setAdminAccounts] = useState([]);
 
   const [newAdmin, setNewAdmin] = useState({
     name: '',
@@ -148,8 +136,35 @@ const GenelAyarlar = () => {
         setCustomUnits(savedCustomUnits);
       }
 
-      if (savedAdminAccounts.length > 0) {
-        setAdminAccounts(savedAdminAccounts);
+      // Admin hesaplarını gerçek users'dan yükle
+      try {
+        const users = await storage.get('users', []);
+        const adminUsers = users.filter(user =>
+          user.role === 'admin'
+        );
+
+        if (adminUsers.length > 0) {
+          const formattedAdmins = adminUsers.map((user, index) => ({
+            id: index + 1,
+            name: user.name || user.username || 'İsimsiz',
+            email: user.email || '',
+            username: user.username || '',
+            password: user.password || '123456', // Varsayılan şifre
+            role: user.role || 'admin',
+            active: user.isActive !== false,
+            createdAt: user.createdAt || new Date().toISOString(),
+            lastLogin: user.lastLoginAt || user.createdAt || new Date().toISOString()
+          }));
+          setAdminAccounts(formattedAdmins);
+          logger.info('✅ Admin hesapları storage\'dan yüklendi:', formattedAdmins.length);
+        } else if (savedAdminAccounts.length > 0) {
+          setAdminAccounts(savedAdminAccounts);
+        }
+      } catch (error) {
+        logger.error('❌ Admin hesapları yüklenirken hata:', error);
+        if (savedAdminAccounts.length > 0) {
+          setAdminAccounts(savedAdminAccounts);
+        }
       }
 
     } catch (error) {
@@ -309,7 +324,7 @@ const GenelAyarlar = () => {
                       onChange={(e) => setBusinessInfo(prev => ({ ...prev, phone: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                       required
-                      pattern="[0-9+\s\-()]+"
+                      pattern="[0-9+\s\-\(\)]+"
                       placeholder="Telefon numaranızı girin"
                     />
                   </div>
@@ -409,17 +424,8 @@ const GenelAyarlar = () => {
                       </div>
                     </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
-                      <select
-                        value={newAdmin.role}
-                        onChange={(e) => setNewAdmin(prev => ({ ...prev, role: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                      >
-                        <option value="admin">Yönetici</option>
-                        <option value="seller">Satıcı</option>
-                      </select>
-                    </div>
+                    {/* Rol sabit olarak admin */}
+                    <input type="hidden" value="admin" />
                   </div>
 
                   <div className="flex justify-end">
@@ -486,7 +492,7 @@ const GenelAyarlar = () => {
                     const currentEditData = editData[admin.id] || admin;
 
                     return (
-                      <div key={admin.id} className="bg-slate-100 border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div key={admin.id} className="bg-gradient-to-br from-blue-50/80 to-purple-50/80 backdrop-blur-sm border border-blue-200/50 rounded-lg p-4 shadow-sm">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1">
                             {isEditing ? (
@@ -526,11 +532,7 @@ const GenelAyarlar = () => {
                               <div>
                                 <div className="flex items-center space-x-2">
                                   <h3 className="font-semibold text-gray-900 text-sm">{admin.name}</h3>
-                                  {admin.role === 'owner' && (
-                                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                      Ana Yönetici
-                                    </span>
-                                  )}
+
                                 </div>
                                 <p className="text-xs text-gray-600 truncate">@{admin.username}</p>
                                 <p className="text-xs text-gray-600 truncate">{admin.email}</p>
@@ -550,29 +552,9 @@ const GenelAyarlar = () => {
                         <div className="space-y-2 mb-3">
                           <div className="flex justify-between text-xs">
                             <span className="text-gray-600">Rol:</span>
-                            {isEditing ? (
-                              <select
-                                value={currentEditData.role}
-                                onChange={(e) => setEditData(prev => ({
-                                  ...prev,
-                                  [admin.id]: { ...currentEditData, role: e.target.value }
-                                }))}
-                                className="text-xs px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-                                disabled={admin.role === 'owner'}
-                              >
-                                <option value="owner">Sahip</option>
-                                <option value="admin">Yönetici</option>
-                                <option value="seller">Satıcı</option>
-                              </select>
-                            ) : (
-                              <span className={`px-2 py-1 rounded-full font-medium ${admin.role === 'owner' ? 'bg-yellow-100 text-yellow-800' :
-                                admin.role === 'admin' ? 'bg-blue-100 text-blue-800' :
-                                  'bg-purple-100 text-purple-800'
-                                }`}>
-                                {admin.role === 'owner' ? 'Sahip' :
-                                  admin.role === 'admin' ? 'Yönetici' : 'Satıcı'}
-                              </span>
-                            )}
+                            <span className="px-2 py-1 rounded-full font-medium bg-blue-100 text-blue-800">
+                              Yönetici
+                            </span>
                           </div>
                           <div className="flex justify-between text-xs">
                             <span className="text-gray-600">Şifre:</span>
@@ -599,7 +581,7 @@ const GenelAyarlar = () => {
                             ) : (
                               <div className="flex items-center space-x-1">
                                 <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs">
-                                  {showPasswords[admin.id] ? admin.password : '•'.repeat(admin.password.length)}
+                                  {showPasswords[admin.id] ? (admin.password || '') : '•'.repeat((admin.password || '').length)}
                                 </span>
                                 <button
                                   type="button"
@@ -675,27 +657,51 @@ const GenelAyarlar = () => {
                                   }`}
                                 title={admin.active ? 'Devre Dışı Bırak' : 'Aktif Et'}
                               >
-                                <Icon name={admin.active ? "UserX" : "UserCheck"} size={12} />
+                                <Icon name={admin.active ? "XCircle" : "CheckCircle"} size={12} />
                               </button>
 
-                              {admin.role !== 'owner' && (
+                              {/* Admin Silme Butonu */}
+                              {(
                                 <button
-                                  onClick={() => {
-                                    showConfirm(
-                                      'Hesabı Sil',
-                                      `${admin.name} hesabını silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz!`,
-                                      () => {
-                                        setAdminAccounts(adminAccounts.filter(a => a.id !== admin.id));
-                                        showSuccess('Başarılı', 'Hesap başarıyla silindi');
+                                  onClick={async () => {
+                                    const confirmed = await showConfirm(
+                                      `"${admin.name}" adlı yöneticiyi silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz.`,
+                                      {
+                                        title: 'Yönetici Sil',
+                                        confirmText: 'Sil',
+                                        cancelText: 'İptal',
+                                        type: 'danger'
                                       }
                                     );
+
+                                    if (confirmed) {
+                                      try {
+                                        // Storage'dan da sil
+                                        const users = await storage.get('users', []);
+                                        const filteredUsers = users.filter(user =>
+                                          user.email !== admin.email && user.username !== admin.username
+                                        );
+                                        await storage.set('users', filteredUsers);
+
+                                        // Local state'den sil
+                                        setAdminAccounts(adminAccounts.filter(a => a.id !== admin.id));
+
+                                        showSuccess('Başarılı', `${admin.name} başarıyla silindi`);
+                                        logger.info('✅ Admin silindi:', admin.email);
+                                      } catch (error) {
+                                        logger.error('❌ Admin silme hatası:', error);
+                                        showError('Hata', 'Yönetici silinirken hata oluştu');
+                                      }
+                                    }
                                   }}
-                                  className="flex items-center justify-center px-3 py-2 bg-transparent border border-red-600 text-red-600 text-xs rounded hover:bg-red-600/10 transition-colors font-medium"
-                                  title="Hesabı Sil"
+                                  className="flex items-center justify-center px-3 py-2 bg-transparent border border-red-600 text-red-600 text-xs rounded hover:bg-red-600/10 transition-colors"
+                                  title="Yöneticiyi Sil"
                                 >
                                   <Icon name="Trash2" size={12} />
                                 </button>
                               )}
+
+
                             </>
                           )}
                         </div>

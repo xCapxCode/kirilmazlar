@@ -4,7 +4,7 @@
  * Sadece kullanılan icon'ları export eder
  */
 
-import logger from '@utils/logger';
+import logger from '@utils/productionLogger';
 
 // Proje genelinde kullanılan tüm icon'lar
 import {
@@ -36,6 +36,7 @@ import {
   Edit2,
   Eye,
   EyeOff,
+  Heart,
   HelpCircle,
   Home,
   Info,
@@ -43,11 +44,13 @@ import {
   Loader,
   Loader2,
   Lock,
+  LogIn,
   LogOut,
   // Communication
   Mail,
   MapPin,
   Menu,
+  Mic,
   // Quantity Controls
   Minus,
   Package,
@@ -55,6 +58,7 @@ import {
   Plus,
   RefreshCw,
   RotateCcw,
+  Search,
   Settings,
   Shield,
   // Business Icons
@@ -63,6 +67,7 @@ import {
   Star,
   Store,
   Trash2,
+  TrendingUp,
   Truck,
   // Authentication & User
   User,
@@ -113,6 +118,11 @@ export const ICON_MAP = {
   'Store': 'Store',
   'Leaf': 'Leaf',
   'Star': 'Star',
+  'Heart': 'Heart',
+  'Search': 'Search',
+  'Mic': 'Mic',
+  'LogIn': 'LogIn',
+  'TrendingUp': 'TrendingUp',
 
   // Communication
   'Mail': 'Mail',
@@ -185,6 +195,10 @@ export const getIconComponent = (iconName) => {
     Store,
     Leaf,
     Star,
+    Heart,
+    Search,
+    Mic,
+    LogIn,
     Mail,
     Phone,
     MapPin,
@@ -200,6 +214,7 @@ export const getIconComponent = (iconName) => {
     Database,
     Archive,
     Trash2,
+    TrendingUp,
     Loader,
     Loader2,
     Settings,
@@ -234,7 +249,7 @@ export const getIconComponent = (iconName) => {
 export {
   AlertCircle, AlertTriangle, Apple, Archive, ArrowLeft,
   ArrowRight, BarChart3, Bell, Bug, Building, Calendar, Camera, Carrot, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Clock, CreditCard, Database, DollarSign, Download, Edit, Edit2, Eye,
-  EyeOff, HelpCircle, Home, Info, Leaf, Loader, Loader2, Lock, LogOut, Mail, MapPin, Menu, Minus, Package, Phone, Plus, RefreshCw, RotateCcw, Settings, Shield, ShoppingBag,
-  ShoppingCart, Star, Store, Trash2, Truck, User, UserCheck, Users, Wifi, WifiOff, X, XCircle
+  EyeOff, Heart, HelpCircle, Home, Info, Leaf, Loader, Loader2, Lock, LogIn, LogOut, Mail, MapPin, Menu, Mic, Minus, Package, Phone, Plus, RefreshCw, RotateCcw, Search, Settings, Shield, ShoppingBag,
+  ShoppingCart, Star, Store, Trash2, TrendingUp, Truck, User, UserCheck, Users, Wifi, WifiOff, X, XCircle
 };
 

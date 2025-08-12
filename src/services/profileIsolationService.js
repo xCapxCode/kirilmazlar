@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import logger from '@utils/logger';
+import logger from '@utils/productionLogger';
 /**
  * Profile Isolation Service
  * P1.2.4 - Cross-profile data bleeding prevention

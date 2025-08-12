@@ -1,6 +1,6 @@
 import storage from '@core/storage';
 
-import logger from '@utils/logger';
+import logger from '@utils/productionLogger';
 /**
  * Sipariş yönetimi için servis sınıfı
  * Sipariş CRUD işlemleri ve senkronizasyon için kullanılır

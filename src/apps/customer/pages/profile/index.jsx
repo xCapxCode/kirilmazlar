@@ -4,6 +4,7 @@ import { useAuth } from '../../../../contexts/AuthContext';
 import { useCart } from '../../../../contexts/CartContext';
 import { useBreakpoint } from '../../../../hooks/useBreakpoint';
 import Icon from '../../../../shared/components/AppIcon';
+import { logger } from '../../../../utils/productionLogger';
 
 logger.info('🔥 MusteriProfil module loaded!');
 
@@ -108,8 +109,8 @@ const MusteriProfil = () => {
   const totalSpent = orders.reduce((sum, order) => sum + order.total, 0);
 
   return (
-    <div className="min-h-screen bg-slate-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-slate-200 pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="space-y-6">
           {/* Profil Başlığı */}
           <div className="bg-slate-100 rounded-lg p-6 shadow-sm border border-gray-200">

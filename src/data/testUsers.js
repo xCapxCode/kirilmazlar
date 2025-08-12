@@ -1,16 +1,5 @@
-// Test kullanıcıları kaldırıldı - Sadece admin kullanıcısı
-export const TEST_USERS = [
-  {
-    id: 'admin-1',
-    email: 'admin@example.com',
-    username: 'admin',
-    password: 'admin123',
-    role: 'admin',
-    isActive: true,
-    name: 'Admin',
-    createdAt: new Date().toISOString()
-  }
-];
+// Test kullanıcıları kaldırıldı - Gerçek kullanıcı sistemi kullanılıyor
+export const TEST_USERS = [];
 
 export const TEST_BUSINESS = {
   id: 'business-1',

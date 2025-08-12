@@ -1,6 +1,6 @@
 import storage from '@core/storage';
 
-import logger from '@utils/logger';
+import logger from '@utils/productionLogger';
 /**
  * Ürün yönetimi için servis sınıfı
  * Ürün CRUD işlemleri ve senkronizasyon için kullanılır
@@ -14,15 +14,15 @@ class ProductService {
   async getAll(options = {}) {
     try {
       const products = await storage.get('products', []);
-      
+
       if (options.activeOnly) {
-        return products.filter(product => 
-          product.isActive === true || 
-          product.status === 'active' || 
+        return products.filter(product =>
+          product.isActive === true ||
+          product.status === 'active' ||
           product.status === 'available'
         );
       }
-      
+
       return products;
     } catch (error) {
       logger.error('Ürünler yüklenirken hata:', error);
@@ -53,12 +53,12 @@ class ProductService {
   async create(productData) {
     try {
       const products = await storage.get('products', []);
-      
+
       // Yeni ID oluştur
-      const newId = products.length > 0 
-        ? Math.max(...products.map(p => typeof p.id === 'number' ? p.id : 0)) + 1 
+      const newId = products.length > 0
+        ? Math.max(...products.map(p => typeof p.id === 'number' ? p.id : 0)) + 1
         : 1;
-      
+
       // Ürün nesnesini oluştur
       const newProduct = {
         ...productData,
@@ -66,7 +66,7 @@ class ProductService {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      
+
       // Status ve isActive alanlarını senkronize et
       if (productData.status === 'active' || productData.status === 'available') {
         newProduct.isActive = true;
@@ -77,16 +77,16 @@ class ProductService {
         newProduct.isActive = true;
         newProduct.status = 'active';
       }
-      
+
       // Storage'a kaydet
       const updatedProducts = [...products, newProduct];
       await storage.set('products', updatedProducts);
-      
+
       // Gerçek zamanlı senkronizasyon için storage event'i tetikle
       storage.notify('products', updatedProducts);
-      
+
       logger.info(`✅ Yeni ürün oluşturuldu: ${newId} -> ${newProduct.name}`);
-      
+
       return newProduct;
     } catch (error) {
       logger.error('Ürün oluşturulurken hata:', error);
@@ -104,38 +104,38 @@ class ProductService {
     try {
       const products = await storage.get('products', []);
       const index = products.findIndex(product => product.id === id);
-      
+
       if (index === -1) {
         return null;
       }
-      
+
       // Status ve isActive alanlarını senkronize et
       if (productData.status === 'active' || productData.status === 'available') {
         productData.isActive = true;
       } else if (productData.status === 'inactive' || productData.status === 'unavailable') {
         productData.isActive = false;
       }
-      
+
       // Ürünü güncelle
       const updatedProduct = {
         ...products[index],
         ...productData,
         updatedAt: new Date().toISOString()
       };
-      
+
       const updatedProducts = [
         ...products.slice(0, index),
         updatedProduct,
         ...products.slice(index + 1)
       ];
-      
+
       await storage.set('products', updatedProducts);
-      
+
       // Gerçek zamanlı senkronizasyon için storage event'i tetikle
       storage.notify('products', updatedProducts);
-      
+
       logger.info(`✅ Ürün güncellendi: ${id} -> ${updatedProduct.name}`);
-      
+
       return updatedProduct;
     } catch (error) {
       logger.error(`ID'si ${id} olan ürün güncellenirken hata:`, error);
@@ -153,14 +153,14 @@ class ProductService {
     try {
       const products = await storage.get('products', []);
       const index = products.findIndex(product => product.id === id);
-      
+
       if (index === -1) {
         return null;
       }
-      
+
       // Status ve isActive alanlarını senkronize et
       const isActive = status === 'active' || status === 'available';
-      
+
       // Ürünü güncelle
       const updatedProduct = {
         ...products[index],
@@ -168,20 +168,20 @@ class ProductService {
         isActive,
         updatedAt: new Date().toISOString()
       };
-      
+
       const updatedProducts = [
         ...products.slice(0, index),
         updatedProduct,
         ...products.slice(index + 1)
       ];
-      
+
       await storage.set('products', updatedProducts);
-      
+
       // Gerçek zamanlı senkronizasyon için storage event'i tetikle
       storage.notify('products', updatedProducts);
-      
+
       logger.info(`✅ Ürün durumu güncellendi: ${id} -> ${status} (isActive: ${isActive})`);
-      
+
       return updatedProduct;
     } catch (error) {
       logger.error(`ID'si ${id} olan ürün durumu güncellenirken hata:`, error);
@@ -198,18 +198,18 @@ class ProductService {
     try {
       const products = await storage.get('products', []);
       const updatedProducts = products.filter(product => product.id !== id);
-      
+
       if (updatedProducts.length === products.length) {
         return false; // Ürün bulunamadı
       }
-      
+
       await storage.set('products', updatedProducts);
-      
+
       // Gerçek zamanlı senkronizasyon için storage event'i tetikle
       storage.notify('products', updatedProducts);
-      
+
       logger.info(`✅ Ürün silindi: ${id}`);
-      
+
       return true;
     } catch (error) {
       logger.error(`ID'si ${id} olan ürün silinirken hata:`, error);
@@ -239,7 +239,7 @@ class ProductService {
   async getLowStockProducts() {
     try {
       const products = await storage.get('products', []);
-      return products.filter(product => 
+      return products.filter(product =>
         product.stock <= (product.minStock || 5)
       );
     } catch (error) {

@@ -5,6 +5,7 @@ import { useCart } from '../../../../contexts/CartContext';
 import { useBreakpoint } from '../../../../hooks/useBreakpoint';
 import Icon from '../../../../shared/components/AppIcon';
 import Image from '../../../../shared/components/AppImage';
+import { logger } from '../../../../utils/productionLogger';
 
 const ShoppingCartCheckout = () => {
   const navigate = useNavigate();
@@ -237,8 +238,8 @@ const ShoppingCartCheckout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-slate-200 pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Başlık Bandı */}
         <div className="bg-slate-100 rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-center justify-between">
@@ -401,8 +402,8 @@ const ShoppingCartCheckout = () => {
                   onClick={handleCheckout}
                   disabled={!isMinimumMet || isLoading}
                   className={`w-full py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 ${isMinimumMet && !isLoading
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
                 >
                   {isLoading ? (

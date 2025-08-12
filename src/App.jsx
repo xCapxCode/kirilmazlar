@@ -10,6 +10,7 @@ import { migrationManager } from "./core/migration";
 import Routes from "./Routes";
 import { setupCSPViolationReporting } from "./security/contentSecurityPolicy";
 import securityService from "./security/SecurityService";
+import dataService from "./services/dataService";
 import ConcurrentSessionModal from "./shared/components/ConcurrentSessionModal";
 import NetworkStatus from "./shared/components/NetworkStatus";
 import SecurityAlertModal from "./shared/components/SecurityAlertModal";
@@ -53,6 +54,14 @@ function App() {
             localStorage.removeItem('cart');
           }
         }
+
+        // DataService'i başlat - İlk veri yükleme için
+        logger.info('🔄 DataService başlatılıyor...');
+        dataService.initializeData();
+        logger.info('✅ DataService başlatıldı');
+
+        // Kullanıcıları kontrol et (mobil erişim için login sayfasında yüklenecek)
+        logger.info('Uygulama başlatıldı');
 
         // Veri migrasyonu yap
         logger.info('Veri migrasyonu kontrol ediliyor...');

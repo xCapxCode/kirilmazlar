@@ -377,6 +377,7 @@ export const CartProvider = ({ children }) => {
   };
 
   const value = {
+    items: cartItems, // Mobil uyumluluk için items alias'ı
     cartItems,
     orders,
     addToCart,

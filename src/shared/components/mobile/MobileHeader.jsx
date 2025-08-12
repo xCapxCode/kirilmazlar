@@ -69,14 +69,14 @@ const MobileHeader = ({
             ) : (
               <div className="flex items-center mr-3">
                 <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                  <Icon name="Leaf" size={20} className="text-white" />
+                  <span className="text-white font-bold text-lg">K</span>
                 </div>
               </div>
             )}
 
             <div className="flex-1 min-w-0">
               <h1 className="text-lg font-bold text-white truncate leading-tight">
-                {title}
+                Kırılmazlar Gıda
               </h1>
               {userProfile?.name && (
                 <p className="text-xs text-green-100 truncate leading-tight mt-0.5">

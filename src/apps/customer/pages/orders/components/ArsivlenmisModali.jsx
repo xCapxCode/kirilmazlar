@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
 import Icon from '@shared/components/AppIcon';
+import { useEffect, useState } from 'react';
 import { useNotification } from '../../../../../contexts/NotificationContext';
-import orderCleanupUtil from '../../../../../utils/orderCleanupUtil';
+// Order cleanup utility removed - using direct order service
 
 const ArsivlenmisModali = ({ onClose }) => {
   const { showSuccess, showError } = useNotification();

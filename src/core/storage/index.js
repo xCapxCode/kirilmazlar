@@ -4,7 +4,7 @@
  * Bu dosya TÜMEL uygulamanın tek veri kaynağıdır
  */
 
-import logger from '@utils/logger';
+import logger from '@utils/productionLogger';
 
 class KirilmazlarStorage {
   constructor() {

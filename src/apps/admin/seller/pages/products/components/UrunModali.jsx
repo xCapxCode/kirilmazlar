@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNotification } from '../../../../../../contexts/NotificationContext';
 import Icon from '../../../../../../shared/components/AppIcon';
 
@@ -19,8 +19,30 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [units, setUnits] = useState([]);
 
-  const units = ['kg', 'adet', 'gram', 'litre', 'demet', 'kasa (10kg)', 'çuval (50kg)', 'kutu'];
+  // Birimleri ayarlar sayfasından yükle
+  useEffect(() => {
+    const loadUnits = async () => {
+      try {
+        const customUnits = await storage.get('custom_units', []);
+        const activeUnits = customUnits.filter(unit => unit.active);
+
+        if (activeUnits.length > 0) {
+          setUnits(activeUnits.map(unit => unit.name));
+        } else {
+          // Varsayılan birimler
+          setUnits(['kg', 'adet', 'gram', 'litre', 'demet', 'kasa', 'çuval']);
+        }
+      } catch (error) {
+        console.error('Birimler yüklenirken hata:', error);
+        // Hata durumunda varsayılan birimler
+        setUnits(['kg', 'adet', 'gram', 'litre', 'demet', 'kasa', 'çuval']);
+      }
+    };
+
+    loadUnits();
+  }, []);
 
   useEffect(() => {
     if (product) {
@@ -45,7 +67,7 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
       ...prev,
       [name]: value
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
@@ -68,14 +90,14 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
 
   const processImageFile = (file) => {
     logger.info('processImageFile çağrıldı:', file);
-    
+
     // Dosya boyutu kontrolü (2MB = 2 * 1024 * 1024 bytes)
     const maxSize = 2 * 1024 * 1024;
     if (file.size > maxSize) {
       showError('Dosya boyutu 2MB\'dan büyük olamaz. Lütfen daha küçük bir dosya seçin.');
       return;
     }
-    
+
     if (file && file.type.startsWith('image/')) {
       logger.info('Dosya tipi uygun, boyutlandırma başlıyor...');
       const reader = new FileReader();
@@ -96,27 +118,27 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
-    
+
     img.onload = () => {
       // Canvas boyutlarını hedef boyutlara ayarla
       canvas.width = targetWidth;
       canvas.height = targetHeight;
-      
+
       // Resmi canvas'a çiz (otomatik olarak yeniden boyutlandırılır)
       ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
-      
+
       // Yeniden boyutlandırılmış resmi base64'e çevir
       const resizedImage = canvas.toDataURL('image/jpeg', 0.8);
-      
+
       // Form data'ya kaydet
       setFormData(prev => ({
         ...prev,
         image: resizedImage
       }));
-      
+
       logger.info('Resim başarıyla yeniden boyutlandırıldı:', targetWidth + 'x' + targetHeight);
     };
-    
+
     img.src = imageDataUrl;
   };
 
@@ -133,7 +155,7 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragOver(false);
-    
+
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       processImageFile(files[0]);
@@ -191,7 +213,7 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
     e.preventDefault();
     logger.info('Form submit edildi');
     logger.info('Form data:', formData);
-    
+
     if (!validateForm()) {
       logger.info('Form validation başarısız');
       logger.info('Hatalar:', errors);
@@ -213,7 +235,7 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
       logger.info('Kaydedilecek ürün verisi:', productData);
       await onSave(productData);
       logger.info('Ürün başarıyla kaydedildi');
-      
+
       showSuccess(product ? 'Ürün başarıyla güncellendi!' : 'Ürün başarıyla eklendi!');
     } catch (error) {
       logger.error('Ürün kaydetme hatası:', error);
@@ -244,7 +266,7 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
         {/* Form */}
         <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[calc(90vh-80px)]">
           <div className="p-6 space-y-6">
-            
+
             {/* Ürün Adı */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -255,9 +277,8 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                  errors.name ? 'border-red-300' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.name ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 placeholder="Ürün adını giriniz"
               />
               {errors.name && (
@@ -285,21 +306,20 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Ürün Resmi
               </label>
-              <div 
-                className={`border-2 border-dashed rounded-lg overflow-hidden transition-all duration-200 ${
-                  isDragOver 
-                    ? 'border-blue-400 bg-blue-50' 
-                    : 'border-gray-300 hover:border-gray-400'
-                }`}
+              <div
+                className={`border-2 border-dashed rounded-lg overflow-hidden transition-all duration-200 ${isDragOver
+                  ? 'border-blue-400 bg-blue-50'
+                  : 'border-gray-300 hover:border-gray-400'
+                  }`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
               >
                 {formData.image ? (
                   <div className="relative w-full h-48">
-                    <img 
-                      src={formData.image} 
-                      alt="Ürün resmi" 
+                    <img
+                      src={formData.image}
+                      alt="Ürün resmi"
                       className="w-full h-full object-cover object-center"
                     />
                     <div className="absolute top-2 right-2 flex space-x-2">
@@ -322,12 +342,11 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
                     </div>
                   </div>
                 ) : (
-                  <div 
-                    className={`flex flex-col items-center justify-center h-48 cursor-pointer transition-colors p-4 ${
-                      isDragOver 
-                        ? 'bg-blue-50' 
-                        : 'hover:bg-gray-50'
-                    }`}
+                  <div
+                    className={`flex flex-col items-center justify-center h-48 cursor-pointer transition-colors p-4 ${isDragOver
+                      ? 'bg-blue-50'
+                      : 'hover:bg-gray-50'
+                      }`}
                   >
                     <label className="flex flex-col items-center w-full h-full justify-center cursor-pointer">
                       {isDragOver ? (
@@ -372,9 +391,8 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
                   name="category"
                   value={formData.category}
                   onChange={handleCategoryChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                    errors.category ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.category ? 'border-red-300' : 'border-gray-300'
+                    }`}
                 >
                   <option value="">Kategori seçiniz</option>
                   {categories.map(category => (
@@ -397,9 +415,8 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
                   value={formData.subcategory}
                   onChange={handleInputChange}
                   disabled={!selectedCategory}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:bg-gray-100 ${
-                    errors.subcategory ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:bg-gray-100 ${errors.subcategory ? 'border-red-300' : 'border-gray-300'
+                    }`}
                 >
                   <option value="">Alt kategori seçiniz</option>
                   {selectedCategory?.subcategories?.map(subcategory => (
@@ -445,9 +462,8 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
                   onChange={handleInputChange}
                   step="0.01"
                   min="0"
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                    errors.price ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.price ? 'border-red-300' : 'border-gray-300'
+                    }`}
                   placeholder="0.00"
                 />
                 {errors.price && (
@@ -468,9 +484,8 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
                   value={formData.stock}
                   onChange={handleInputChange}
                   min="0"
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                    errors.stock ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.stock ? 'border-red-300' : 'border-gray-300'
+                    }`}
                   placeholder="0"
                 />
                 {errors.stock && (
@@ -488,9 +503,8 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
                   value={formData.minStock}
                   onChange={handleInputChange}
                   min="0"
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                    errors.minStock ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.minStock ? 'border-red-300' : 'border-gray-300'
+                    }`}
                   placeholder="0"
                 />
                 {errors.minStock && (

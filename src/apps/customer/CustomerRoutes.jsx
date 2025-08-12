@@ -1,8 +1,8 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import MobileBottomNavigation from "../../shared/components/mobile/MobileBottomNavigation";
 import BottomTabNavigation from "../../shared/components/ui/BottomTabNavigation";
 import Header from "../../shared/components/ui/Header";
+import CustomerMobileNavigation from "./components/CustomerMobileNavigation";
 
 // Customer Pages - Lazy loaded for code splitting
 const ProductCatalog = lazy(() => import("./pages/catalog"));
@@ -55,8 +55,8 @@ const CustomerRoutes = () => {
       </div>
 
       {/* Mobile Navigation - Sadece mobile'da görünsün */}
-      <div className="md:hidden">
-        <MobileBottomNavigation />
+      <div className="block md:hidden" style={{ position: 'relative', zIndex: 999999 }}>
+        <CustomerMobileNavigation />
       </div>
 
       {/* Desktop Navigation - Sadece desktop'ta görünsün */}

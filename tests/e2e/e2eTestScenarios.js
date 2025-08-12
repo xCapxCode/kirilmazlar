@@ -5,7 +5,7 @@
  * @author GeniusCoder (Gen)
  */
 
-import { performanceTestUtils, testDataGenerator, testEnvironmentManager } from '../services/testingService.js';
+// Testing service removed - using direct test utilities
 import { Logger } from '../utils/logger.js';
 
 /**

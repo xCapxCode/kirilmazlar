@@ -140,11 +140,22 @@ const UrunYonetimi = () => {
         logger.info('✅ Ürün güncellendi:', productData.name);
         showSuccess('Ürün başarıyla güncellendi');
       } else {
-        // Yeni ekleme
+        // Yeni ekleme - benzersiz ID oluştur
+        const existingIds = products.map(p => p.id);
+        let newId;
+        let counter = 1;
+
+        // Benzersiz ID oluştur
+        do {
+          newId = `prod-${counter}`;
+          counter++;
+        } while (existingIds.includes(newId));
+
         const newProduct = {
           ...productData,
-          id: `prod-${Date.now()}`,
+          id: newId,
           createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
           isActive: true
         };
         updatedProducts = [...products, newProduct];
@@ -169,8 +180,27 @@ const UrunYonetimi = () => {
     }
 
     try {
+      // Benzersiz kategori ID oluştur
+      const existingIds = categories.map(c => c.id);
+      let newId;
+      let counter = 1;
+
+      // Sayısal ID'ler varsa onlarla uyumlu ol
+      const hasNumericIds = existingIds.some(id => typeof id === 'number');
+
+      if (hasNumericIds) {
+        const numericIds = existingIds.filter(id => typeof id === 'number');
+        newId = numericIds.length > 0 ? Math.max(...numericIds) + 1 : 1;
+      } else {
+        // String ID oluştur
+        do {
+          newId = `cat-${counter}`;
+          counter++;
+        } while (existingIds.includes(newId));
+      }
+
       const newCategory = {
-        id: `cat-${Date.now()}`,
+        id: newId,
         name: newCategoryName.trim(),
         description: newCategoryDescription.trim(),
         isActive: true,
@@ -403,16 +433,16 @@ const UrunYonetimi = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.stock > (product.minStock || 5)
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
                           }`}>
                           {product.stock || 0} {product.unit || 'kg'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.status === 'active'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-800'
                           }`}>
                           {product.status === 'active' ? 'Aktif' : 'Pasif'}
                         </span>

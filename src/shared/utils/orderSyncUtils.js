@@ -1,6 +1,6 @@
 // Sipariş senkronizasyon yardımcı fonksiyonları
 import storage from '@core/storage';
-import logger from '@utils/logger';
+import logger from '@utils/productionLogger';
 
 export const orderSyncUtils = {
   // Sipariş durumu güncelleme

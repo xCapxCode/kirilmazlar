@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../../contexts/AuthContext';
 import Icon from '../../../../shared/components/AppIcon';
+import { logger } from '../../../../utils/productionLogger';
 
 const MobileLogin = () => {
   const navigate = useNavigate();
@@ -40,69 +41,68 @@ const MobileLogin = () => {
     }
   };
 
-  const handleTestLogin = (email, password) => {
-    setFormData({ email, password });
-    // Auto submit after a brief delay
-    setTimeout(() => {
-      handleSubmit({ preventDefault: () => { } });
-    }, 100);
-  };
+
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-500 to-green-700 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-green-600 via-emerald-500 to-teal-500 flex flex-col">
       {/* Header */}
       <div className="flex-shrink-0 pt-safe">
-        <div className="px-6 pt-8 pb-4">
+        <div className="px-6 pt-12 pb-8">
           <div className="text-center">
-            <div className="w-20 h-20 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Icon name="Store" size={40} className="text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-white mb-2">Kırılmazlar Mobile</h1>
-            <p className="text-green-100 text-sm">Hesabınızla giriş yapın</p>
+            <img
+              src="/assets/images/logo/KirilmazlarLogoLandingpage.png"
+              alt="Kırılmazlar"
+              className="w-64 h-auto mx-auto mb-6 drop-shadow-2xl"
+            />
           </div>
         </div>
       </div>
 
       {/* Login Form */}
-      <div className="flex-1 bg-white rounded-t-3xl mt-8 px-6 py-8">
+      <div className="flex-1 bg-white rounded-t-3xl px-6 py-8">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Hoş Geldiniz</h2>
+          <p className="text-gray-600">Hesabınıza giriş yapın</p>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Email Input */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-              Kullanıcı Adı veya Email
+          <div className="space-y-3">
+            <label className="text-sm font-semibold text-gray-800">
+              E-posta veya Kullanıcı Adı
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Icon name="User" size={20} className="text-gray-400" />
+                <Icon name="User" size={20} className="text-green-500" />
               </div>
               <input
                 type="text"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="uner@test.com"
-                className="w-full pl-12 pr-4 py-4 text-lg border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
+                placeholder="E-posta adresinizi girin"
+                className="w-full pl-12 pr-4 py-4 text-base border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white transition-all"
                 required
               />
             </div>
           </div>
 
           {/* Password Input */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
+          <div className="space-y-3">
+            <label className="text-sm font-semibold text-gray-800">
               Şifre
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Icon name="Lock" size={20} className="text-gray-400" />
+                <Icon name="Lock" size={20} className="text-green-500" />
               </div>
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="••••••"
-                className="w-full pl-12 pr-12 py-4 text-lg border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
+                placeholder="Şifrenizi girin"
+                className="w-full pl-12 pr-12 py-4 text-base border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white transition-all"
                 required
               />
               <button
@@ -113,7 +113,7 @@ const MobileLogin = () => {
                 <Icon
                   name={showPassword ? 'EyeOff' : 'Eye'}
                   size={20}
-                  className="text-gray-400"
+                  className="text-green-500 hover:text-green-600"
                 />
               </button>
             </div>
@@ -133,7 +133,7 @@ const MobileLogin = () => {
           <button
             type="submit"
             disabled={loading || !formData.email || !formData.password}
-            className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-2xl font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-lg"
+            className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-4 rounded-2xl font-bold text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-3 shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 active:scale-95 mt-8"
           >
             {loading ? (
               <>
@@ -142,55 +142,16 @@ const MobileLogin = () => {
               </>
             ) : (
               <>
-                <Icon name="ArrowRight" size={20} />
+                <Icon name="LogIn" size={20} />
                 <span>Giriş Yap</span>
               </>
             )}
           </button>
         </form>
 
-        {/* Test Accounts */}
-        <div className="mt-8 pt-6 border-t border-gray-100">
-          <p className="text-sm text-gray-500 text-center mb-4">Test Hesapları:</p>
-          <div className="grid grid-cols-1 gap-3">
-            <button
-              onClick={() => handleTestLogin('uner@test.com', '1234')}
-              className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-left"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                  <Icon name="User" size={16} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-blue-900">Satıcı</p>
-                  <p className="text-xs text-blue-600">uner@test.com / 1234</p>
-                </div>
-              </div>
-            </button>
 
-            <button
-              onClick={() => handleTestLogin('musteri@test.com', '1234')}
-              className="bg-green-50 border border-green-200 rounded-xl p-3 text-left"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                  <Icon name="ShoppingBag" size={16} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-green-900">Müşteri</p>
-                  <p className="text-xs text-green-600">musteri@test.com / 1234</p>
-                </div>
-              </div>
-            </button>
-          </div>
-        </div>
 
-        {/* Version Info */}
-        <div className="mt-8 text-center">
-          <p className="text-xs text-gray-400">
-            Kırılmazlar Mobile v1.0.0
-          </p>
-        </div>
+
       </div>
     </div>
   );

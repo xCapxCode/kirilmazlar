@@ -88,7 +88,8 @@ class ProductionLogger {
    */
   success(...args) {
     if (this.currentLevel <= this.levels.INFO) {
-      logger.info('✅ [SUCCESS]', ...args);
+      console.info('✅ [SUCCESS]', ...args);
+      this.metrics.info++;
     }
   }
 
@@ -133,7 +134,8 @@ class ProductionLogger {
   system(system, message, data = null) {
     if (this.currentLevel <= this.levels.INFO) {
       const emoji = this.getSystemEmoji(system);
-      logger.info(`${emoji} [${system.toUpperCase()}]`, message, data || '');
+      console.info(`${emoji} [${system.toUpperCase()}]`, message, data || '');
+      this.metrics.info++;
     }
   }
 
@@ -230,3 +232,4 @@ if (logger.isDevelopment) {
 
 export default logger;
 export { logger };
+

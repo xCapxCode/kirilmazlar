@@ -13,11 +13,11 @@ export default defineConfig({
   })],
   publicDir: 'public',
   server: {
-    port: 3000,
-    strictPort: true,
-    host: 'localhost',
+    port: 5500,
+    strictPort: false,
+    host: '0.0.0.0', // Network erişimi için
     fs: {
-      strict: true
+      strict: false
     }
   },
   test: {

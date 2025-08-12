@@ -1,10 +1,11 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import BottomTabNavigation from "../../../shared/components/ui/BottomTabNavigation";
+import SellerMobileNavigation from "./components/SellerMobileNavigation";
 
 // Seller Pages - Lazy loaded for code splitting
 const SellerDashboard = lazy(() => import("./pages/dashboard"));
-const ProductManagement = lazy(() => import("./pages/products"));
+const ProductManagement = lazy(() => import("./pages/products/index.jsx"));
 const OrderManagement = lazy(() => import("./pages/orders"));
 const CustomerManagement = lazy(() => import("./pages/customers"));
 const GeneralSettings = lazy(() => import("./pages/settings"));
@@ -50,7 +51,16 @@ const SellerRoutes = () => {
           </Suspense>
         } />
       </Routes>
-      <BottomTabNavigation />
+
+      {/* Mobile Navigation - Sadece mobile'da görünsün */}
+      <div className="md:hidden">
+        <SellerMobileNavigation />
+      </div>
+
+      {/* Desktop Navigation - Sadece desktop'ta görünsün */}
+      <div className="hidden md:block">
+        <BottomTabNavigation />
+      </div>
     </>
   );
 };

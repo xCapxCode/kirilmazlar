@@ -7,7 +7,8 @@ import { useModal } from '../../../../contexts/ModalContext';
 import { useNotification } from '../../../../contexts/NotificationContext';
 import { useBreakpoint } from '../../../../hooks/useBreakpoint';
 import orderService from '../../../../services/orderService';
-import orderCleanupUtil from '../../../../utils/orderCleanupUtil';
+// Order cleanup utility removed - using direct order service
+import { logger } from '../../../../utils/productionLogger';
 import ArsivlenmisModali from './components/ArsivlenmisModali';
 import SiparisGecmisi from './components/SiparisGecmisi';
 import SiparisIptalModali from './components/SiparisIptalModali';
@@ -198,15 +199,15 @@ const CustomerOrders = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-slate-200 pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Başlık Bandı */}
         <div className="bg-slate-100 rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Icon name="ShoppingBag" size={24} className="text-blue-600" />
+              <Icon name="Package" size={24} className="text-green-600" />
               <div>
-                <h1 className="text-2xl font-bold text-blue-600">Siparişlerim</h1>
+                <h1 className="text-2xl font-bold text-green-600">Siparişlerim</h1>
                 <p className="text-gray-600 mt-1">
                   Toplam {stats.totalOrders} sipariş • {stats.activeOrders} aktif
                 </p>
@@ -216,7 +217,7 @@ const CustomerOrders = () => {
             <div className="flex items-center space-x-3">
               <button
                 onClick={handleArchiveCompletedOrders}
-                className="border-2 border-blue-600 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-600/10 transition-colors flex items-center space-x-2"
+                className="border-2 border-green-600 text-green-600 px-4 py-2 rounded-lg hover:bg-green-600/10 transition-colors flex items-center space-x-2"
               >
                 <Icon name="Archive" size={18} />
                 <span>Tamamlananları Arşivle</span>
@@ -224,7 +225,7 @@ const CustomerOrders = () => {
 
               <button
                 onClick={() => setShowArchivedModal(true)}
-                className="border-2 border-purple-600 text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-600/10 transition-colors flex items-center space-x-2"
+                className="border-2 border-green-600 text-green-600 px-4 py-2 rounded-lg hover:bg-green-600/10 transition-colors flex items-center space-x-2"
               >
                 <Icon name="Inbox" size={18} />
                 <span>Arşivi Görüntüle</span>
@@ -232,7 +233,7 @@ const CustomerOrders = () => {
 
               <button
                 onClick={handleCleanupOldOrders}
-                className="border-2 border-orange-600 text-orange-600 px-4 py-2 rounded-lg hover:bg-orange-600/10 transition-colors flex items-center space-x-2"
+                className="border-2 border-red-600 text-red-600 px-4 py-2 rounded-lg hover:bg-red-600/10 transition-colors flex items-center space-x-2"
               >
                 <Icon name="Trash2" size={18} />
                 <span>Eski Siparişleri Temizle</span>
@@ -240,7 +241,7 @@ const CustomerOrders = () => {
 
               <button
                 onClick={loadOrders}
-                className="border-2 border-blue-600 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-600/10 transition-colors flex items-center space-x-2"
+                className="border-2 border-green-600 text-green-600 px-4 py-2 rounded-lg hover:bg-green-600/10 transition-colors flex items-center space-x-2"
               >
                 <Icon name="RefreshCw" size={18} />
                 <span>Yenile</span>

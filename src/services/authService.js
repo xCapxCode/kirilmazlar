@@ -2,7 +2,6 @@
 import storage from '@core/storage';
 import logger from '@utils/productionLogger';
 import { TEST_BUSINESS } from '../data/testUsers.js';
-import customerUserMappingService from './customerUserMappingService.js';
 import sessionManagementService from './sessionManagementService.js';
 
 class AuthService {
@@ -70,12 +69,12 @@ class AuthService {
         throw new Error('Account is not active');
       }
 
-      // Check and repair mappings
-      const needsRepair = await customerUserMappingService.isRepairNeeded();
-      if (needsRepair) {
-        logger.debug('🔧 Repairing customer-user mappings...');
-        await customerUserMappingService.repairAllMappings();
-      }
+      // Customer-User mapping repair devre dışı - fake kullanıcı oluşturmayı önlemek için
+      // const needsRepair = await customerUserMappingService.isRepairNeeded();
+      // if (needsRepair) {
+      //   logger.debug('🔧 Repairing customer-user mappings...');
+      //   await customerUserMappingService.repairAllMappings();
+      // }
 
       // Get full user profile
       let fullUserProfile = { ...user };

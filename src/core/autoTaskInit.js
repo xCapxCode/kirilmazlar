@@ -1,4 +1,4 @@
-import { AutoTaskProgressionService, ContinuousBuildService } from '../../.github/auto-task-progression/index.js';
+// Auto task services removed - using simplified approach
 
 // Initialize logger
 const logger = {

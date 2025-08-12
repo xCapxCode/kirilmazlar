@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import Icon from '../../../../shared/components/AppIcon';
 import Login from '../../../../shared/components/auth/Login';
-import LandingHeader from '../components/LandingHeader';
 import Footer from '../components/Footer'; // Footer bileşenini import et
+import LandingHeader from '../components/LandingHeader';
 
 const LandingPage = () => {
   const [businessInfo, setBusinessInfo] = useState({
@@ -13,6 +12,7 @@ const LandingPage = () => {
   });
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [popularProducts, setPopularProducts] = useState([]);
+  const [showCookieBanner, setShowCookieBanner] = useState(false);
 
   const staticPopularProducts = [
     { id: 1, name: 'Domates', image_url: '/assets/images/placeholders/product-placeholder.png', price: '20.00', unit: 'kg', rating: 4 },
@@ -38,7 +38,7 @@ const LandingPage = () => {
           });
         }
       } catch (error) {
-        logger.error('Business info loading error:', error);
+        console.error('Business info loading error:', error);
         setBusinessInfo({
           name: 'KIRILMAZLAR',
           logo: null,
@@ -69,13 +69,19 @@ const LandingPage = () => {
           setPopularProducts([]);
         }
       } catch (error) {
-        logger.error('Ürünler yüklenirken hata:', error);
+        console.error('Ürünler yüklenirken hata:', error);
         setPopularProducts([]);
       }
     };
 
     loadBusinessInfo();
     loadPopularProducts();
+
+    // Cookie consent kontrolü
+    const cookieConsent = localStorage.getItem('cookieConsent');
+    if (!cookieConsent) {
+      setShowCookieBanner(true);
+    }
 
     const handleProductsUpdate = () => {
       loadPopularProducts();
@@ -99,40 +105,65 @@ const LandingPage = () => {
     };
   }, []);
 
+  const acceptCookies = () => {
+    localStorage.setItem('cookieConsent', 'accepted');
+    setShowCookieBanner(false);
+  };
+
+  const rejectCookies = () => {
+    localStorage.setItem('cookieConsent', 'rejected');
+    setShowCookieBanner(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 landing-page">
-      <LandingHeader 
+      <LandingHeader
         onLoginClick={() => setShowLoginModal(true)}
         showLoginButton={true}
       />
       <main className="w-full">
-        <section className="relative overflow-hidden flex items-center justify-center" style={{ height: '90vh', minHeight: '700px' }}>
-          <div 
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-500"
-            style={{
-              backgroundImage: `url('/assets/images/landing/anasayfa.png')`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center center'
-            }}
-          />
+        <section
+          className="relative overflow-hidden flex items-center justify-center w-full hero-section"
+          style={{
+            height: '100vh',
+            minHeight: '700px',
+            backgroundImage: `url('/assets/images/landing/anasayfa.png')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        >
           <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-black/40 to-black/60"></div>
           <div className="relative z-10 w-full max-w-7xl mx-auto h-full flex flex-col justify-center items-center px-4 sm:px-8">
             <div className="flex-grow flex items-center justify-center text-center">
               <div>
                 <h1 className="text-4xl sm:text-5xl font-bold text-white mb-6 drop-shadow-lg leading-tight">
                   Taze Meyve ve Sebzelerin
-                  <span 
+                  <span
                     className="block text-6xl sm:text-7xl md:text-8xl mt-2.5 text-green-400"
-                    style={{ 
+                    style={{
                       textShadow: '0 0 25px rgba(52, 211, 153, 0.5), 0 0 10px rgba(16, 185, 129, 0.5)'
                     }}
                   >
                     En Güvenilir Adresi
                   </span>
                 </h1>
-                <p className="text-lg sm:text-xl text-white/90 mb-12 max-w-3xl mx-auto drop-shadow-md leading-relaxed">
+                <p className="text-lg sm:text-xl text-white/90 mb-8 max-w-3xl mx-auto drop-shadow-md leading-relaxed">
                   Günlük taze ürünler, hızlı teslimat ve uygun fiyatlarla ailenizin sağlıklı beslenme ihtiyaçlarını karşılıyoruz.
                 </p>
+
+                {/* Glass Giriş Butonu */}
+                <div className="mb-12">
+                  <button
+                    onClick={() => setShowLoginModal(true)}
+                    className="bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 text-white px-8 py-4 rounded-2xl font-semibold text-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+                  >
+                    <span className="flex items-center justify-center space-x-2">
+                      <Icon name="LogIn" size={24} className="text-green-300" />
+                      <span>Giriş Yap</span>
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
             {/* Özellikler Bölümü */}
@@ -186,19 +217,19 @@ const LandingPage = () => {
                     Meyve ve Sebzeler
                   </h3>
                 </div>
-                
+
                 <p className="text-gray-600 text-xl leading-relaxed mb-8">
                   Mağazamız size yıl boyunca her zaman taze meyve ve sebzeler sunar. Geniş bir yelpazede yüksek kaliteli taze ürünlerden satın alın.
                 </p>
-                
-                <button 
+
+                <button
                   onClick={() => setShowLoginModal(true)}
                   className="bg-green-500 hover:bg-green-600 text-white px-10 py-4 rounded-md font-semibold text-xl transition-colors duration-300 shadow-lg"
                 >
                   GİRİŞ İÇİN TIKLA
                 </button>
               </div>
-              
+
               {/* Sağ Taraf: Resim */}
               <div className="relative">
                 <img
@@ -211,22 +242,22 @@ const LandingPage = () => {
           </div>
         </section>
 
-        <section 
-          id="about" 
-          className="relative bg-cover bg-center flex items-center" 
-          style={{ 
+        <section
+          id="about"
+          className="relative bg-cover bg-center flex items-center"
+          style={{
             backgroundImage: `url('/assets/images/landing/hakkimizda_bg.png')`,
             minHeight: '850px'
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-br from-green-900/80 via-black/70 to-green-900/80"></div>
-          <div className="relative w-full max-w-6xl mx-auto px-4 sm:px-8 text-white">
+          <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-8">
             <div className="text-left">
-              <h2 className="text-5xl font-serif text-white mb-6 drop-shadow-md">
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6 drop-shadow-md">
                 Toprağın ve Emeğin Öyküsü
               </h2>
-              <div className="w-24 h-1 bg-green-400 mb-10"></div>
-              <div className="space-y-6 text-lg text-white/90 leading-relaxed max-w-full text-justify">
+              <div className="w-24 h-1 bg-green-400 mb-8"></div>
+              <div className="space-y-5 text-base sm:text-lg text-white/90 leading-relaxed text-left max-w-4xl">
                 <p>
                   Kırılmazlar, toprağın bereketinden doğan ve nesilden nesile aktarılan bir aile geleneğinin mirasıdır. Hikayemiz, 1955'li yıllarda rahmetli dedemiz Hacı İbrahim Halil Kırılmaz'ın gametçilikle başlayan tutku dolu yolculuğuyla başladı. Toprağın sunduğu nimetleri sofralara ulaştırma aşkıyla atılan bu adımlar, 1960'lı yıllarda hallerin kurulmasıyla babamız Abdulbaki Kırılmaz ve amcamız Muhittin Kırılmaz’ın liderliğinde yeni bir döneme taşındı.
                 </p>
@@ -260,7 +291,7 @@ const LandingPage = () => {
                   Size en iyi hizmeti sunmak için özenle çalışıyoruz. İşte bizi tercih etmeniz için birkaç neden:
                 </p>
                 <div className="w-16 h-1 bg-green-500 mb-10"></div>
-                
+
                 <div className="space-y-8">
                   {/* Feature 1 */}
                   <div className="flex items-start space-x-6">
@@ -312,7 +343,7 @@ const LandingPage = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Image */}
               <div className="relative flex items-center justify-center h-96 md:h-full">
                 <img
@@ -328,7 +359,46 @@ const LandingPage = () => {
       </main>
       <Footer />
       {showLoginModal && <Login onClose={() => setShowLoginModal(false)} />}
-    </div>
+
+      {/* Cookie Consent Banner */}
+      {showCookieBanner && (
+        <div className="fixed bottom-6 left-6 right-6 z-50 max-w-md mx-auto">
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-6">
+            <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-white font-semibold text-lg mb-2">
+                  Çerez Kullanımı
+                </h3>
+                <p className="text-white/80 text-sm leading-relaxed mb-4">
+                  Size daha iyi hizmet verebilmek için çerezleri kullanıyoruz. Devam ederek kabul etmiş olursunuz.
+                </p>
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={acceptCookies}
+                    className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-xl font-medium transition-all duration-300 border border-white/30 hover:border-white/50"
+                  >
+                    Kabul Et
+                  </button>
+                  <button
+                    onClick={rejectCookies}
+                    className="text-white/70 hover:text-white/90 font-medium transition-colors text-sm underline underline-offset-2"
+                  >
+                    Reddet
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div >
   );
 };
 

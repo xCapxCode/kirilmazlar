@@ -5,7 +5,7 @@
  */
 
 import storage from '@core/storage';
-import logger from '@utils/logger';
+import logger from '@utils/productionLogger';
 import { schemaVersions } from '../schema';
 
 class BackupManager {

@@ -1,8 +1,11 @@
-import { AlertCircle, ArrowRight, Eye, EyeOff, Info, Lock, User, X } from '@utils/selectiveIcons';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
+import storage from '../../../core/storage';
 import { logger } from '../../../utils/productionLogger.js';
+import Icon from '../AppIcon';
+
+// Test kullanıcıları kaldırıldı - Mevcut kullanıcı sistemi kullanılıyor
 
 const Login = ({ onClose, isMobile = false }) => {
   const [username, setUsername] = useState('');
@@ -14,18 +17,34 @@ const Login = ({ onClose, isMobile = false }) => {
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
+  // Test kullanıcı yükleme kaldırıldı - Mevcut kullanıcı sistemi kullanılıyor
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
+      // Debug: Kullanıcıları kontrol et
+      const users = JSON.parse(localStorage.getItem('kirilmazlar_users') || '[]');
+      console.log('🔍 Mevcut kullanıcılar (kirilmazlar_users):', users);
+      console.log('🔍 Giriş denemesi:', { username, password });
+
+      // Alternatif storage key'leri de kontrol et
+      const usersAlt = JSON.parse(localStorage.getItem('users') || '[]');
+      console.log('🔍 Alternatif users:', usersAlt);
+
+      // Storage service'i kullanarak kontrol et
+      console.log('🔍 Storage service users:', storage?.get ? storage.get('users', []) : 'storage not available');
+
       const result = await signIn(username, password);
+      console.log('🔍 SignIn sonucu:', result);
+
       if (result.success && result.data && result.data.user) {
         const role = result.data.user.role;
         logger.debug('🔄 Kullanıcı rolü:', role);
         if (role === 'admin' || role === 'seller' || role === 'owner') {
           logger.debug('🏃‍♂️ Seller dashboard\'a yönlendiriliyor...');
-          navigate(isMobile ? '/m/catalog' : '/seller/dashboard');
+          navigate(isMobile ? '/ms/dashboard' : '/seller/dashboard');
         } else if (role === 'customer') {
           logger.debug('🏃‍♂️ Customer catalog\'a yönlendiriliyor...');
           navigate(isMobile ? '/m/catalog' : '/customer/catalog');
@@ -38,6 +57,7 @@ const Login = ({ onClose, isMobile = false }) => {
         setError(result.error || 'Giriş başarısız oldu.');
       }
     } catch (err) {
+      console.error('🔍 Login hatası:', err);
       setError('Bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setLoading(false);
@@ -48,22 +68,34 @@ const Login = ({ onClose, isMobile = false }) => {
 
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-500 to-green-700 flex flex-col">
-        {/* Mobile Header */}
+      <div className="min-h-screen bg-white flex flex-col">
+        {/* Mobile Header with Kırılmazlar Logo */}
         <div className="flex-shrink-0 pt-safe">
-          <div className="px-6 pt-8 pb-4">
+          <div className="px-6 pt-16 pb-8">
             <div className="text-center">
-              <div className="w-20 h-20 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <User size={40} className="text-white" />
+              {/* Kırılmazlar Logo */}
+              <div className="flex items-center justify-center mx-auto mb-6">
+                <img
+                  src="/assets/images/logo/KirilmazlarLogo.png"
+                  alt="Kırılmazlar"
+                  className="h-20 w-auto"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+                <div className="w-20 h-20 bg-green-100 rounded-3xl flex items-center justify-center hidden">
+                  <span className="text-2xl font-bold text-green-600">K</span>
+                </div>
               </div>
-              <h1 className="text-2xl font-bold text-white mb-2">Kırılmazlar Mobile</h1>
-              <p className="text-green-100 text-sm">Hesabınızla giriş yapın</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Kırılmazlar</h1>
+              <p className="text-gray-500 text-base">Taze gıda, hızlı teslimat</p>
             </div>
           </div>
         </div>
 
         {/* Mobile Login Form */}
-        <div className="flex-1 bg-white rounded-t-3xl mt-8 px-6 py-8">
+        <div className="flex-1 px-6 py-8">
           <form onSubmit={handleLogin} className="space-y-6">
             {/* Email Input */}
             <div className="space-y-2">
@@ -72,7 +104,7 @@ const Login = ({ onClose, isMobile = false }) => {
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <User size={20} className="text-gray-400" />
+                  <Icon name="User" size={20} className="text-gray-400" />
                 </div>
                 <input
                   type="text"
@@ -92,7 +124,7 @@ const Login = ({ onClose, isMobile = false }) => {
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock size={20} className="text-gray-400" />
+                  <Icon name="Lock" size={20} className="text-gray-400" />
                 </div>
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -107,7 +139,7 @@ const Login = ({ onClose, isMobile = false }) => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-4 flex items-center"
                 >
-                  {showPassword ? <EyeOff size={20} className="text-gray-400" /> : <Eye size={20} className="text-gray-400" />}
+                  <Icon name={showPassword ? "EyeOff" : "Eye"} size={20} className="text-gray-400" />
                 </button>
               </div>
             </div>
@@ -116,7 +148,7 @@ const Login = ({ onClose, isMobile = false }) => {
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
                 <div className="flex items-center space-x-2">
-                  <AlertCircle size={16} className="text-red-500" />
+                  <Icon name="AlertCircle" size={16} className="text-red-500" />
                   <p className="text-sm text-red-600">{error}</p>
                 </div>
               </div>
@@ -135,26 +167,25 @@ const Login = ({ onClose, isMobile = false }) => {
                 </>
               ) : (
                 <>
-                  <ArrowRight size={20} />
+                  <Icon name="ArrowRight" size={20} />
                   <span>Giriş Yap</span>
                 </>
               )}
             </button>
           </form>
 
-          {/* Registration Info */}
-          <div className="mt-8 pt-6 border-t border-gray-100">
-            <p className="text-sm text-gray-500 text-center mb-4">
-              Henüz hesabınız yok mu? Kayıt olmak için yönetici ile iletişime geçin.
-            </p>
-          </div>
 
-          {/* Version Info */}
-          <div className="mt-8 text-center">
-            <p className="text-xs text-gray-400">
-              Kırılmazlar Mobile v1.0.0
-            </p>
-          </div>
+
+
+
+
+        </div>
+
+        {/* Version Info */}
+        <div className="mt-8 text-center">
+          <p className="text-xs text-gray-400">
+            Kırılmazlar Mobile v1.0.0
+          </p>
         </div>
       </div>
     );
@@ -163,13 +194,32 @@ const Login = ({ onClose, isMobile = false }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-gray-800 bg-opacity-80 backdrop-blur-sm rounded-2xl p-8 w-full max-w-md text-white border border-gray-700">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-3xl font-bold">Giriş Yap</h2>
-            <p className="text-gray-400">Hesabınızla giriş yapın</p>
+        {/* Header with close button */}
+        <div className="flex justify-between items-start mb-6">
+          <div className="flex-1">
+            {/* Logo */}
+            <div className="flex justify-center mb-4">
+              <img
+                src="/assets/images/logo/KirilmazlarLogo.png"
+                alt="Kırılmazlar"
+                className="h-16 w-auto"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+              <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center hidden">
+                <span className="text-2xl font-bold text-green-600">K</span>
+              </div>
+            </div>
+            {/* Title */}
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-2">Giriş Yap</h2>
+              <p className="text-gray-400 text-sm">Hesabınızla giriş yapın</p>
+            </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
-            <X size={24} />
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors ml-4">
+            <Icon name="X" size={24} />
           </button>
         </div>
 
@@ -179,7 +229,7 @@ const Login = ({ onClose, isMobile = false }) => {
               Kullanıcı Adı veya Email
             </label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <Icon name="User" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input
                 id="username"
                 type="text"
@@ -198,7 +248,7 @@ const Login = ({ onClose, isMobile = false }) => {
               Şifre
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <Icon name="Lock" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
@@ -214,7 +264,7 @@ const Login = ({ onClose, isMobile = false }) => {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
               >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                <Icon name={showPassword ? "EyeOff" : "Eye"} size={20} />
               </button>
             </div>
           </div>
@@ -243,7 +293,7 @@ const Login = ({ onClose, isMobile = false }) => {
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
             ) : (
               <>
-                <ArrowRight className="mr-2" size={20} />
+                <Icon name="ArrowRight" className="mr-2" size={20} />
                 Giriş Yap
               </>
             )}
@@ -252,13 +302,13 @@ const Login = ({ onClose, isMobile = false }) => {
 
         {error && (
           <div className="mt-4 bg-red-900 bg-opacity-50 border border-red-700 text-red-300 px-4 py-3 rounded-lg relative flex items-center">
-            <AlertCircle className="mr-2" size={20} />
+            <Icon name="AlertCircle" className="mr-2" size={20} />
             <span>{error}</span>
           </div>
         )}
 
         <div className="mt-6 bg-gray-900 bg-opacity-50 border border-gray-700 rounded-lg p-4 flex items-start space-x-3">
-          <Info className="text-gray-400 mt-1" size={20} />
+          <Icon name="Info" className="text-gray-400 mt-1" size={20} />
           <div>
             <h4 className="font-semibold text-gray-200">Bilgi:</h4>
             <p className="text-sm text-gray-400">

@@ -1,12 +1,14 @@
 // Merkezi Veri Yönetim Servisi
 import storage from '@core/storage';
+import { ALL_USERS, INITIAL_CUSTOMERS } from '../data/initialData.js';
 import dataValidator from '../utils/dataValidator.js';
 import logger from '../utils/logger.js';
 
 class DataService {
     constructor() {
         this.isInitialized = false;
-        // Constructor'da initializeData çağırmayalım
+        // Constructor'da initializeData çağıralım
+        this.initializeData();
     }
 
     // Veri başlatma - Sadece bir kez çalışır
@@ -58,19 +60,46 @@ class DataService {
 
     // Temel verilerin varlığını kontrol et
     ensureBaseData() {
-        // SADECE boş kontrol - ASLA otomatik veri ekleme yapma
-        // Kullanıcının oluşturduğu veriler korunur
+        // Temel verilerin varlığını kontrol et ve eksikleri tamamla
 
-        // Sadece temel yapıları kontrol et, veri ekleme
-        if (!storage.get('users')) {
-            storage.set('users', []);
-            logger.info('� Kullanıcı storage başlatıldı');
+        // Kullanıcılar - İlk kez yükleniyorsa gerçek verileri yükle
+        const existingUsers = storage.get('users');
+        if (!existingUsers || existingUsers.length === 0) {
+            // İlk veri yükleme
+            storage.set('users', ALL_USERS);
+            logger.info('👥 İlk kullanıcı verileri yüklendi:', ALL_USERS.length);
         }
 
-        // Kategoriler
-        if (!storage.get('categories')) {
-            storage.set('categories', []);
-            logger.info('📂 Kategori storage başlatıldı');
+        // Müşteriler - İlk kez yükleniyorsa gerçek verileri yükle
+        const existingCustomers = storage.get('customers');
+        if (!existingCustomers || existingCustomers.length === 0) {
+            storage.set('customers', INITIAL_CUSTOMERS);
+            logger.info('👤 İlk müşteri verileri yüklendi:', INITIAL_CUSTOMERS.length);
+        }
+
+        // Kategoriler - Temel kategoriler oluştur
+        const existingCategories = storage.get('categories');
+        if (!existingCategories || existingCategories.length === 0) {
+            const basicCategories = [
+                {
+                    id: 'cat-1',
+                    name: 'Meyve',
+                    description: 'Taze meyveler',
+                    image: null,
+                    isActive: true,
+                    createdAt: new Date().toISOString()
+                },
+                {
+                    id: 'cat-2',
+                    name: 'Sebze',
+                    description: 'Taze sebzeler',
+                    image: null,
+                    isActive: true,
+                    createdAt: new Date().toISOString()
+                }
+            ];
+            storage.set('categories', basicCategories);
+            logger.info('📂 Temel kategori verileri oluşturuldu:', basicCategories.length);
         }
 
         // Ürünler  
@@ -90,11 +119,11 @@ class DataService {
             storage.set('cart', []);
         }
 
-        // GERÇEK kullanıcı sayısını logla
-        const realUsers = storage.get('users', []);
-        logger.info(`👥 GERÇEK kullanıcı sayısı: ${realUsers.length}`);
-        if (realUsers.length > 0) {
-            logger.info(`📋 Kullanıcılar: ${realUsers.map(u => u.username || u.email).join(', ')}`);
+        // Kullanıcı sayısını logla
+        const users = storage.get('users', []);
+        logger.info(`👥 Toplam kullanıcı sayısı: ${users.length}`);
+        if (users.length > 0) {
+            logger.info(`📋 Kullanıcılar: ${users.map(u => `${u.username}(${u.role})`).join(', ')}`);
         }
     }
 

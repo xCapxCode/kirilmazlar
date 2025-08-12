@@ -1,5 +1,5 @@
 // Retry utility for async operations
-import logger from '@utils/logger';
+import logger from '@utils/productionLogger';
 
 export const withRetry = async (fn, maxRetries = 3, delay = 1000) => {
   let lastError;

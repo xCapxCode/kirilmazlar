@@ -314,7 +314,7 @@ const EditCustomerForm = ({ customer, onSave, onCancel }) => {
         updatedAt: new Date().toISOString()
       });
     } catch (error) {
-      logger.error('Müşteri güncellenirken hata:', error);
+      // Hata durumunda sessizce devam et
     } finally {
       setIsSubmitting(false);
     }
@@ -542,36 +542,17 @@ const MusteriYonetimi = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      logger.info('🔄 loadData başlatılıyor...');
 
       // Müşterileri yükle
       const storedCustomers = await customerService.getAll();
-      logger.info('📋 customerService.getAll() sonucu:', storedCustomers.length, 'müşteri');
-
-      // İlk 3 müşteriyi detaylı logla
-      storedCustomers.slice(0, 3).forEach((customer, index) => {
-        logger.info(`🔍 Müşteri ${index + 1}:`, {
-          id: customer.id,
-          name: customer.name,
-          email: customer.email,
-          phone: customer.phone,
-          address: customer.address,
-          city: customer.city,
-          username: customer.username
-        });
-      });
 
       // Siparişleri yükle
       const storedOrders = await storage.get('customer_orders', []);
-      logger.info('📋 storage.get customer_orders sonucu:', storedOrders.length, 'sipariş');
 
-      logger.info('📝 setCustomers çağrılıyor:', storedCustomers.length, 'müşteri');
       setCustomers(storedCustomers);
       setOrders(storedOrders);
-      logger.info('✅ Müşteri yönetimi verileri yüklendi');
 
     } catch (error) {
-      logger.error('❌ Müşteri yönetimi veri yükleme hatası:', error);
       showError('Müşteri verileri yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);
@@ -599,7 +580,6 @@ const MusteriYonetimi = () => {
       showSuccess(`Müşteri durumu başarıyla güncellendi: ${getStatusLabel(status)}`);
       return true;
     } catch (error) {
-      logger.error('Müşteri durumu güncellenirken hata:', error);
       showError('Müşteri durumu güncellenirken bir hata oluştu');
       return false;
     }
@@ -721,40 +701,70 @@ const MusteriYonetimi = () => {
 
   // Excel export
   const handleExportToExcel = () => {
-    const data = filteredCustomers.map(customer => ({
-      'Müşteri Adı': customer.name,
-      'E-posta': customer.email,
-      'Telefon': customer.phone,
-      'Şehir': customer.city,
+    if (filteredCustomers.length === 0) {
+      showWarning('Excel İndir', 'İndirilecek müşteri verisi bulunamadı');
+      return;
+    }
+
+    const data = filteredCustomers.map((customer, index) => ({
+      'Sıra No': index + 1,
+      'Müşteri Adı': customer.name || '',
+      'Kullanıcı Adı': customer.username || '',
+      'E-posta': customer.email || '',
+      'Telefon': customer.phone || '',
+      'Adres': customer.address || '',
+      'Şehir': customer.city || '',
+      'İlçe': customer.district || '',
+      'Posta Kodu': customer.postalCode || '',
       'Hesap Türü': customer.accountType === 'business' ? 'Kurumsal' : 'Bireysel',
+      'Şirket Adı': customer.companyName || '',
+      'Ünvan': customer.companyTitle || '',
       'Durum': customer.status === 'active' ? 'Aktif' : 'Pasif',
       'Kayıt Tarihi': formatDate(customer.registeredAt),
-      'Sipariş Sayısı': customer.orderCount,
-      'Toplam Harcama': customer.totalSpent,
-      'Son Sipariş': formatDate(customer.lastOrderDate)
+      'Son Giriş': formatDate(customer.lastLoginAt),
+      'Sipariş Sayısı': customer.orderCount || 0,
+      'Toplam Harcama (₺)': customer.totalSpent || 0,
+      'Ortalama Sipariş (₺)': customer.averageOrderValue || 0,
+      'Son Sipariş Tarihi': formatDate(customer.lastOrderDate),
+      'Son Sipariş Tutarı (₺)': customer.lastOrderAmount || 0,
+      'Notlar': customer.notes || ''
     }));
 
-    const csv = [
-      Object.keys(data[0]).join(','),
-      ...data.map(row => Object.values(row).join(','))
+    // CSV formatında UTF-8 BOM ile
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row =>
+        headers.map(header => {
+          const value = row[header];
+          // Virgül ve tırnak işareti içeren değerleri tırnak içine al
+          if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+            return `"${value.replace(/"/g, '""')}"`;
+          }
+          return value;
+        }).join(',')
+      )
     ].join('\n');
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    // UTF-8 BOM ekle
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], {
+      type: 'text/csv;charset=utf-8;'
+    });
+
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `musteriler_${new Date().toISOString().split('T')[0]}.csv`;
+    const today = new Date().toISOString().split('T')[0];
+    link.download = `Musteriler_${today}_${filteredCustomers.length}_kayit.csv`;
     link.click();
+
+    showSuccess('Excel İndir', `${filteredCustomers.length} müşteri verisi başarıyla indirildi`);
   };
 
   // Yeni müşteri ekleme
   const handleAddCustomer = async (customerData) => {
     try {
-      logger.info('🔄 Müşteri ekleme başlatılıyor:');
-      logger.info('📝 Form datası:', customerData);
-      logger.info('📞 Telefon:', customerData.phone);
-      logger.info('📧 Email:', customerData.email);
-      logger.info('🏠 Adres:', customerData.address);
-      logger.info('🏙️ Şehir:', customerData.city);
+
 
       const newCustomer = await customerService.create({
         ...customerData,
@@ -764,35 +774,12 @@ const MusteriYonetimi = () => {
         avatar: null
       });
 
-      logger.info('✅ CustomerService.create sonucu:');
-      logger.info('📝 Yeni müşteri objesi:', newCustomer);
-      logger.info('📞 Kaydedilen telefon:', newCustomer.phone);
-      logger.info('📧 Kaydedilen email:', newCustomer.email);
-      logger.info('🏠 Kaydedilen adres:', newCustomer.address);
-      logger.info('🏙️ Kaydedilen şehir:', newCustomer.city);
-
-      // Storage'dan müşterileri kontrol et
-      const allCustomers = await storage.get('customers', []);
-      logger.info('📋 Storage\'daki tüm müşteriler sayısı:', allCustomers.length);
-
-      // Son eklenen müşteriyi kontrol et
-      const lastCustomer = allCustomers[allCustomers.length - 1];
-      logger.info('🔍 Son eklenen müşteri:', lastCustomer);
-      if (lastCustomer) {
-        logger.info('📞 Son müşteri telefon:', lastCustomer.phone);
-        logger.info('📧 Son müşteri email:', lastCustomer.email);
-        logger.info('🏠 Son müşteri adres:', lastCustomer.address);
-        logger.info('🏙️ Son müşteri şehir:', lastCustomer.city);
-      }
-
       // Müşterileri yeniden yükle
       await loadData();
       setShowNewCustomerModal(false);
 
-      logger.info('✅ Yeni müşteri eklendi:', newCustomer.name);
       showSuccess(`${newCustomer.name} başarıyla eklendi!`);
     } catch (error) {
-      logger.error('❌ Müşteri ekleme hatası:', error);
       showError('Müşteri eklenirken bir hata oluştu');
     }
   };
@@ -829,8 +816,6 @@ const MusteriYonetimi = () => {
         // Müşterileri yeniden yükle
         await loadData();
 
-        logger.info('✅ Müşteri silindi:', customerName);
-
         // Notification debounce - aynı mesajı tekrar gösterme
         const now = Date.now();
         if (!window.lastDeleteNotification || now - window.lastDeleteNotification > 2000) {
@@ -838,7 +823,6 @@ const MusteriYonetimi = () => {
           window.lastDeleteNotification = now;
         }
       } catch (error) {
-        logger.error('❌ Müşteri silme hatası:', error);
         showError('Müşteri silinirken bir hata oluştu');
       }
     }
@@ -858,10 +842,8 @@ const MusteriYonetimi = () => {
       setShowEditCustomerModal(false);
       setEditingCustomer(null);
 
-      logger.info('✅ Müşteri güncellendi:', customerData.name);
       showSuccess(`${customerData.name} bilgileri başarıyla güncellendi!`);
     } catch (error) {
-      logger.error('❌ Müşteri güncelleme hatası:', error);
       showError('Müşteri güncellenirken bir hata oluştu');
     }
   };
@@ -881,10 +863,8 @@ const MusteriYonetimi = () => {
       setSelectedCustomer(customer);
       setShowDetailModal(true);
 
-      logger.info('Müşteri siparişleri:', customerOrders);
       showSuccess(`${customer.name} - ${customerOrders.length} sipariş bulundu.`);
     } catch (error) {
-      logger.error('Müşteri siparişleri yüklenirken hata:', error);
       showError('Müşteri siparişleri yüklenirken bir hata oluştu');
     }
   };
@@ -938,134 +918,8 @@ const MusteriYonetimi = () => {
                 <Icon name="Plus" size={18} />
                 <span>Yeni Müşteri</span>
               </button>
-              <button
-                onClick={async () => {
-                  // Test customers for quick testing
-                  logger.info('🔄 Test verileri ekleniyor...');
 
-                  // Önce mevcut müşterileri kontrol et
-                  const existingCustomers = await customerService.getAll();
-                  logger.info('📋 Mevcut müşteri sayısı:', existingCustomers.length);
 
-                  // Test müşterilerinden sadece mevcut olmayanları ekle
-                  const testCustomers = [
-                    {
-                      name: 'Ahmet Yılmaz',
-                      email: 'ahmet@example.com',
-                      phone: '0532 123 4567',
-                      username: 'ahmet123',
-                      password: 'test123',
-                      address: 'Atatürk Caddesi No:123',
-                      city: 'İstanbul',
-                      district: 'Kadıköy',
-                      accountType: 'personal'
-                    },
-                    {
-                      name: 'Mehmet Öz',
-                      email: 'mehmet@example.com',
-                      phone: '0533 987 6543',
-                      username: 'mehmet456',
-                      password: 'test456',
-                      address: 'İstiklal Caddesi No:456',
-                      city: 'Ankara',
-                      district: 'Çankaya',
-                      accountType: 'personal'
-                    },
-                    {
-                      name: 'ABC Şirketi',
-                      email: 'info@abc.com',
-                      phone: '0212 555 1234',
-                      username: 'abc_company',
-                      password: 'company123',
-                      address: 'İş Merkezi No:789',
-                      city: 'İzmir',
-                      district: 'Konak',
-                      accountType: 'business',
-                      companyName: 'ABC Ltd. Şti.',
-                      companyTitle: 'Müdür'
-                    }
-                  ];
-
-                  let addedCount = 0;
-                  for (const testCustomer of testCustomers) {
-                    // Aynı email varsa ekleme
-                    const exists = existingCustomers.find(c => c.email === testCustomer.email);
-                    if (!exists) {
-                      await handleAddCustomer(testCustomer);
-                      addedCount++;
-                    } else {
-                      logger.info(`⚠️ ${testCustomer.name} zaten mevcut, atlanıyor`);
-                    }
-                  }
-
-                  logger.info(`✅ ${addedCount} test müşterisi eklendi`);
-
-                  // Veri yüklemeyi tekrar çalıştır
-                  await loadData();
-                }}
-                className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors flex items-center space-x-2"
-              >
-                <Icon name="Database" size={18} />
-                <span>Test Verileri Ekle</span>
-              </button>
-              <button
-                onClick={() => {
-                  logger.info('🔍 Debug Bilgileri:');
-                  logger.info('customers state:', customers);
-                  logger.info('filteredCustomers:', filteredCustomers);
-                  logger.info('currentCustomers:', currentCustomers);
-                  logger.info('customerStats:', customerStats);
-
-                  // LocalStorage kontrolü
-                  const stored = localStorage.getItem('customers');
-                  logger.info('localStorage customers:', stored ? JSON.parse(stored) : 'YOK');
-
-                  // Unified storage kontrolü
-                  const unified = localStorage.getItem('unified_storage');
-                  if (unified) {
-                    const unifiedData = JSON.parse(unified);
-                    logger.info('unified_storage customers:', unifiedData.customers || 'YOK');
-                  }
-
-                  // Gerçek müşteri arama
-                  logger.info('🔍 GERÇEK MÜŞTERİ ARAMA:');
-                  const bulentUner = customers.find(c =>
-                    c.name && (
-                      c.name.toLowerCase().includes('bülent') ||
-                      c.name.toLowerCase().includes('üner') ||
-                      c.name.toLowerCase().includes('bulent')
-                    )
-                  );
-
-                  const nesetAvvuran = customers.find(c =>
-                    c.name && (
-                      c.name.toLowerCase().includes('neset') ||
-                      c.name.toLowerCase().includes('avvuran')
-                    )
-                  );
-
-                  logger.info('👤 Bülent Üner:', bulentUner ? '✅ BULUNDU' : '❌ BULUNAMADI');
-                  logger.info('👤 Neset Avvuran:', nesetAvvuran ? '✅ BULUNDU' : '❌ BULUNAMADI');
-
-                  if (bulentUner) logger.info('📋 Bülent Üner detayları:', bulentUner);
-                  if (nesetAvvuran) logger.info('📋 Neset Avvuran detayları:', nesetAvvuran);
-
-                  // Tüm müşteri isimlerini listele
-                  logger.info('📋 TÜM MÜŞTERİ İSİMLERİ:');
-                  customers.forEach((customer, index) => {
-                    logger.info(`${index + 1}. ${customer.name} (${customer.email})`);
-                  });
-
-                  // CustomerService test
-                  customerService.getAll().then(result => {
-                    logger.info('customerService.getAll() sonucu:', result);
-                  });
-                }}
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2"
-              >
-                <Icon name="Bug" size={18} />
-                <span>Debug</span>
-              </button>
               <button
                 onClick={handleExportToExcel}
                 className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
@@ -1199,18 +1053,10 @@ const MusteriYonetimi = () => {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
                 {currentCustomers.map((customer, index) => {
-                  // Debug: Her müşteri için log
-                  logger.info(`🔍 Render edilen müşteri ${index + 1}:`, {
-                    id: customer.id,
-                    name: customer.name,
-                    email: customer.email,
-                    phone: customer.phone,
-                    city: customer.city,
-                    address: customer.address
-                  });
+
 
                   return (
-                    <div key={customer.id} className="bg-white/70 backdrop-blur-sm border border-gray-300 rounded-lg p-4 hover:shadow-lg transition-shadow shadow-sm hover:bg-white/80">
+                    <div key={customer.id} className="bg-gradient-to-br from-blue-50/80 to-purple-50/80 backdrop-blur-sm border border-blue-200/50 rounded-lg p-4 shadow-sm">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <h3 className="font-semibold text-gray-900 text-sm truncate">{customer.name}</h3>
@@ -1219,8 +1065,8 @@ const MusteriYonetimi = () => {
                         </div>
                         <div className="flex items-center space-x-1">
                           <span className={`px-2 py-1 text-xs font-semibold rounded-full ${customer.status === 'active'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
                             }`}>
                             {customer.status === 'active' ? 'Aktif' : 'Pasif'}
                           </span>
@@ -1245,8 +1091,8 @@ const MusteriYonetimi = () => {
                         <div className="flex justify-between text-xs">
                           <span className="text-gray-600">Hesap:</span>
                           <span className={`px-2 py-1 rounded-full ${customer.accountType === 'business'
-                              ? 'bg-purple-100 text-purple-800'
-                              : 'bg-orange-100 text-orange-800'
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-orange-100 text-orange-800'
                             }`}>
                             {customer.accountType === 'business' ? 'Kurumsal' : 'Bireysel'}
                           </span>
@@ -1287,7 +1133,7 @@ const MusteriYonetimi = () => {
                             setSelectedCustomer(customer);
                             setShowDetailModal(true);
                           }}
-                          className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 bg-transparent border border-blue-600 text-blue-600 text-xs rounded hover:bg-blue-600/10 transition-colors font-medium"
+                          className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 bg-blue-500/10 border border-blue-400/50 text-blue-700 text-xs rounded-lg font-medium backdrop-blur-sm"
                         >
                           <Icon name="User" size={12} />
                           <span>Detay</span>
@@ -1297,7 +1143,7 @@ const MusteriYonetimi = () => {
                             setSelectedCustomer(customer);
                             setShowStatusModal(true);
                           }}
-                          className="flex items-center justify-center px-3 py-2 bg-transparent border border-purple-600 text-purple-600 text-xs rounded hover:bg-purple-600/10 transition-colors font-medium"
+                          className="flex items-center justify-center px-3 py-2 bg-purple-500/10 border border-purple-400/50 text-purple-700 text-xs rounded-lg font-medium backdrop-blur-sm"
                           title="Müşteri durumunu güncelle"
                         >
                           <Icon name="UserCheck" size={12} />
@@ -1305,7 +1151,7 @@ const MusteriYonetimi = () => {
                         </button>
                         <button
                           onClick={() => handleViewOrders(customer)}
-                          className="flex items-center justify-center px-3 py-2 bg-transparent border border-green-600 text-green-600 text-xs rounded hover:bg-green-600/10 transition-colors font-medium"
+                          className="flex items-center justify-center px-3 py-2 bg-green-500/10 border border-green-400/50 text-green-700 text-xs rounded-lg font-medium backdrop-blur-sm"
                           title="Sipariş geçmişini görüntüle"
                         >
                           <Icon name="ShoppingBag" size={12} />

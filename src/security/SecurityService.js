@@ -141,36 +141,58 @@ class SecurityService {
       window.location.hostname === 'localhost';
 
     if (isSecure) {
-      // Override document.cookie setter to enforce secure cookies
-      const originalCookieDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
-      const originalCookieSetter = originalCookieDescriptor.set;
-      const originalCookieGetter = originalCookieDescriptor.get;
-
-      Object.defineProperty(document, 'cookie', {
-        set(value) {
-          let secureValue = value;
-
-          // Add Secure flag if not present and we're on HTTPS
-          if (window.location.protocol === 'https:' && !value.includes('Secure')) {
-            secureValue += '; Secure';
-          }
-
-          // Add SameSite if not present
-          if (!value.includes('SameSite')) {
-            secureValue += '; SameSite=Strict';
-          }
-
-          // Add HttpOnly for sensitive cookies
-          if ((value.includes('auth') || value.includes('session')) && !value.includes('HttpOnly')) {
-            secureValue += '; HttpOnly';
-          }
-
-          originalCookieSetter.call(this, secureValue);
-        },
-        get() {
-          return originalCookieGetter.call(this);
+      try {
+        // Check if cookie property is already overridden
+        const descriptor = Object.getOwnPropertyDescriptor(document, 'cookie');
+        if (descriptor && descriptor.configurable === false) {
+          logger.info('Cookie property already secured, skipping override');
+          return;
         }
-      });
+
+        // Override document.cookie setter to enforce secure cookies
+        const originalCookieDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
+        const originalCookieSetter = originalCookieDescriptor?.set;
+        const originalCookieGetter = originalCookieDescriptor?.get;
+
+        if (!originalCookieSetter || !originalCookieGetter) {
+          logger.warn('Could not access original cookie descriptors');
+          return;
+        }
+
+        // Only define if not already defined
+        if (!descriptor) {
+          Object.defineProperty(document, 'cookie', {
+            configurable: true,
+            enumerable: true,
+            set(value) {
+              let secureValue = value;
+
+              // Add Secure flag if not present and we're on HTTPS
+              if (window.location.protocol === 'https:' && !value.includes('Secure')) {
+                secureValue += '; Secure';
+              }
+
+              // Add SameSite if not present
+              if (!value.includes('SameSite')) {
+                secureValue += '; SameSite=Strict';
+              }
+
+              // Add HttpOnly for sensitive cookies
+              if ((value.includes('auth') || value.includes('session')) && !value.includes('HttpOnly')) {
+                secureValue += '; HttpOnly';
+              }
+
+              originalCookieSetter.call(this, secureValue);
+            },
+            get() {
+              return originalCookieGetter.call(this);
+            }
+          });
+        }
+      } catch (error) {
+        logger.warn('Could not override cookie property:', error.message);
+        // Continue without cookie override - not critical for functionality
+      }
     }
   }
 

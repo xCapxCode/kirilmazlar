@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import logger from '@utils/logger';
+import logger from '@utils/productionLogger';
 /**
  * Security Monitor Service
  * P1.3.3 - Session invalidation on security issues

@@ -1,6 +1,6 @@
 import storage from '@core/storage';
 // Removed orderService import to avoid circular dependency
-import logger from '@utils/logger';
+import logger from '@utils/productionLogger';
 
 /**
  * Müşteri yönetimi için servis sınıfı

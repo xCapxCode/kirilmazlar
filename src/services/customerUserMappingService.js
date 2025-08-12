@@ -5,7 +5,7 @@
 
 import storage from '@core/storage';
 
-import logger from '@utils/logger';
+import logger from '@utils/productionLogger';
 class CustomerUserMappingService {
   constructor() {
     this.isRepairing = false;
@@ -17,32 +17,14 @@ class CustomerUserMappingService {
    * @returns {Promise<Object>} - Repair report
    */
   setupAutoRepair() {
-    // Storage değişikliklerini dinle
-    window.addEventListener('kirilmazlar_storage_change', async (event) => {
-      const { key } = event.detail;
-      
-      // Customer veya user verisi değiştiğinde mapping'i kontrol et
-      if (key.includes('customers') || key.includes('users')) {
-        await this.repairAllMappings(true);
-      }
-    });
-
-    // Periyodik kontrol (5 dakikada bir)
-    setInterval(async () => {
-      await this.repairAllMappings(true);
-    }, 5 * 60 * 1000);
+    // DEVRE DIŞI - Fake kullanıcı oluşturmayı önlemek için
+    logger.info('⚠️ CustomerUserMappingService devre dışı bırakıldı - fake kullanıcı oluşturmayı önlemek için');
   }
 
   async repairAllMappings(silent = false) {
-    if (this.isRepairing) {
-      if (!silent) {
-        logger.info('⚠️ Mapping repair zaten çalışıyor...');
-      }
-      return { success: false, message: 'Repair already in progress' };
-    }
-
-    this.isRepairing = true;
-    logger.info('🔧 P1.2.2: Customer-User mapping repair başlatılıyor...');
+    // DEVRE DIŞI - Fake kullanıcı oluşturmayı önlemek için
+    logger.info('⚠️ CustomerUserMappingService.repairAllMappings devre dışı - fake kullanıcı oluşturmayı önlemek için');
+    return { success: true, message: 'Service disabled to prevent fake user creation' };
 
     try {
       const customers = await storage.get('customers', []);

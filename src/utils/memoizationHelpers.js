@@ -122,14 +122,50 @@ export const useMemoizedCalculations = {
 
       // Category filter
       if (selectedCategory && selectedCategory !== 'all') {
+        logger.debug('🔍 Filtering by category:', selectedCategory);
+
         if (selectedCategory === 'organic') {
           filtered = filtered.filter(product => product.isOrganic);
         } else {
-          filtered = filtered.filter(product =>
-            product.category === selectedCategory ||
-            product.categoryId === selectedCategory
-          );
+          // Türkçe karakter normalizasyonu
+          const normalizeText = (text) => {
+            return text.toLowerCase()
+              .replace(/ğ/g, 'g')
+              .replace(/ü/g, 'u')
+              .replace(/ş/g, 's')
+              .replace(/ı/g, 'i')
+              .replace(/ö/g, 'o')
+              .replace(/ç/g, 'c')
+              .trim();
+          };
+
+          // Kategori ID'si ile filtreleme (kebab-case)
+          const categoryName = selectedCategory.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+          const normalizedCategoryName = normalizeText(categoryName);
+
+          filtered = filtered.filter(product => {
+            const productCategory = product.category || '';
+            const normalizedProductCategory = normalizeText(productCategory);
+
+            // Çoklu eşleşme kontrolü - daha esnek
+            const match = 
+              productCategory === categoryName ||
+              productCategory.toLowerCase() === categoryName.toLowerCase() ||
+              normalizedProductCategory === normalizedCategoryName ||
+              // Kasalı ürünler için özel kontrol
+              (normalizedCategoryName.includes('kasali') && normalizedProductCategory.includes('kasali')) ||
+              (normalizedCategoryName.includes('kasali') && normalizedProductCategory.includes('kasa')) ||
+              // Genel kelime eşleşmesi
+              normalizedProductCategory.includes(normalizedCategoryName) ||
+              normalizedCategoryName.includes(normalizedProductCategory) ||
+              product.categoryId === selectedCategory;
+
+            logger.debug(`Product: ${product.name}, Category: ${productCategory}, Expected: ${categoryName}, Normalized Product: ${normalizedProductCategory}, Normalized Expected: ${normalizedCategoryName}, Match: ${match}`);
+            return match;
+          });
         }
+
+        logger.debug('🔍 Filtered products count:', filtered.length);
       }
 
       // Price range filter

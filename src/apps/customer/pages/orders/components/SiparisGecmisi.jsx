@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
 import Icon from '@shared/components/AppIcon';
-import { useNotification } from '../../../../../contexts/NotificationContext';
+import { useCallback, useEffect, useState } from 'react';
 import { useModal } from '../../../../../contexts/ModalContext';
+import { useNotification } from '../../../../../contexts/NotificationContext';
 import orderService from '../../../../../services/orderService';
-import orderSyncUtil from '../../../../../utils/orderSyncUtil';
+// Order sync utility removed - using direct order service
 import storage from '@core/storage';
-import SiparisIptalModali from './SiparisIptalModali';
 import SiparisDetayModali from './SiparisDetayModali';
+import SiparisIptalModali from './SiparisIptalModali';
 
 const SiparisGecmisi = ({ customerId }) => {
   const { showSuccess, showError } = useNotification();
@@ -21,22 +21,22 @@ const SiparisGecmisi = ({ customerId }) => {
   const loadOrders = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       if (!customerId) {
         logger.info('⚠️  Customer ID yok, siparişler yüklenemez');
         setOrders([]);
         return;
       }
-      
+
       // Tüm siparişleri al ve debug et
       const allOrders = await storage.get('customer_orders', []);
       logger.info('🔍 SiparisGecmisi DEBUG - Tüm orders:', allOrders);
       logger.info('🔍 SiparisGecmisi DEBUG - Customer ID:', customerId);
-      
+
       // OrderService kullanarak müşteriye özel siparişleri yükle
       const customerOrders = await orderService.getByCustomerId(customerId);
       logger.info('🔍 SiparisGecmisi DEBUG - Filtered orders:', customerOrders);
-      
+
       setOrders(customerOrders);
       logger.info(`✅ Customer ${customerId} için ${customerOrders.length} sipariş yüklendi`);
     } catch (error) {
@@ -49,10 +49,10 @@ const SiparisGecmisi = ({ customerId }) => {
 
   useEffect(() => {
     loadOrders();
-    
+
     // Sadece customer_orders storage'ını dinle
     const unsubscribeCustomerOrders = storage.subscribe('customer_orders', loadOrders);
-    
+
     return () => {
       unsubscribeCustomerOrders();
     };
@@ -61,25 +61,25 @@ const SiparisGecmisi = ({ customerId }) => {
   const handleCancelOrder = async (orderId, reason) => {
     try {
       const updatedOrder = await orderService.cancel(orderId, reason);
-      
+
       if (!updatedOrder) {
         throw new Error('Sipariş bulunamadı');
       }
-      
+
       // Local state'i güncelle
-      setOrders(prevOrders => 
-        prevOrders.map(order => 
-          order.id === orderId 
-            ? { 
-                ...order, 
-                status: updatedOrder.status,
-                cancelReason: reason,
-                updatedAt: new Date().toISOString()
-              }
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.id === orderId
+            ? {
+              ...order,
+              status: updatedOrder.status,
+              cancelReason: reason,
+              updatedAt: new Date().toISOString()
+            }
             : order
         )
       );
-      
+
       showSuccess('Sipariş başarıyla iptal edildi');
       return true;
     } catch (error) {
@@ -132,8 +132,8 @@ const SiparisGecmisi = ({ customerId }) => {
     return order.status === 'Beklemede' || order.status === 'Onaylandı';
   };
 
-  const filteredOrders = activeTab === 'all' 
-    ? orders 
+  const filteredOrders = activeTab === 'all'
+    ? orders
     : activeTab === 'active'
       ? orders.filter(order => !['Teslim Edildi', 'İptal Edildi'].includes(order.status))
       : orders.filter(order => ['Teslim Edildi', 'İptal Edildi'].includes(order.status));
@@ -144,31 +144,28 @@ const SiparisGecmisi = ({ customerId }) => {
       <div className="flex space-x-2 border-b border-gray-200">
         <button
           onClick={() => setActiveTab('all')}
-          className={`px-4 py-2 text-sm font-medium ${
-            activeTab === 'all'
+          className={`px-4 py-2 text-sm font-medium ${activeTab === 'all'
               ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-500 hover:text-gray-700'
-          }`}
+            }`}
         >
           Tüm Siparişler
         </button>
         <button
           onClick={() => setActiveTab('active')}
-          className={`px-4 py-2 text-sm font-medium ${
-            activeTab === 'active'
+          className={`px-4 py-2 text-sm font-medium ${activeTab === 'active'
               ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-500 hover:text-gray-700'
-          }`}
+            }`}
         >
           Aktif Siparişler
         </button>
         <button
           onClick={() => setActiveTab('completed')}
-          className={`px-4 py-2 text-sm font-medium ${
-            activeTab === 'completed'
+          className={`px-4 py-2 text-sm font-medium ${activeTab === 'completed'
               ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-500 hover:text-gray-700'
-          }`}
+            }`}
         >
           Tamamlanan/İptal
         </button>
@@ -187,7 +184,7 @@ const SiparisGecmisi = ({ customerId }) => {
           <Icon name="ShoppingBag" size={48} className="text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Sipariş bulunamadı</h3>
           <p className="text-gray-600">
-            {activeTab === 'all' 
+            {activeTab === 'all'
               ? 'Henüz sipariş vermemişsiniz.'
               : activeTab === 'active'
                 ? 'Aktif siparişiniz bulunmuyor.'
@@ -212,11 +209,11 @@ const SiparisGecmisi = ({ customerId }) => {
                       </p>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-                      {order.status === 'pending' ? 'Beklemede' : 
-                       order.status === 'confirmed' ? 'Onaylandı' : 
-                       order.status === 'preparing' ? 'Hazırlanıyor' : 
-                       order.status === 'delivered' ? 'Teslim Edildi' : 
-                       order.status === 'cancelled' ? 'İptal Edildi' : order.status}
+                      {order.status === 'pending' ? 'Beklemede' :
+                        order.status === 'confirmed' ? 'Onaylandı' :
+                          order.status === 'preparing' ? 'Hazırlanıyor' :
+                            order.status === 'delivered' ? 'Teslim Edildi' :
+                              order.status === 'cancelled' ? 'İptal Edildi' : order.status}
                     </span>
                   </div>
                   <div className="text-right">
@@ -247,9 +244,9 @@ const SiparisGecmisi = ({ customerId }) => {
                       {order.items.slice(0, 3).map((item, index) => (
                         <div key={index} className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                           {item.image ? (
-                            <img 
-                              src={item.image} 
-                              alt={item.name} 
+                            <img
+                              src={item.image}
+                              alt={item.name}
                               className="w-full h-full object-cover"
                             />
                           ) : (
@@ -321,7 +318,7 @@ const SiparisGecmisi = ({ customerId }) => {
           onCancel={handleCancelOrder}
         />
       )}
-      
+
       {/* Detail Modal */}
       {showDetailModal && selectedOrder && (
         <SiparisDetayModali

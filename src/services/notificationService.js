@@ -3,7 +3,7 @@
  * Sistem genelinde bildirim yönetimi
  */
 
-import logger from '@utils/logger';
+import logger from '@utils/productionLogger';
 
 class NotificationService {
   constructor() {

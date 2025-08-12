@@ -188,7 +188,7 @@ class DataValidator {
       }
 
       // Durum kontrolü
-      const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'];
+      const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled', 'Teslim Edildi', 'İptal Edildi', 'Onaylandı', 'Hazırlanıyor'];
       if (order.status && !validStatuses.includes(order.status)) {
         errors.push(`Order ${index}: Invalid status ${order.status}`);
       }

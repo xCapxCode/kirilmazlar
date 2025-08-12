@@ -208,7 +208,7 @@ const SellerDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-200">
+    <div className="min-h-screen bg-slate-200 pb-20 md:pb-0">
       <SaticiHeader />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
