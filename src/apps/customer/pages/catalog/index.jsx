@@ -138,47 +138,24 @@ const CustomerProductCatalog = () => {
 
     // Category filter
     if (selectedCategory && selectedCategory !== 'all') {
-      logger.debug('🔍 Custom filtering by category:', selectedCategory);
-
-      // Türkçe karakter normalize fonksiyonu
-      const normalizeText = (text) => {
-        return text
-          .toLowerCase()
-          .replace(/ğ/g, 'g')
-          .replace(/ü/g, 'u')
-          .replace(/ş/g, 's')
-          .replace(/ı/g, 'i')
-          .replace(/ö/g, 'o')
-          .replace(/ç/g, 'c')
-          .trim();
-      };
-
-      // Kategori adını kebab-case'den normal forma çevir
-      const categoryName = selectedCategory.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-      const normalizedCategoryName = normalizeText(categoryName);
+      logger.debug('🔍 Filtering by category:', selectedCategory);
 
       filtered = filtered.filter(product => {
         const productCategory = product.category || '';
-        const normalizedProductCategory = normalizeText(productCategory);
+        
+        // Kasalı ürünler için özel eşleştirme - DÜZELTME
+        if (selectedCategory === 'kasalı-ürünler') {
+          return productCategory === 'Kasalı Ürünler' ||
+                 productCategory.toLowerCase().includes('kasalı') ||
+                 productCategory.toLowerCase().includes('kasali');
+        }
 
-        // Kasalı ürünler için özel eşleştirme
-         if (selectedCategory === 'kasalı-ürünler' || selectedCategory === 'kasali-urunler') {
-           return productCategory === 'Kasalı Ürünler' ||
-                  productCategory.toLowerCase().includes('kasalı') ||
-                  productCategory.toLowerCase().includes('kasali') ||
-                  normalizedProductCategory.includes('kasali') ||
-                  normalizedProductCategory.includes('kasa');
-         }
-
-         // Diğer kategoriler için normal eşleştirme
-         return productCategory === categoryName ||
-                productCategory.toLowerCase() === categoryName.toLowerCase() ||
-                normalizedProductCategory === normalizedCategoryName ||
-                normalizedProductCategory.includes(normalizedCategoryName) ||
-                normalizedCategoryName.includes(normalizedProductCategory);
+        // Diğer kategoriler için ID bazlı eşleştirme
+        const productCategoryId = productCategory.toLowerCase().replace(/\s+/g, '-');
+        return productCategoryId === selectedCategory;
       });
 
-      logger.debug('🔍 Custom filtered products count:', filtered.length);
+      logger.debug('🔍 Filtered products count:', filtered.length);
     }
 
     // Price range filter
