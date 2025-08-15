@@ -96,16 +96,39 @@ class DataService {
                     image: null,
                     isActive: true,
                     createdAt: new Date().toISOString()
+                },
+                {
+                    id: 'cat-3',
+                    name: 'Kasalı Ürünler',
+                    description: 'Taze sebzeler',
+                    image: null,
+                    isActive: true,
+                    createdAt: new Date().toISOString()
                 }
             ];
             storage.set('categories', basicCategories);
             logger.info('📂 Temel kategori verileri oluşturuldu:', basicCategories.length);
         }
 
-        // Ürünler  
-        if (!storage.get('products')) {
-            storage.set('products', []);
-            logger.info('� Ürün storage başlatıldı');
+        // Ürünler - Demo ürünleri yükle (sadece ilk kez)
+        const existingProducts = storage.get('products');
+        if (!existingProducts || existingProducts.length === 0) {
+            // Demo ürünleri import et
+            import('../data/demoData.js').then(({ DEMO_PRODUCTS }) => {
+                // Kasalı ürünler dahil tüm demo ürünleri yükle
+                storage.set('products', DEMO_PRODUCTS);
+                logger.info('📦 Demo ürünler yüklendi (kasalı ürünler dahil):', DEMO_PRODUCTS.length);
+                
+                // Kasalı ürün sayısını logla
+                const kasaliCount = DEMO_PRODUCTS.filter(p => 
+                    p.unit === 'kasa' || p.unit === 'çuval' || 
+                    p.category?.startsWith('Kasalı ') ||
+                    p.originalCategory
+                ).length;
+                logger.info('🗃️ Kasalı ürün sayısı:', kasaliCount);
+            }).catch(error => {
+                logger.error('❌ Demo ürün yükleme hatası:', error);
+            });
         }
 
         // Siparişler

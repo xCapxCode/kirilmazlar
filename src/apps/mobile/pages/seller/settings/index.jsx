@@ -16,6 +16,7 @@ const MobileSellerSettings = () => {
     navigate('/login');
   };
 
+  // Web ile aynı temel ayarlar - gereksiz özellikler kaldırıldı
   const settingsGroups = [
     {
       title: 'İşletme',
@@ -23,48 +24,22 @@ const MobileSellerSettings = () => {
         {
           id: 'business-info',
           label: 'İşletme Bilgileri',
-          icon: 'Store',
+          icon: 'Building',
           color: 'bg-blue-100 text-blue-600',
           action: () => { }
         },
         {
-          id: 'business-hours',
-          label: 'Çalışma Saatleri',
-          icon: 'Clock',
+          id: 'pricing',
+          label: 'Fiyat Ayarları',
+          icon: 'DollarSign',
           color: 'bg-green-100 text-green-600',
           action: () => { }
         },
         {
-          id: 'delivery-settings',
-          label: 'Teslimat Ayarları',
-          icon: 'Truck',
+          id: 'orders',
+          label: 'Sipariş Ayarları',
+          icon: 'ShoppingCart',
           color: 'bg-orange-100 text-orange-600',
-          action: () => { }
-        }
-      ]
-    },
-    {
-      title: 'Satış',
-      items: [
-        {
-          id: 'payment-methods',
-          label: 'Ödeme Yöntemleri',
-          icon: 'CreditCard',
-          color: 'bg-purple-100 text-purple-600',
-          action: () => { }
-        },
-        {
-          id: 'tax-settings',
-          label: 'Vergi Ayarları',
-          icon: 'Calculator',
-          color: 'bg-yellow-100 text-yellow-600',
-          action: () => { }
-        },
-        {
-          id: 'discounts',
-          label: 'İndirimler',
-          icon: 'Percent',
-          color: 'bg-red-100 text-red-600',
           action: () => { }
         }
       ]
@@ -73,24 +48,17 @@ const MobileSellerSettings = () => {
       title: 'Hesap',
       items: [
         {
-          id: 'profile',
-          label: 'Profil Bilgileri',
-          icon: 'User',
-          color: 'bg-gray-100 text-gray-600',
-          action: () => { }
-        },
-        {
           id: 'notifications',
           label: 'Bildirimler',
           icon: 'Bell',
-          color: 'bg-indigo-100 text-indigo-600',
+          color: 'bg-purple-100 text-purple-600',
           action: () => { }
         },
         {
-          id: 'security',
-          label: 'Güvenlik',
-          icon: 'Shield',
-          color: 'bg-emerald-100 text-emerald-600',
+          id: 'units',
+          label: 'Birim Yönetimi',
+          icon: 'Package',
+          color: 'bg-yellow-100 text-yellow-600',
           action: () => { }
         }
       ]
@@ -104,20 +72,6 @@ const MobileSellerSettings = () => {
           icon: 'HelpCircle',
           color: 'bg-teal-100 text-teal-600',
           action: () => { }
-        },
-        {
-          id: 'contact',
-          label: 'İletişim',
-          icon: 'MessageCircle',
-          color: 'bg-pink-100 text-pink-600',
-          action: () => { }
-        },
-        {
-          id: 'about',
-          label: 'Hakkında',
-          icon: 'Info',
-          color: 'bg-cyan-100 text-cyan-600',
-          action: () => { }
         }
       ]
     }
@@ -125,26 +79,40 @@ const MobileSellerSettings = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
-      {/* Modern Hero Section */}
+      {/* Modern Header with Hero - Müşteri mobil favoriler gibi */}
       <div className="relative">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-green-600 via-green-500 to-emerald-500 opacity-90"></div>
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-32 h-32 bg-white rounded-full"></div>
-          <div className="absolute bottom-20 right-8 w-24 h-24 bg-white rounded-full"></div>
-          <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-white rounded-full"></div>
-        </div>
+        <div className="absolute inset-0 opacity-20" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+        }}></div>
 
-        <div className="relative px-6 py-8 text-white">
-          {/* Logo */}
-          <div className="flex justify-center mb-6">
+        {/* Header Content */}
+        <div className="relative z-10 px-4 pt-12 pb-8">
+          {/* Navigation */}
+          <div className="flex items-center justify-between mb-6">
+            <button
+              onClick={() => navigate('/ms/dashboard')}
+              className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center"
+            >
+              <Icon name="ArrowLeft" size={20} className="text-white" />
+            </button>
+
             <img
               src="/assets/images/logo/KirilmazlarLogoLandingpage.png"
               alt="Kırılmazlar"
               className="h-14 w-auto opacity-100 drop-shadow-sm"
             />
+
+            <button
+              onClick={() => navigate('/ms/dashboard')}
+              className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center"
+            >
+              <Icon name="Settings" size={20} className="text-white" />
+            </button>
           </div>
 
+          {/* Hero Content */}
           <div className="text-center">
             <div className="w-20 h-20 bg-green-100/80 shadow-sm hover:bg-green-150/80 hover:shadow-md rounded-2xl flex items-center justify-center mx-auto mb-4 transition-all">
               <Icon name="Settings" size={24} className="text-green-600" />
@@ -169,9 +137,9 @@ const MobileSellerSettings = () => {
       </div>
 
       {/* Content */}
-      <div className="px-4 -mt-4 pb-24 relative z-20 space-y-6">
+      <div className="px-4 -mt-4 pb-24 relative z-20">
         {/* Profil Kartı */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
+        <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
           <div className="flex items-center space-x-4">
             {/* Avatar */}
             <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-600 rounded-2xl flex items-center justify-center">
@@ -205,66 +173,43 @@ const MobileSellerSettings = () => {
           </div>
         </div>
 
-        {/* İstatistik Kartları */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
-            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-              <Icon name="ShoppingBag" size={20} className="text-blue-600" />
+        {/* Ayar Grupları */}
+        <div className="space-y-6">
+          {settingsGroups.map((group, groupIndex) => (
+            <div key={groupIndex} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
+                <h3 className="text-sm font-semibold text-gray-900">{group.title}</h3>
+              </div>
+              <div>
+                {group.items.map((item, index) => (
+                  <button
+                    key={item.id}
+                    onClick={item.action}
+                    className={`w-full flex items-center space-x-4 p-4 hover:bg-gray-50 transition-colors ${index !== group.items.length - 1 ? 'border-b border-gray-100' : ''
+                      }`}
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.color}`}>
+                      <Icon name={item.icon} size={20} />
+                    </div>
+                    <span className="flex-1 text-left font-medium text-gray-900">{item.label}</span>
+                    <Icon name="ChevronRight" size={18} className="text-gray-400" />
+                  </button>
+                ))}
+              </div>
             </div>
-            <p className="text-lg font-bold text-gray-900">156</p>
-            <p className="text-xs text-gray-500">Sipariş</p>
-          </div>
-
-          <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
-            <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-              <Icon name="Package" size={20} className="text-green-600" />
-            </div>
-            <p className="text-lg font-bold text-gray-900">89</p>
-            <p className="text-xs text-gray-500">Ürün</p>
-          </div>
-
-          <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
-            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-              <Icon name="Users" size={20} className="text-purple-600" />
-            </div>
-            <p className="text-lg font-bold text-gray-900">42</p>
-            <p className="text-xs text-gray-500">Müşteri</p>
-          </div>
+          ))}
         </div>
 
-        {/* Ayar Grupları */}
-        {settingsGroups.map((group, groupIndex) => (
-          <div key={groupIndex} className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-              <h3 className="text-sm font-semibold text-gray-900">{group.title}</h3>
-            </div>
-            <div>
-              {group.items.map((item, index) => (
-                <button
-                  key={item.id}
-                  onClick={item.action}
-                  className={`w-full flex items-center space-x-4 p-4 hover:bg-gray-50 transition-colors ${index !== group.items.length - 1 ? 'border-b border-gray-100' : ''
-                    }`}
-                >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.color}`}>
-                    <Icon name={item.icon} size={20} />
-                  </div>
-                  <span className="flex-1 text-left font-medium text-gray-900">{item.label}</span>
-                  <Icon name="ChevronRight" size={18} className="text-gray-400" />
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-
         {/* Çıkış Yap Butonu */}
-        <button
-          onClick={() => setShowSignOutConfirm(true)}
-          className="w-full bg-red-50 border border-red-200 text-red-600 py-4 rounded-2xl font-semibold flex items-center justify-center space-x-2"
-        >
-          <Icon name="LogOut" size={20} />
-          <span>Çıkış Yap</span>
-        </button>
+        <div className="mt-6">
+          <button
+            onClick={() => setShowSignOutConfirm(true)}
+            className="w-full bg-red-50 border border-red-200 text-red-600 py-4 rounded-2xl font-semibold flex items-center justify-center space-x-2"
+          >
+            <Icon name="LogOut" size={20} />
+            <span>Çıkış Yap</span>
+          </button>
+        </div>
 
         {/* Uygulama Bilgisi */}
         <div className="text-center mt-8 space-y-2">

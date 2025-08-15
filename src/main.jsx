@@ -20,9 +20,6 @@ import './utils/storageHealthMonitor';
 // Debug info için
 import './utils/debugInfo';
 
-// 🚀 KIRO AUTONOMOUS SYSTEM - %97 API Tasarrufu
-import '../.kiro/index.js';
-
 const container = document.getElementById("root");
 const root = createRoot(container);
 

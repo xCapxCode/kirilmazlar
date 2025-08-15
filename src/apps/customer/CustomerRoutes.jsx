@@ -6,6 +6,9 @@ import CustomerMobileNavigation from "./components/CustomerMobileNavigation";
 
 // Customer Pages - Lazy loaded for code splitting
 const ProductCatalog = lazy(() => import("./pages/catalog"));
+const CustomerCatalogNew = lazy(() => import("./pages/catalog/CustomerCatalogNew"));
+const CustomerCatalogFixed = lazy(() => import("./pages/catalog/CustomerCatalogFixed"));
+const CustomerCatalogFinal = lazy(() => import("./pages/catalog/CustomerCatalogFinal"));
 const Cart = lazy(() => import("./pages/cart"));
 const OrderHistory = lazy(() => import("./pages/orders"));
 const CustomerProfile = lazy(() => import("./pages/profile"));
@@ -33,7 +36,7 @@ const CustomerRoutes = () => {
           <Route index element={<Navigate to="catalog" replace />} />
           <Route path="catalog" element={
             <Suspense fallback={<PageLoader />}>
-              <ProductCatalog />
+              <CustomerCatalogFinal />
             </Suspense>
           } />
           <Route path="cart" element={

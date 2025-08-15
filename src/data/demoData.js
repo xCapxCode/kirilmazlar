@@ -562,6 +562,41 @@ export const DEMO_PRODUCTS = [
     barcode: '1234567890158',
     isActive: true,
     createdAt: new Date().toISOString()
+  },
+  // Test için kasalı ürün
+  {
+    id: 'prod-37',
+    name: 'Kasalı Domates',
+    description: 'Toptan kasalı domates',
+    price: 120.00,
+    unit: 'kasa',
+    category: 'Kasalı Sebze',
+    originalCategory: 'Sebze',
+    categoryId: 'cat-3',
+    stock: 5,
+    minStock: 1,
+    image: '/assets/images/products/Domates.png',
+    barcode: '1234567890159',
+    isActive: true,
+    status: 'active',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'prod-38',
+    name: 'Çuvallı Patates',
+    description: 'Toptan çuvallı patates',
+    price: 200.00,
+    unit: 'çuval',
+    category: 'Kasalı Sebze',
+    originalCategory: 'Sebze',
+    categoryId: 'cat-3',
+    stock: 3,
+    minStock: 1,
+    image: '/assets/images/products/patates.png',
+    barcode: '1234567890160',
+    isActive: true,
+    status: 'active',
+    createdAt: new Date().toISOString()
   }
 ];
 

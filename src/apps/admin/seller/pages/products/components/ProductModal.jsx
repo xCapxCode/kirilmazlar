@@ -92,7 +92,7 @@ const ProductModal = ({ product, categories, units, onSave, onClose }) => {
     if (!formData.name.trim()) newErrors.name = 'Product name is required';
     if (!formData.description.trim()) newErrors.description = 'Description is required';
     if (!formData.category) newErrors.category = 'Category is required';
-    if (!formData.subCategory) newErrors.subCategory = 'Sub-category is required';
+    // Alt kategori artık zorunlu değil - opsiyonel
     if (!formData.price || parseFloat(formData.price) <= 0) newErrors.price = 'Valid price is required';
     if (!formData.stock || parseInt(formData.stock) < 0) newErrors.stock = 'Valid stock quantity is required';
     if (!formData.lowStockThreshold || parseInt(formData.lowStockThreshold) < 0) {
@@ -114,17 +114,34 @@ const ProductModal = ({ product, categories, units, onSave, onClose }) => {
     try {
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
       
+      // Dinamik kategori sistemi - kasa seçildiğinde otomatik tag ekle
+      let finalTags = [...formData.tags];
+      let finalCategory = formData.category;
+      
+      // Kasa/çuval seçildiğinde dinamik kategori oluştur
+      if (formData.unit === 'kasa' || formData.unit === 'çuval') {
+        const kasaTag = `Kasalı ${formData.category}`;
+        if (!finalTags.includes(kasaTag)) {
+          finalTags.push(kasaTag);
+        }
+        // Kategoriyi de güncelle
+        finalCategory = `Kasalı ${formData.category}`;
+      }
+      
       const productData = {
         ...formData,
+        category: finalCategory,
+        tags: finalTags,
         price: parseFloat(formData.price),
         stock: parseInt(formData.stock),
         lowStockThreshold: parseInt(formData.lowStockThreshold),
-        minimumOrder: parseInt(formData.minimumOrder)
+        minimumOrder: parseInt(formData.minimumOrder),
+        status: formData.status || 'active' // Varsayılan olarak active
       };
       
       onSave(productData);
     } catch (error) {
-      logger.error('Error saving product:', error);
+      console.error('Error saving product:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -189,7 +206,7 @@ const ProductModal = ({ product, categories, units, onSave, onClose }) => {
 
         <div>
           <label className="block text-sm font-medium text-text-primary mb-2">
-            Sub-Category *
+            Sub-Category (Optional)
           </label>
           <select
             value={formData.subCategory}
@@ -199,7 +216,7 @@ const ProductModal = ({ product, categories, units, onSave, onClose }) => {
               errors.subCategory ? 'border-error' : 'border-border'
             }`}
           >
-            <option value="">Select sub-category</option>
+            <option value="">Select sub-category (optional)</option>
             {formData.category && subCategories[formData.category]?.map(subCat => (
               <option key={subCat} value={subCat}>{subCat}</option>
             ))}

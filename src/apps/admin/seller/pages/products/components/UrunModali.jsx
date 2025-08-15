@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNotification } from '../../../../../../contexts/NotificationContext';
+import storage from '../../../../../../core/storage';
 import Icon from '../../../../../../shared/components/AppIcon';
+import logger from '../../../../../../utils/logger';
 
 const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) => {
   const { showSuccess, showError } = useNotification();
@@ -189,9 +191,7 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
       newErrors.category = 'Kategori seçimi gereklidir';
     }
 
-    if (!formData.subcategory) {
-      newErrors.subcategory = 'Alt kategori seçimi gereklidir';
-    }
+    // Alt kategori artık zorunlu değil - opsiyonel
 
     if (!formData.price || parseFloat(formData.price) <= 0) {
       newErrors.price = 'Geçerli bir fiyat giriniz';
@@ -225,14 +225,19 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
     setIsSubmitting(true);
 
     try {
-      const productData = {
+      let productData = {
         ...formData,
         price: parseFloat(formData.price),
         stock: parseInt(formData.stock),
-        minStock: parseInt(formData.minStock)
+        minStock: parseInt(formData.minStock),
+        status: formData.status || 'active', // Kullanıcının seçtiği durumu koru
+        isActive: formData.status === 'active' // isActive alanını da güncelle
       };
 
-      logger.info('Kaydedilecek ürün verisi:', productData);
+      // YENİ SİSTEM: ProductSyncService ile kasalı ürün standardizasyonu
+      productData = productSyncService.standardizeProductForSeller(productData);
+
+      logger.info('🗃️ Standardize edilmiş ürün verisi:', productData);
       await onSave(productData);
       logger.info('Ürün başarıyla kaydedildi');
 
@@ -408,7 +413,7 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Alt Kategori *
+                  Alt Kategori (Opsiyonel)
                 </label>
                 <select
                   name="subcategory"
@@ -418,7 +423,7 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:bg-gray-100 ${errors.subcategory ? 'border-red-300' : 'border-gray-300'
                     }`}
                 >
-                  <option value="">Alt kategori seçiniz</option>
+                  <option value="">Alt kategori seçiniz (opsiyonel)</option>
                   {selectedCategory?.subcategories?.map(subcategory => (
                     <option key={subcategory} value={subcategory}>
                       {subcategory}
@@ -572,4 +577,4 @@ const UrunModali = ({ product, categories, activeCategory, onSave, onClose }) =>
   );
 };
 
-export default UrunModali; 
+export default UrunModali;

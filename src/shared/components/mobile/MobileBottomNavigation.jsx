@@ -59,30 +59,24 @@ const MobileBottomNavigation = () => {
 
   return (
     <div
-      className="fixed left-0 right-0 shadow-2xl"
+      className="fixed bottom-0 left-0 right-0 bg-white shadow-2xl border-t border-gray-200"
       style={{
-        bottom: '0px',
         zIndex: 999999,
-        height: '80px',
-        background: 'linear-gradient(to bottom, #ffffff 0%, #ffffff 80px, #22c55e 80px)',
-        borderTop: '1px solid #f3f4f6',
-        boxShadow: '0 -4px 20px rgba(0,0,0,0.05)',
-        paddingBottom: 'env(safe-area-inset-bottom)',
-        minHeight: 'calc(80px + env(safe-area-inset-bottom))'
+        height: '80px'
       }}
     >
-      <div className="flex items-center justify-around px-2 py-2 relative">
+      <div className="flex items-center justify-around px-4 py-3">
         {navItems.map((item) => {
-          // Ortadaki sepet butonu için özel tasarım
+          // Ortadaki sepet butonu için özel tasarım - yeşil renk korundu
           if (item.isCenter) {
             return (
               <button
                 key={item.id}
                 onClick={() => handleNavigation(item.path)}
-                className="relative flex flex-col items-center justify-center touch-manipulation transition-all duration-200 -mt-6"
+                className="relative flex flex-col items-center justify-center touch-manipulation transition-all duration-300 ease-out -mt-6"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                {/* Center Cart Button - Green Color */}
+                {/* Center Cart Button - Green Color Korundu */}
                 <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center shadow-2xl border-4 border-white relative">
                   <Icon
                     name={item.icon}
@@ -92,7 +86,7 @@ const MobileBottomNavigation = () => {
 
                   {/* Cart Badge */}
                   {item.badge && (
-                    <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-[20px] flex items-center justify-center px-1 border-2 border-white">
+                    <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-[20px] flex items-center justify-center px-1 border-2 border-white animate-pulse">
                       {item.badge > 99 ? '99+' : item.badge}
                     </div>
                   )}
@@ -101,26 +95,29 @@ const MobileBottomNavigation = () => {
             );
           }
 
-          // Diğer navigation öğeleri
+          // Diğer navigation öğeleri - satıcı stili ile
           return (
             <button
               key={item.id}
               onClick={() => handleNavigation(item.path)}
-              className="relative flex flex-col items-center justify-center min-w-0 flex-1 py-2 px-1 touch-manipulation transition-all duration-200"
+              className={`relative flex flex-col items-center justify-center min-w-0 flex-1 py-2 px-1 touch-manipulation transition-all duration-300 ease-out ${item.isActive
+                ? 'scale-105'
+                : 'hover:bg-gray-50 active:scale-95'
+                }`}
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
               {/* Icon */}
-              <div className="relative mb-1">
+              <div className="relative mb-1.5">
                 <Icon
                   name={item.icon}
                   size={20}
-                  className={`transition-all duration-200 ${item.isActive ? 'text-green-500' : 'text-gray-400'
+                  className={`transition-all duration-300 ${item.isActive ? 'text-green-600' : 'text-gray-700'
                     }`}
                 />
               </div>
 
               {/* Label */}
-              <span className={`text-xs font-medium leading-none truncate transition-all duration-200 ${item.isActive ? 'text-green-500' : 'text-gray-400'
+              <span className={`text-xs font-medium leading-none truncate transition-all duration-300 ${item.isActive ? 'text-green-600' : 'text-gray-700'
                 }`}>
                 {item.label}
               </span>
@@ -133,3 +130,5 @@ const MobileBottomNavigation = () => {
 };
 
 export default MobileBottomNavigation;
+
+

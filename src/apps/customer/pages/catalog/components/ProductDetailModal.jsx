@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Icon from '../../../../../shared/components/AppIcon';
 import Image from '../../../../../shared/components/AppImage';
 
@@ -7,8 +7,8 @@ const ProductDetailModal = ({ product, onClose, onAddToCart }) => {
   const [quantity, setQuantity] = useState(1);
   const [selectedUnit, setSelectedUnit] = useState(product.unit);
 
-  const discountedPrice = product.discount > 0 
-    ? product.price * (1 - product.discount / 100) 
+  const discountedPrice = product.discount > 0
+    ? product.price * (1 - product.discount / 100)
     : product.price;
 
   const unitOptions = [
@@ -19,8 +19,8 @@ const ProductDetailModal = ({ product, onClose, onAddToCart }) => {
     { value: 'sack', label: 'Çuval' }
   ];
 
-  const availableUnits = unitOptions.filter(unit => 
-    unit.value === product.unit || 
+  const availableUnits = unitOptions.filter(unit =>
+    unit.value === product.unit ||
     (product.unit === 'kg' && ['piece', 'bunch'].includes(unit.value)) ||
     (product.unit === 'piece' && ['kg', 'bunch'].includes(unit.value))
   );
@@ -64,13 +64,15 @@ const ProductDetailModal = ({ product, onClose, onAddToCart }) => {
             <div className="lg:w-1/2 p-6">
               <div className="aspect-square rounded-lg overflow-hidden mb-4">
                 <Image
-                  src={product.gallery[selectedImageIndex]}
+                  src={product.image}
                   alt={product.name}
                   className="w-full h-full object-cover"
+                  fallback="/assets/images/placeholders/product-placeholder.png"
                 />
               </div>
-              
-              {product.gallery.length > 1 && (
+
+              {/* Gallery özelliği şimdilik tek resim için devre dışı */}
+              {/* {product.gallery && product.gallery.length > 1 && (
                 <div className="flex space-x-2">
                   {product.gallery.map((image, index) => (
                     <button
@@ -89,7 +91,7 @@ const ProductDetailModal = ({ product, onClose, onAddToCart }) => {
                     </button>
                   ))}
                 </div>
-              )}
+              )} */}
             </div>
 
             {/* Product Info */}
@@ -104,8 +106,8 @@ const ProductDetailModal = ({ product, onClose, onAddToCart }) => {
                         key={i}
                         name="Star"
                         size={16}
-                        className={i < Math.floor(product.rating) 
-                          ? 'text-accent fill-current' :'text-gray-300'
+                        className={i < Math.floor(product.rating)
+                          ? 'text-accent fill-current' : 'text-gray-300'
                         }
                       />
                     ))}
@@ -176,10 +178,9 @@ const ProductDetailModal = ({ product, onClose, onAddToCart }) => {
                       <button
                         key={unit.value}
                         onClick={() => setSelectedUnit(unit.value)}
-                        className={`px-3 py-2 rounded-lg border transition-smooth ${
-                          selectedUnit === unit.value
-                            ? 'border-primary bg-primary/5 text-primary' :'border-border text-text-secondary hover:border-primary/50'
-                        }`}
+                        className={`px-3 py-2 rounded-lg border transition-smooth ${selectedUnit === unit.value
+                            ? 'border-primary bg-primary/5 text-primary' : 'border-border text-text-secondary hover:border-primary/50'
+                          }`}
                       >
                         {unit.label}
                       </button>
@@ -231,10 +232,9 @@ const ProductDetailModal = ({ product, onClose, onAddToCart }) => {
               <button
                 onClick={handleAddToCart}
                 disabled={!product.isAvailable}
-                className={`w-full py-4 px-6 rounded-lg font-semibold transition-smooth ${
-                  product.isAvailable
-                    ? 'bg-primary text-white hover:bg-primary-600' :'bg-gray-200 text-gray-500 cursor-not-allowed'
-                }`}
+                className={`w-full py-4 px-6 rounded-lg font-semibold transition-smooth ${product.isAvailable
+                    ? 'bg-primary text-white hover:bg-primary-600' : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  }`}
               >
                 {product.isAvailable ? (
                   <div className="flex items-center justify-center space-x-2">

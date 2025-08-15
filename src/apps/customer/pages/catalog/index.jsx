@@ -142,12 +142,27 @@ const CustomerProductCatalog = () => {
 
       filtered = filtered.filter(product => {
         const productCategory = product.category || '';
-        
-        // Kasalı ürünler için özel eşleştirme - DÜZELTME
+
+        // Kasalı ürünler için özel eşleştirme - AKILLI SİSTEM
         if (selectedCategory === 'kasalı-ürünler') {
-          return productCategory === 'Kasalı Ürünler' ||
-                 productCategory.toLowerCase().includes('kasalı') ||
-                 productCategory.toLowerCase().includes('kasali');
+          // Direkt kasalı kategori kontrolü
+          if (productCategory === 'Kasalı Ürünler' ||
+            productCategory.startsWith('Kasalı ') ||
+            /^kasalı\s+/i.test(productCategory)) {
+            return true;
+          }
+
+          // Ürün birimini kontrol et (kasa/çuval)
+          if (product.unit === 'kasa' || product.unit === 'çuval') {
+            return true;
+          }
+
+          // Orijinal kategori kontrolü (dinamik sistem için)
+          if (product.originalCategory) {
+            return true;
+          }
+
+          return false;
         }
 
         // Diğer kategoriler için ID bazlı eşleştirme
@@ -219,6 +234,9 @@ const CustomerProductCatalog = () => {
     logger.info('Storage mode:', storage.isDevelopment ? 'MEMORY' : 'LOCALSTORAGE');
     storage.debug();
 
+    // KASALI ÜRÜNLER DEBUG BAŞLANGICI
+    logger.info('🗃️ ===== KASALI ÜRÜNLER DEBUG BAŞLADI =====');
+
     setIsLoading(true);
 
     try {
@@ -256,6 +274,12 @@ const CustomerProductCatalog = () => {
       );
       logger.info('🔍 DEEP DEBUG - Kasalı ürünler storage\'da:', kasaliInStorage);
 
+      // Kasalı ürünlerin aktiflik durumunu kontrol et
+      kasaliInStorage.forEach(product => {
+        const isActive = product.isActive !== false && product.status !== 'inactive' && product.status !== 'disabled';
+        logger.info(`🔍 KASALI ÜRÜN AKTIFLIK: ${product.name} - isActive: ${product.isActive}, status: ${product.status}, stock: ${product.stock}, SONUÇ: ${isActive}`);
+      });
+
       // Her ürünün filtreleme durumunu kontrol et
       savedProducts.forEach(product => {
         const isActive = product.isActive !== false &&
@@ -265,18 +289,32 @@ const CustomerProductCatalog = () => {
       });
 
       if (savedProducts && savedProducts.length > 0) {
-        // Aktif ürünleri müşteriye göster - ÇOK DAHA ESNEKLEŞTİRİLDİ
+        // Aktif ürünleri müşteriye göster - ESNEK KONTROL
         loadedProducts = savedProducts
           .filter(product => {
-            // Sadece açıkça disabled olanları filtrele
-            const isNotDisabled = product.status !== 'disabled';
+            // Pasif olarak işaretlenmiş ürünleri hariç tut
+            const isExplicitlyInactive = product.isActive === false ||
+              product.status === 'inactive' ||
+              product.status === 'disabled';
 
+            // Stok kontrolü - stok 0 ise gösterme
+            const hasStock = product.stock > 0;
+
+            const shouldShow = !isExplicitlyInactive && hasStock;
+
+            if (product.category && product.category.toLowerCase().includes('kasalı')) {
+              logger.info(`🗃️ KASALI ÜRÜN FİLTRE: ${product.name} - isActive: ${product.isActive}, status: ${product.status}, stock: ${product.stock}, GÖSTER: ${shouldShow}`);
+            }
+
+            return shouldShow;
+          })
+          .filter(product => {
             // Temel veri kontrolü
             const hasBasicData = product.name && product.category;
 
-            logger.info(`Ürün ${product.name}: isNotDisabled=${isNotDisabled}, hasBasicData=${hasBasicData}, category=${product.category}`);
+            logger.info(`Ürün ${product.name}: hasBasicData=${hasBasicData}, category=${product.category}`);
 
-            return isNotDisabled && hasBasicData;
+            return hasBasicData;
           })
           .map(product => ({
             id: product.id,
@@ -370,43 +408,50 @@ const CustomerProductCatalog = () => {
         }
       });
 
-      // Kategorisi olmayan ürünleri temizle ve güncelle
-      const orphanedProducts = [];
-      const validProducts = [];
+      // Tüm ürünleri göster - kategori temizleme işlemini devre dışı bırak
+      const validProducts = loadedProducts;
 
+      // Kategori sayımı için tüm ürünleri işle
       loadedProducts.forEach(product => {
         const categoryId = product.category.toLowerCase().replace(/\s+/g, '-');
-        const categoryExists = sellerCategories.some(cat =>
-          cat.name.toLowerCase().replace(/\s+/g, '-') === categoryId
-        );
 
-        if (categoryExists || product.category === 'Genel') {
-          validProducts.push(product);
-          if (categoryMap.has(categoryId)) {
-            categoryMap.get(categoryId).count++;
-          }
-        } else {
-          orphanedProducts.push(product);
-          logger.warn(`⚠️ Ürün "${product.name}" kategorisi "${product.category}" satıcı panelinde bulunamadı`);
+        // Kasalı ürünler için özel eşleştirme - AKILLI SİSTEM
+        let targetCategoryId = categoryId;
+        const isKasaliProduct = product.category === 'Kasalı Ürünler' ||
+          product.category.startsWith('Kasalı ') ||
+          /^kasalı\s+/i.test(product.category) ||
+          product.unit === 'kasa' ||
+          product.unit === 'çuval' ||
+          product.originalCategory;
+
+        if (isKasaliProduct) {
+          targetCategoryId = 'kasalı-ürünler';
+          logger.info(`🗃️ KASALI ÜRÜN TESPİT EDİLDİ: ${product.name} -> ${targetCategoryId} (kategori: ${product.category}, unit: ${product.unit}, originalCategory: ${product.originalCategory})`);
         }
+
+        // Kategori map'te yoksa oluştur
+        if (!categoryMap.has(targetCategoryId)) {
+          // Kasalı ürünler için özel isim
+          const categoryName = targetCategoryId === 'kasalı-ürünler' ? 'Kasalı Ürünler' : product.category;
+          categoryMap.set(targetCategoryId, {
+            id: targetCategoryId,
+            name: categoryName,
+            icon: getCategoryIcon(categoryName),
+            count: 0
+          });
+        }
+
+        // Sayımı artır
+        if (categoryMap.has(targetCategoryId)) {
+          categoryMap.get(targetCategoryId).count++;
+
+          if (targetCategoryId === 'kasalı-ürünler') {
+            logger.info(`🗃️ KASALI KATEGORİ SAYIM: ${product.name} eklendi, toplam: ${categoryMap.get(targetCategoryId).count}`);
+          }
+        }
+
+        logger.info(`📊 Kategori sayımı: ${product.name} -> ${targetCategoryId} (${product.category})`);
       });
-
-      // Eğer kategorisi olmayan ürünler varsa, bunları storage'dan temizle
-      if (orphanedProducts.length > 0) {
-        logger.info(`🧹 ${orphanedProducts.length} adet kategorisi olmayan ürün temizleniyor...`);
-        const allStorageProducts = storage.get('products', []);
-        const cleanedProducts = allStorageProducts.filter(storageProduct =>
-          !orphanedProducts.some(orphan => orphan.id === storageProduct.id)
-        );
-
-        // Storage'ı güncelle
-        storage.set('products', cleanedProducts);
-
-        // Local state'i güncelle
-        setProducts(validProducts);
-
-        logger.info('✅ Kategorisi olmayan ürünler temizlendi');
-      }
 
       // Sadece ürünü olan kategorileri göster
       const finalCategories = Array.from(categoryMap.values()).filter(cat =>
@@ -427,6 +472,13 @@ const CustomerProductCatalog = () => {
       setDynamicCategories([{ id: 'all', name: 'Tüm Ürünler', icon: 'Grid3X3', count: 0 }]);
     }
 
+    // KASALI ÜRÜNLER DEBUG SONU
+    logger.info('🗃️ ===== KASALI ÜRÜNLER DEBUG BİTTİ =====');
+    logger.info('📊 SONUÇ ÖZET:');
+    logger.info('- Toplam yüklenen ürün:', products.length);
+    logger.info('- Toplam kategori:', categories.length);
+    logger.info('- Kasalı kategori var mı:', categories.some(cat => cat.id === 'kasalı-ürünler'));
+
     setIsLoading(false);
   };
 
@@ -442,6 +494,107 @@ const CustomerProductCatalog = () => {
       'Kasalı': 'Package2'
     };
     return iconMap[categoryName] || 'Package';
+  };
+
+  // Kategorileri yükleyen fonksiyon - loadProducts'tan sonra çağrılmalı
+  const loadCategories = async () => {
+    logger.info('🔄 loadCategories called');
+
+    try {
+      // Products zaten yüklenmişse, kategorileri products üzerinden oluştur
+      if (products && products.length > 0) {
+        // Kategori dağılımını logla
+        const categoryCount = {};
+        products.forEach(product => {
+          categoryCount[product.category] = (categoryCount[product.category] || 0) + 1;
+        });
+        logger.info('📊 Kategori dağılımı:', categoryCount);
+
+        // Satıcı panelindeki aktif kategorileri al
+        const sellerCategories = storage.get('categories', []);
+        logger.info('📂 Satıcı kategorileri:', sellerCategories);
+
+        // Dinamik kategorileri oluştur
+        const categoryMap = new Map();
+        categoryMap.set('all', { id: 'all', name: 'Tüm Ürünler', icon: 'Grid3X3', count: products.length });
+
+        // Önce satıcı panelindeki kategorileri ekle (Tüm Ürünler hariç)
+        sellerCategories.forEach(sellerCategory => {
+          if (sellerCategory.name !== 'Tüm Ürünler') {
+            const categoryId = sellerCategory.name.toLowerCase().replace(/\s+/g, '-');
+            categoryMap.set(categoryId, {
+              id: categoryId,
+              name: sellerCategory.name,
+              icon: getCategoryIcon(sellerCategory.name),
+              count: 0
+            });
+          }
+        });
+
+        // Kategori sayımı için tüm ürünleri işle
+        products.forEach(product => {
+          const categoryId = product.category.toLowerCase().replace(/\s+/g, '-');
+
+          // Kasalı ürünler için özel eşleştirme - AKILLI SİSTEM
+          let targetCategoryId = categoryId;
+          const isKasaliProduct = product.category === 'Kasalı Ürünler' ||
+            product.category.startsWith('Kasalı ') ||
+            /^kasalı\s+/i.test(product.category) ||
+            product.unit === 'kasa' ||
+            product.unit === 'çuval' ||
+            product.originalCategory;
+
+          if (isKasaliProduct) {
+            targetCategoryId = 'kasalı-ürünler';
+            logger.info(`🗃️ KASALI ÜRÜN TESPİT EDİLDİ (2): ${product.name} -> ${targetCategoryId} (kategori: ${product.category}, unit: ${product.unit}, originalCategory: ${product.originalCategory})`);
+          }
+
+          // Kategori map'te yoksa oluştur
+          if (!categoryMap.has(targetCategoryId)) {
+            // Kasalı ürünler için özel isim
+            const categoryName = targetCategoryId === 'kasalı-ürünler' ? 'Kasalı Ürünler' : product.category;
+            categoryMap.set(targetCategoryId, {
+              id: targetCategoryId,
+              name: categoryName,
+              icon: getCategoryIcon(categoryName),
+              count: 0
+            });
+          }
+
+          // Sayımı artır
+          if (categoryMap.has(targetCategoryId)) {
+            categoryMap.get(targetCategoryId).count++;
+
+            if (targetCategoryId === 'kasalı-ürünler') {
+              logger.info(`🗃️ KASALI KATEGORİ SAYIM (2): ${product.name} eklendi, toplam: ${categoryMap.get(targetCategoryId).count}`);
+            }
+          }
+
+          logger.info(`📊 Kategori sayımı: ${product.name} -> ${targetCategoryId} (${product.category})`);
+        });
+
+        // Sadece ürünü olan kategorileri göster
+        const finalCategories = Array.from(categoryMap.values()).filter(cat =>
+          cat.id === 'all' || cat.count > 0
+        );
+
+        setDynamicCategories(finalCategories);
+        setCategories(finalCategories);
+
+        logger.info('✅ Kategoriler başarıyla yüklendi:', finalCategories.length);
+      } else {
+        logger.warn('⚠️ Ürünler yüklenmeden kategoriler yüklenmek istendi');
+        // Ürün yoksa, tüm kategorileri göster
+        setCategories([{ id: 'all', name: 'Tüm Ürünler', icon: 'Grid3X3', count: 0 }]);
+        setDynamicCategories([{ id: 'all', name: 'Tüm Ürünler', icon: 'Grid3X3', count: 0 }]);
+      }
+    } catch (error) {
+      logger.error('Kategoriler yüklenirken hata:', error);
+
+      // Hata durumunda sadece 'Tüm Ürünler' kategorisi göster
+      setCategories([{ id: 'all', name: 'Tüm Ürünler', icon: 'Grid3X3', count: 0 }]);
+      setDynamicCategories([{ id: 'all', name: 'Tüm Ürünler', icon: 'Grid3X3', count: 0 }]);
+    }
   };
 
   const handleRefresh = async () => {

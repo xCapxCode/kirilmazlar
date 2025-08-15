@@ -10,6 +10,14 @@ const MobileSellerCustomers = () => {
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: ''
+  });
 
   useEffect(() => {
     loadCustomers();
@@ -100,26 +108,40 @@ const MobileSellerCustomers = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
-      {/* Modern Hero Section */}
+      {/* Modern Header with Hero - Müşteri mobil favoriler gibi */}
       <div className="relative">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-green-600 via-green-500 to-emerald-500 opacity-90"></div>
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-32 h-32 bg-white rounded-full"></div>
-          <div className="absolute bottom-20 right-8 w-24 h-24 bg-white rounded-full"></div>
-          <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-white rounded-full"></div>
-        </div>
+        <div className="absolute inset-0 opacity-20" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+        }}></div>
 
-        <div className="relative px-6 py-8 text-white">
-          {/* Logo */}
-          <div className="flex justify-center mb-6">
+        {/* Header Content */}
+        <div className="relative z-10 px-4 pt-12 pb-8">
+          {/* Navigation */}
+          <div className="flex items-center justify-between mb-6">
+            <button
+              onClick={() => navigate('/ms/dashboard')}
+              className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center"
+            >
+              <Icon name="ArrowLeft" size={20} className="text-white" />
+            </button>
+
             <img
               src="/assets/images/logo/KirilmazlarLogoLandingpage.png"
               alt="Kırılmazlar"
               className="h-14 w-auto opacity-100 drop-shadow-sm"
             />
+
+            <button
+              onClick={loadCustomers}
+              className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center"
+            >
+              <Icon name="RefreshCw" size={20} className="text-white" />
+            </button>
           </div>
 
+          {/* Hero Content */}
           <div className="text-center">
             <div className="w-20 h-20 bg-green-100/80 shadow-sm hover:bg-green-150/80 hover:shadow-md rounded-2xl flex items-center justify-center mx-auto mb-4 transition-all">
               <Icon name="Users" size={24} className="text-green-600" />
@@ -134,13 +156,13 @@ const MobileSellerCustomers = () => {
             <div className="flex justify-center space-x-8 mt-6">
               <div className="text-center">
                 <div className="text-xl font-medium text-white">
-                  {customers.filter(c => c.level === 'VIP').length}
+                  {customers.filter(c => c.totalSpent >= 1000).length}
                 </div>
                 <div className="text-white/70 text-xs">VIP</div>
               </div>
               <div className="text-center">
                 <div className="text-xl font-medium text-white">
-                  {customers.filter(c => c.level === 'Gold').length}
+                  {customers.filter(c => c.totalSpent >= 500).length}
                 </div>
                 <div className="text-white/70 text-xs">Gold</div>
               </div>
@@ -155,16 +177,17 @@ const MobileSellerCustomers = () => {
         </div>
       </div>
 
-      <div className="px-4 py-4 space-y-4">
+      {/* Content */}
+      <div className="px-4 -mt-4 pb-24 relative z-20">
         {/* Arama Çubuğu */}
-        <div className="relative">
+        <div className="relative mb-6">
           <Icon name="Search" size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             placeholder="Müşteri ara..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-white rounded-2xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+            className="w-full pl-10 pr-4 py-3 bg-white rounded-2xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none"
           />
         </div>
 

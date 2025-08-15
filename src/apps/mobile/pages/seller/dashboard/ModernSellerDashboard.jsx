@@ -5,7 +5,7 @@ import { useAuth } from '../../../../../contexts/AuthContext';
 import Icon from '../../../../../shared/components/AppIcon';
 import { logger } from '../../../../../utils/productionLogger';
 
-const MobileSellerDashboard = () => {
+const ModernSellerDashboard = () => {
   const navigate = useNavigate();
   const { userProfile } = useAuth();
   const [stats, setStats] = useState({
@@ -20,30 +20,30 @@ const MobileSellerDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Kategoriler - Müşteri mobil ile aynı tasarım
+  // Kategoriler - Icon'larla
   const categories = [
     {
       id: 'siparisler',
       name: 'Siparişler',
-      emoji: '📦',
+      icon: 'ShoppingBag',
       path: '/ms/orders'
     },
     {
       id: 'urunler',
       name: 'Ürünler',
-      emoji: '🛒',
+      icon: 'Package',
       path: '/ms/products'
     },
     {
       id: 'musteriler',
       name: 'Müşteriler',
-      emoji: '👥',
+      icon: 'Users',
       path: '/ms/customers'
     },
     {
       id: 'ayarlar',
       name: 'Ayarlar',
-      emoji: '⚙️',
+      icon: 'Settings',
       path: '/ms/settings'
     }
   ];
@@ -172,21 +172,21 @@ const MobileSellerDashboard = () => {
           </h1>
         </div>
 
-        {/* Satış Paneli Kartı - Resimde görülen mavi-mor kart */}
-        <div className="bg-gradient-to-r from-blue-100 to-purple-50 rounded-2xl p-4 mb-6 border border-blue-200">
+        {/* Satış Paneli Kartı - Müşteri mobil renkleri ile */}
+        <div className="bg-green-100 rounded-2xl p-4 mb-6 shadow-sm hover:bg-green-150 hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-blue-200 rounded-2xl flex items-center justify-center">
-                <span className="text-2xl">📊</span>
+              <div className="flex items-center justify-center">
+                <Icon name="BarChart3" size={24} className="text-green-600" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-blue-900">Satış Paneli</h3>
-                <p className="text-sm text-blue-700">Hızlı Yönetim</p>
+                <h3 className="text-lg font-bold text-green-600">Satış Paneli</h3>
+                <p className="text-sm text-green-600">Hızlı Yönetim</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xs text-blue-600 font-medium">Siparişlerinizi</p>
-              <p className="text-xs text-blue-600">kolayca yönetin</p>
+              <p className="text-xs text-green-600 font-medium">Siparişlerinizi</p>
+              <p className="text-xs text-green-600">kolayca yönetin</p>
             </div>
           </div>
         </div>
@@ -201,14 +201,12 @@ const MobileSellerDashboard = () => {
               <button
                 key={category.id}
                 onClick={() => navigate(category.path)}
-                className="flex-shrink-0 flex flex-col items-center p-3 rounded-2xl transition-all w-20 h-20 bg-blue-100 shadow-sm hover:bg-blue-150 hover:shadow-md"
+                className="flex-shrink-0 flex flex-col items-center p-3 rounded-2xl transition-all w-20 h-20 bg-green-100 shadow-sm hover:bg-green-150 hover:shadow-md"
               >
-                <div className="flex items-center justify-center mb-1">
-                  <span className="text-2xl">
-                    {category.emoji}
-                  </span>
+                <div className="flex items-center justify-center mb-1 w-full h-8">
+                  <Icon name={category.icon} size={24} className="text-green-600" />
                 </div>
-                <span className="text-xs font-medium text-center leading-tight text-blue-600">
+                <span className="text-xs font-medium text-center leading-tight text-green-600">
                   {category.name}
                 </span>
               </button>
@@ -233,85 +231,57 @@ const MobileSellerDashboard = () => {
           </button>
         </div>
 
-        {/* Stats Cards - 2x2 Grid müşteri mobil gibi */}
+        {/* Stats Cards - Müşteri mobil renkleri ile */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           {/* Toplam Siparişler */}
-          <div className="bg-white rounded-2xl p-3 shadow-sm">
-            <div className="relative mb-3">
-              <div className="aspect-square bg-green-50 rounded-xl flex items-center justify-center overflow-hidden">
-                <Icon name="ShoppingBag" size={32} className="text-green-600" />
+          <div className="bg-green-100 rounded-2xl p-3 shadow-sm hover:bg-green-150 hover:shadow-md transition-all">
+            <div className="flex flex-col items-center text-center">
+              <div className="flex items-center justify-center mb-1 w-full h-8">
+                <Icon name="ShoppingBag" size={24} className="text-green-600" />
               </div>
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-900 text-sm mb-1 leading-tight">
-                {stats.totalOrders} Sipariş
-              </h3>
-              <p className="text-xs text-gray-500 mb-2">Toplam</p>
-              <div className="flex items-center justify-between">
-                <span className="text-base font-bold text-green-500">
-                  Aktif
-                </span>
-              </div>
+              <div className="text-xl font-bold text-green-600 mb-1">{stats.totalOrders}</div>
+              <span className="text-xs font-medium text-center leading-tight text-green-600">
+                Sipariş
+              </span>
             </div>
           </div>
 
           {/* Toplam Ürünler */}
-          <div className="bg-white rounded-2xl p-3 shadow-sm">
-            <div className="relative mb-3">
-              <div className="aspect-square bg-blue-50 rounded-xl flex items-center justify-center overflow-hidden">
-                <Icon name="Package" size={32} className="text-blue-600" />
+          <div className="bg-green-100 rounded-2xl p-3 shadow-sm hover:bg-green-150 hover:shadow-md transition-all">
+            <div className="flex flex-col items-center text-center">
+              <div className="flex items-center justify-center mb-1 w-full h-8">
+                <Icon name="Package" size={24} className="text-green-600" />
               </div>
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-900 text-sm mb-1 leading-tight">
-                {stats.totalProducts} Ürün
-              </h3>
-              <p className="text-xs text-gray-500 mb-2">Toplam</p>
-              <div className="flex items-center justify-between">
-                <span className="text-base font-bold text-blue-500">
-                  Stokta
-                </span>
-              </div>
+              <div className="text-xl font-bold text-green-600 mb-1">{stats.totalProducts}</div>
+              <span className="text-xs font-medium text-center leading-tight text-green-600">
+                Ürün
+              </span>
             </div>
           </div>
 
           {/* Toplam Müşteriler */}
-          <div className="bg-white rounded-2xl p-3 shadow-sm">
-            <div className="relative mb-3">
-              <div className="aspect-square bg-purple-50 rounded-xl flex items-center justify-center overflow-hidden">
-                <Icon name="Users" size={32} className="text-purple-600" />
+          <div className="bg-green-100 rounded-2xl p-3 shadow-sm hover:bg-green-150 hover:shadow-md transition-all">
+            <div className="flex flex-col items-center text-center">
+              <div className="flex items-center justify-center mb-1 w-full h-8">
+                <Icon name="Users" size={24} className="text-green-600" />
               </div>
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-900 text-sm mb-1 leading-tight">
-                {stats.totalCustomers} Müşteri
-              </h3>
-              <p className="text-xs text-gray-500 mb-2">Toplam</p>
-              <div className="flex items-center justify-between">
-                <span className="text-base font-bold text-purple-500">
-                  Kayıtlı
-                </span>
-              </div>
+              <div className="text-xl font-bold text-green-600 mb-1">{stats.totalCustomers}</div>
+              <span className="text-xs font-medium text-center leading-tight text-green-600">
+                Müşteri
+              </span>
             </div>
           </div>
 
           {/* Toplam Gelir */}
-          <div className="bg-white rounded-2xl p-3 shadow-sm">
-            <div className="relative mb-3">
-              <div className="aspect-square bg-orange-50 rounded-xl flex items-center justify-center overflow-hidden">
-                <Icon name="DollarSign" size={32} className="text-orange-600" />
+          <div className="bg-green-100 rounded-2xl p-3 shadow-sm hover:bg-green-150 hover:shadow-md transition-all">
+            <div className="flex flex-col items-center text-center">
+              <div className="flex items-center justify-center mb-1 w-full h-8">
+                <Icon name="DollarSign" size={24} className="text-green-600" />
               </div>
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-900 text-sm mb-1 leading-tight">
-                Toplam Gelir
-              </h3>
-              <p className="text-xs text-gray-500 mb-2">TL</p>
-              <div className="flex items-center justify-between">
-                <span className="text-base font-bold text-orange-500">
-                  ₺{stats.totalRevenue}
-                </span>
-              </div>
+              <div className="text-xl font-bold text-green-600 mb-1">₺{stats.totalRevenue}</div>
+              <span className="text-xs font-medium text-center leading-tight text-green-600">
+                Gelir
+              </span>
             </div>
           </div>
         </div>
@@ -402,4 +372,4 @@ const MobileSellerDashboard = () => {
   );
 };
 
-export default MobileSellerDashboard;
+export default ModernSellerDashboard;

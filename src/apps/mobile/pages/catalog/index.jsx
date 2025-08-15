@@ -82,7 +82,7 @@ const MobileCatalog = () => {
           name: product.name,
           price: parseFloat(product.price) || 0,
           unit: product.unit || 'adet',
-          image: getProductImagePath(product.name),
+          image: product.image || getProductImagePath(product.name), // Önce satıcı resmini kullan, fallback olarak default
           category: product.category || 'Genel',
           subcategory: product.subcategory || '',
           stock: parseInt(product.stock) || 0,
@@ -145,7 +145,7 @@ const MobileCatalog = () => {
           productCategory === selectedCat ||
           (selectedCat === 'sebzeler' && (productCategory.includes('sebze') || productCategory.includes('yeşil'))) ||
           (selectedCat === 'meyveler' && (productCategory.includes('meyve') || productCategory.includes('fruit'))) ||
-          (selectedCat === 'kasali' && (productCategory.includes('kasa') || productCategory.includes('box')));
+          (selectedCat === 'kasali' && (productCategory.includes('kasalı') || productCategory.includes('kasali') || productCategory === 'Kasalı Ürünler'));
       });
     }
 

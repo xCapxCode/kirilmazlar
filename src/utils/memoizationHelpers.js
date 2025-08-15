@@ -147,14 +147,16 @@ export const useMemoizedCalculations = {
             const productCategory = product.category || '';
             const normalizedProductCategory = normalizeText(productCategory);
 
-            // Çoklu eşleşme kontrolü - daha esnek
+            // Çoklu eşleşme kontrolü - daha esnek ve kasalı ürünler için genişletildi
             const match = 
               productCategory === categoryName ||
               productCategory.toLowerCase() === categoryName.toLowerCase() ||
               normalizedProductCategory === normalizedCategoryName ||
-              // Kasalı ürünler için özel kontrol
+              // Kasalı ürünler için özel kontrol - GENİŞLETİLDİ
               (normalizedCategoryName.includes('kasali') && normalizedProductCategory.includes('kasali')) ||
               (normalizedCategoryName.includes('kasali') && normalizedProductCategory.includes('kasa')) ||
+              (normalizedCategoryName.includes('kasali') && productCategory.startsWith('Kasalı ')) ||
+              (selectedCategory === 'kasalı-ürünler' && /kasalı\s+\w+/i.test(productCategory)) ||
               // Genel kelime eşleşmesi
               normalizedProductCategory.includes(normalizedCategoryName) ||
               normalizedCategoryName.includes(normalizedProductCategory) ||

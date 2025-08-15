@@ -138,26 +138,40 @@ const MobileSellerOrders = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
-      {/* Modern Hero Section */}
+      {/* Modern Header with Hero - Müşteri mobil favoriler gibi */}
       <div className="relative">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-green-600 via-green-500 to-emerald-500 opacity-90"></div>
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-32 h-32 bg-white rounded-full"></div>
-          <div className="absolute bottom-20 right-8 w-24 h-24 bg-white rounded-full"></div>
-          <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-white rounded-full"></div>
-        </div>
+        <div className="absolute inset-0 opacity-20" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+        }}></div>
 
-        <div className="relative px-6 py-8 text-white">
-          {/* Logo */}
-          <div className="flex justify-center mb-6">
+        {/* Header Content */}
+        <div className="relative z-10 px-4 pt-12 pb-8">
+          {/* Navigation */}
+          <div className="flex items-center justify-between mb-6">
+            <button
+              onClick={() => navigate('/ms/dashboard')}
+              className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center"
+            >
+              <Icon name="ArrowLeft" size={20} className="text-white" />
+            </button>
+
             <img
               src="/assets/images/logo/KirilmazlarLogoLandingpage.png"
               alt="Kırılmazlar"
               className="h-14 w-auto opacity-100 drop-shadow-sm"
             />
+
+            <button
+              onClick={loadOrders}
+              className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center"
+            >
+              <Icon name="RefreshCw" size={20} className="text-white" />
+            </button>
           </div>
 
+          {/* Hero Content */}
           <div className="text-center">
             <div className="w-20 h-20 bg-green-100/80 shadow-sm hover:bg-green-150/80 hover:shadow-md rounded-2xl flex items-center justify-center mx-auto mb-4 transition-all">
               <Icon name="ShoppingBag" size={24} className="text-green-600" />
@@ -211,7 +225,26 @@ const MobileSellerOrders = () => {
         </div>
       </div>
 
-      <div className="px-4 py-4">
+      {/* Orders Section - Müşteri mobil products section gibi */}
+      <div className="px-4 py-6 pb-24">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">
+              {selectedTab === 'pending' ? 'Aktif Siparişler' :
+                selectedTab === 'completed' ? 'Tamamlanan Siparişler' : 'Tüm Siparişler'}
+            </h2>
+            <p className="text-sm text-gray-500">
+              {filteredOrders.length} sipariş bulundu
+            </p>
+          </div>
+          <button
+            onClick={loadOrders}
+            className="text-blue-500 text-sm font-medium flex items-center space-x-1"
+          >
+            <Icon name="RefreshCw" size={14} />
+            <span>Yenile</span>
+          </button>
+        </div>
         {/* Sipariş Listesi */}
         {isLoading ? (
           <div className="space-y-4">

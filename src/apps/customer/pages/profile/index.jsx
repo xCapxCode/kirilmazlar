@@ -5,6 +5,7 @@ import { useCart } from '../../../../contexts/CartContext';
 import { useBreakpoint } from '../../../../hooks/useBreakpoint';
 import Icon from '../../../../shared/components/AppIcon';
 import { logger } from '../../../../utils/productionLogger';
+import EditProfileModal from './components/EditProfileModal';
 
 logger.info('🔥 MusteriProfil module loaded!');
 
@@ -17,6 +18,7 @@ const MusteriProfil = () => {
   const { orders, clearCart } = useCart();
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -132,7 +134,7 @@ const MusteriProfil = () => {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-gray-900">Müşteri Bilgileri</h2>
                   <button
-                    onClick={() => navigate('/customer/profile/edit')}
+                    onClick={() => setShowEditProfileModal(true)}
                     className="text-green-600 hover:text-green-700 text-sm font-medium flex items-center space-x-1"
                   >
                     <Icon name="Edit" size={14} />
@@ -422,6 +424,12 @@ const MusteriProfil = () => {
           </div>
         </div>
       )}
+
+      {/* Profil Düzenleme Modalı */}
+      <EditProfileModal
+        isOpen={showEditProfileModal}
+        onClose={() => setShowEditProfileModal(false)}
+      />
     </div>
   );
 };

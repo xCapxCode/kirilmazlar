@@ -5,6 +5,7 @@ import MobileSellerProtectedRoute from "./components/MobileSellerProtectedRoute"
 
 // Mobile Seller Pages - Lazy loaded
 const MobileSellerDashboard = lazy(() => import("./pages/seller/dashboard"));
+const ModernSellerDashboard = lazy(() => import("./pages/seller/dashboard/ModernSellerDashboard"));
 const MobileSellerProducts = lazy(() => import("./pages/seller/products"));
 const MobileSellerOrders = lazy(() => import("./pages/seller/orders"));
 const MobileSellerCustomers = lazy(() => import("./pages/seller/customers"));
@@ -46,7 +47,7 @@ const MobileSellerRoutes = () => {
             } />
             <Route path="dashboard" element={
               <Suspense fallback={<MobileSellerPageLoader />}>
-                <MobileSellerDashboard />
+                <ModernSellerDashboard />
               </Suspense>
             } />
             <Route path="products" element={

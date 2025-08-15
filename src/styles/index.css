@@ -357,7 +357,8 @@ footer {
   border-radius: 4px;
 }
 
-/ * MOBILE BOTTOM NAVIGATION - CRITICAL FIXES */ .mobile-bottom-nav {
+/* MOBILE BOTTOM NAVIGATION - CRITICAL FIXES */
+.mobile-bottom-nav {
   /* Force hardware acceleration */
   transform: translateZ(0);
   backface-visibility: hidden;
@@ -412,7 +413,8 @@ footer {
   background: rgba(255, 0, 0, 0.3) !important;
 }
 
-/ * HERO SECTION RESPONSIVE BACKGROUND */ .hero-section {
+/* HERO SECTION RESPONSIVE BACKGROUND */
+.hero-section {
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;

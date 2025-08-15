@@ -269,7 +269,7 @@ export const TreeShaking = {
    */
   async importLucideIcon(iconName) {
     try {
-      const module = await import(`lucide-react/dist/esm/icons/${iconName.toLowerCase().replace(/([A-Z])/g, '-$1').substring(1)}.js`);
+      const module = await import(/* @vite-ignore */ `lucide-react/dist/esm/icons/${iconName.toLowerCase().replace(/([A-Z])/g, '-$1').substring(1)}.js`);
       return module.default;
     } catch (error) {
       logger.warn(`Failed to import Lucide icon ${iconName}, falling back to default import`);

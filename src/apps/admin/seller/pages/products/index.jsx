@@ -3,11 +3,13 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../../../../contexts/AuthContext';
 import { useModal } from '../../../../../contexts/ModalContext';
 import { useNotification } from '../../../../../contexts/NotificationContext';
+import productSyncService from '../../../../../services/productSyncService';
 import Icon from '../../../../../shared/components/AppIcon';
 import SaticiHeader from '../../../../../shared/components/ui/SaticiHeader';
+import { getProductImagePath } from '../../../../../utils/imagePathHelper';
 
 // Bileşenler
-import UrunModali from './components/UrunModali';
+import ModernUrunModali from './components/ModernUrunModali';
 
 const UrunYonetimi = () => {
   const { user, userProfile, loading: authLoading } = useAuth();
@@ -75,7 +77,6 @@ const UrunYonetimi = () => {
         { name: 'Kırmızı Biber', category: 'Sebzeler', price: 25.00, description: 'Taze kırmızı biber' },
         { name: 'Kıvırcık', category: 'Sebzeler', price: 12.00, description: 'Taze kıvırcık' },
         { name: 'Lahana', category: 'Sebzeler', price: 5.00, description: 'Taze lahana' },
-        { name: 'Lime', category: 'Meyveler', price: 30.00, description: 'Taze lime' },
         { name: 'Limon', category: 'Meyveler', price: 25.00, description: 'Taze limon' },
         { name: 'Mandalina', category: 'Meyveler', price: 18.00, description: 'Taze mandalina' },
         { name: 'Mantar', category: 'Sebzeler', price: 35.00, description: 'Taze mantar' },
@@ -87,7 +88,6 @@ const UrunYonetimi = () => {
         { name: 'Roka', category: 'Sebzeler', price: 15.00, description: 'Taze roka' },
         { name: 'Salatalık', category: 'Sebzeler', price: 8.00, description: 'Taze salatalık' },
         { name: 'Sarımsak', category: 'Sebzeler', price: 45.00, description: 'Taze sarımsak' },
-        { name: 'Soğan (Çuval)', category: 'Kasalı Ürünler', price: 15.00, description: 'Taze soğan çuval' },
         { name: 'Tere Otu', category: 'Sebzeler', price: 8.00, description: 'Taze tere otu' },
         { name: 'Yeşil Elma', category: 'Meyveler', price: 17.00, description: 'Taze yeşil elma' },
         { name: 'Çilek', category: 'Meyveler', price: 45.00, description: 'Taze çilek' },
@@ -124,10 +124,9 @@ const UrunYonetimi = () => {
           product.name === 'Patates' ? 'patates.png' :
             product.name === 'Kabak' ? 'kabak.png' :
               product.name === 'Lahana' ? 'lahana.png' :
-                product.name === 'Soğan (Çuval)' ? 'sogan-cuval.png' :
-                  product.name === 'Tere Otu' ? 'TereOtu.png' :
-                    product.name === 'Darı Mısır' ? 'DarıMısır.png' :
-                      `${product.name}.png`;
+                product.name === 'Tere Otu' ? 'TereOtu.png' :
+                  product.name === 'Darı Mısır' ? 'DarıMısır.png' :
+                    `${product.name}.png`;
 
         return {
           id: `prod-${maxId + index + 1}`,
@@ -204,16 +203,35 @@ const UrunYonetimi = () => {
           {
             id: 4,
             name: 'Kasalı Ürünler',
-            icon: 'Package2',
+            icon: 'Box',
             color: 'amber',
-            subcategories: ['Kasalı Sebzeler', 'Kasalı Meyveler', 'Kasalı Diğer']
+            subcategories: ['Genel']
           }
+          // Kasalı Ürünler kategorisi kaldırıldı - dinamik sistem kullanılacak
         ];
 
         await storage.set('categories', defaultCategories);
         setCategories(defaultCategories);
       } else {
-        setCategories(storedCategories);
+        // Ensure "Kasalı Ürünler" exists in stored categories
+        let updatedCategories = [...storedCategories];
+        const hasKasali = updatedCategories.some(cat => cat.name === 'Kasalı Ürünler');
+        if (!hasKasali) {
+          const newId = updatedCategories.length > 0 && updatedCategories.every(c => typeof c.id === 'number')
+            ? Math.max(...updatedCategories.map(c => c.id)) + 1
+            : `cat-${updatedCategories.length + 1}`;
+          const kasaliCategory = {
+            id: newId,
+            name: 'Kasalı Ürünler',
+            icon: 'Box',
+            color: 'amber',
+            subcategories: ['Genel']
+          };
+          updatedCategories.push(kasaliCategory);
+          await storage.set('categories', updatedCategories);
+          console.log('🆕 "Kasalı Ürünler" kategorisi otomatik eklendi');
+        }
+        setCategories(updatedCategories);
       }
 
       // Ürünleri ayarla - önce eksik ürünleri kontrol et ve ekle
@@ -296,6 +314,63 @@ const UrunYonetimi = () => {
     setShowProductModal(true);
   };
 
+  const handleToggleProductStatus = async (productId) => {
+    try {
+      const currentProducts = await storage.get('products', []);
+      const updatedProducts = currentProducts.map(p =>
+        p.id === productId ? {
+          ...p,
+          isActive: !p.isActive,
+          status: !p.isActive ? 'active' : 'inactive',
+          updatedAt: new Date().toISOString()
+        } : p
+      );
+
+      await storage.set('products', updatedProducts);
+      setProducts(updatedProducts);
+
+      // GÜÇLÜ SENKRONIZASYON - Müşteri paneline bildir
+      console.log('📢 Ürün durum değişikliği senkronizasyon sinyalleri gönderiliyor...');
+
+      // CustomEvent ile bildir
+      window.dispatchEvent(new CustomEvent('productsUpdated', {
+        detail: { products: updatedProducts, timestamp: Date.now() }
+      }));
+
+      // Storage event de tetikle
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'kirilmazlar_products',
+        newValue: JSON.stringify(updatedProducts),
+        oldValue: JSON.stringify(currentProducts),
+        storageArea: localStorage
+      }));
+
+      // BroadcastChannel ile de bildir (cross-tab sync)
+      if (window.BroadcastChannel) {
+        const channel = new BroadcastChannel('products-sync');
+        channel.postMessage({
+          type: 'PRODUCTS_UPDATED',
+          products: updatedProducts,
+          timestamp: Date.now()
+        });
+        channel.close();
+      }
+
+      // Timeout ile de tetikle (fallback)
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('forceProductsReload'));
+      }, 100);
+
+      const product = updatedProducts.find(p => p.id === productId);
+      const statusText = product.isActive ? 'aktif' : 'pasif';
+      console.log(`✅ Ürün durumu ${statusText} olarak değiştirildi ve senkronizasyon sinyalleri gönderildi:`, productId);
+      showSuccess(`Ürün durumu ${statusText} olarak değiştirildi`);
+    } catch (error) {
+      console.error('❌ Ürün durum değiştirme hatası:', error);
+      showError('Ürün durumu değiştirilirken bir hata oluştu');
+    }
+  };
+
   const handleDeleteProduct = async (productId) => {
     const confirmed = await showConfirm(
       'Bu ürünü silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz.',
@@ -314,7 +389,39 @@ const UrunYonetimi = () => {
         await storage.set('products', updatedProducts);
         setProducts(updatedProducts);
 
-        console.log('✅ Ürün başarıyla silindi:', productId);
+        // GÜÇLÜ SENKRONIZASYON - Müşteri paneline bildir
+        console.log('📢 Ürün silme senkronizasyon sinyalleri gönderiliyor...');
+
+        // CustomEvent ile bildir
+        window.dispatchEvent(new CustomEvent('productsUpdated', {
+          detail: { products: updatedProducts, timestamp: Date.now() }
+        }));
+
+        // Storage event de tetikle
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'kirilmazlar_products',
+          newValue: JSON.stringify(updatedProducts),
+          oldValue: JSON.stringify(currentProducts),
+          storageArea: localStorage
+        }));
+
+        // BroadcastChannel ile de bildir (cross-tab sync)
+        if (window.BroadcastChannel) {
+          const channel = new BroadcastChannel('products-sync');
+          channel.postMessage({
+            type: 'PRODUCTS_UPDATED',
+            products: updatedProducts,
+            timestamp: Date.now()
+          });
+          channel.close();
+        }
+
+        // Timeout ile de tetikle (fallback)
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('forceProductsReload'));
+        }, 100);
+
+        console.log('✅ Ürün başarıyla silindi ve senkronizasyon sinyalleri gönderildi:', productId);
         showSuccess('Ürün başarıyla silindi');
       } catch (error) {
         console.error('❌ Ürün silme hatası:', error);
@@ -329,6 +436,12 @@ const UrunYonetimi = () => {
     try {
       const currentProducts = await storage.get('products', []);
       let updatedProducts;
+
+      // Image field'ı boşsa otomatik getProductImagePath kullan
+      if (!productData.image || productData.image.trim() === '') {
+        productData.image = getProductImagePath(productData.name);
+        console.log('🖼️ Otomatik image path oluşturuldu:', productData.image);
+      }
 
       if (editingProduct) {
         // Düzenleme
@@ -369,7 +482,9 @@ const UrunYonetimi = () => {
       await storage.set('products', updatedProducts);
       setProducts(updatedProducts);
 
-      console.log('✅ Ürün başarıyla kaydedildi');
+      // YENİ SİSTEM: ProductSyncService ile senkronizasyon
+      productSyncService.triggerSync(updatedProducts);
+      console.log('✅ Ürün başarıyla kaydedildi ve yeni senkronizasyon sistemi tetiklendi');
 
       setShowProductModal(false);
       setEditingProduct(null);
@@ -432,6 +547,10 @@ const UrunYonetimi = () => {
       setActiveTab(newCategory.name);
       setNewCategoryName('');
       setShowNewCategoryModal(false);
+
+      // Kategori güncellemesi için senkronizasyon sinyali
+      window.dispatchEvent(new CustomEvent('categoriesUpdated', { detail: updatedCategories }));
+
       console.log('✅ Kategori başarıyla eklendi:', newCategory.name);
       showSuccess(`"${newCategory.name}" kategorisi başarıyla eklendi`);
     } catch (error) {
@@ -475,6 +594,9 @@ const UrunYonetimi = () => {
           setActiveTab(updatedCategories[0].name);
         }
 
+        // Kategori güncellemesi için senkronizasyon sinyali
+        window.dispatchEvent(new CustomEvent('categoriesUpdated', { detail: updatedCategories }));
+
         console.log('✅ Kategori başarıyla silindi:', categoryToDelete.name);
         showSuccess(`"${categoryToDelete.name}" kategorisi başarıyla silindi`);
       } catch (error) {
@@ -488,7 +610,10 @@ const UrunYonetimi = () => {
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(filters.search.toLowerCase());
     const matchesStatus = !filters.status || product.status === filters.status;
-    const matchesCategory = activeTab === 'Tüm Ürünler' || product.category === activeTab;
+    const matchesCategory =
+      activeTab === 'Tüm Ürünler' ||
+      product.category === activeTab ||
+      (activeTab === 'Kasalı Ürünler' && product.category.startsWith('Kasalı '));
     const matchesStockStatus = !filters.stockStatus ||
       (filters.stockStatus === 'low' && product.stock <= product.minStock) ||
       (filters.stockStatus === 'normal' && product.stock > product.minStock);
@@ -1024,11 +1149,12 @@ const UrunYonetimi = () => {
         </div>
       )}
 
-      {/* Ürün Modal */}
+      {/* Modern Ürün Modal */}
       {showProductModal && (
-        <UrunModali
+        <ModernUrunModali
           product={editingProduct}
           categories={categories}
+          activeCategory={activeTab !== 'Tüm Ürünler' ? activeTab : ''}
           onSave={handleSaveProduct}
           onClose={() => {
             setShowProductModal(false);
