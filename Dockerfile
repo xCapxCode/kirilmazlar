@@ -1,5 +1,5 @@
 # ===========================================
-# KIRIILMAZLAR PANEL - RAILWAY OPTIMIZED DOCKERFILE
+# KIRIILMAZLAR PANEL - RAILWAY OPTIMIZED DOCKERFILE v2.1
 # Production-ready React application for Railway deployment
 # ===========================================
 
