@@ -3,20 +3,17 @@
 # Production-ready React application for Railway deployment
 # ===========================================
 
-# Use Node.js 18 Alpine for smaller image size
-FROM node:18-alpine
+# Build stage
+FROM node:18-alpine AS builder
 
 # Set working directory
 WORKDIR /app
 
-# Install serve globally for serving static files
-RUN npm install -g serve
-
 # Copy package files first for better caching
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production --silent
+# Install all dependencies (including devDependencies for build)
+RUN npm ci --silent
 
 # Copy source code
 COPY . .
@@ -24,9 +21,21 @@ COPY . .
 # Build application for production
 RUN npm run build
 
+# Production stage
+FROM node:18-alpine AS production
+
+# Set working directory
+WORKDIR /app
+
+# Install serve globally for serving static files
+RUN npm install -g serve
+
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S kirilmazlar -u 1001 -G nodejs
+
+# Copy built application from builder stage
+COPY --from=builder /app/dist ./dist
 
 # Change ownership of the app directory
 RUN chown -R kirilmazlar:nodejs /app
