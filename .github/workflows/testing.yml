@@ -36,7 +36,7 @@ jobs:
         cache: 'npm'
 
     - name: 📦 Install Dependencies
-      run: npm ci
+      run: npm install
 
     - name: 🧪 Run Unit Tests
       run: npm run test -- --coverage --reporter=verbose
@@ -74,7 +74,7 @@ jobs:
         cache: 'npm'
 
     - name: 📦 Install Dependencies
-      run: npm ci
+      run: npm install
 
     - name: 🔗 Run Integration Tests
       run: |
@@ -107,7 +107,7 @@ jobs:
         cache: 'npm'
 
     - name: 📦 Install Dependencies
-      run: npm ci
+      run: npm install
 
     - name: 🏗️ Build Application
       run: npm run build:dev
@@ -150,7 +150,7 @@ jobs:
         cache: 'npm'
 
     - name: 📦 Install Dependencies
-      run: npm ci
+      run: npm install
 
     - name: 🏗️ Build Application
       run: npm run build
@@ -192,7 +192,7 @@ jobs:
         cache: 'npm'
 
     - name: 📦 Install Dependencies
-      run: npm ci
+      run: npm install
 
     - name: 🏗️ Build Application
       run: npm run build
@@ -232,7 +232,7 @@ jobs:
         cache: 'npm'
 
     - name: 📦 Install Dependencies
-      run: npm ci
+      run: npm install
 
     - name: 🔒 Security Audit
       run: npm audit --audit-level=moderate

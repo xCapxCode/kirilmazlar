@@ -48,7 +48,7 @@ jobs:
         cache: 'npm'
 
     - name: 📦 Install Dependencies
-      run: npm ci
+      run: npm install
 
     - name: 🧪 Environment Configuration Check
       run: npm run env:check
@@ -89,7 +89,7 @@ jobs:
         cache: 'npm'
 
     - name: 📦 Install Dependencies
-      run: npm ci
+      run: npm install
 
     - name: 🔍 ESLint Check
       run: npx eslint . --ext .js,.jsx --max-warnings 0
@@ -133,7 +133,7 @@ jobs:
         cache: 'npm'
 
     - name: 📦 Install Dependencies
-      run: npm ci
+      run: npm install
 
     - name: 🏗️ Build for ${{ matrix.environment }}
       env:
