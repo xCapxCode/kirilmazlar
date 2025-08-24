@@ -11,6 +11,7 @@ const MobileLogin = () => {
     email: '',
     password: ''
   });
+  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -30,7 +31,7 @@ const MobileLogin = () => {
 
     setLoading(true);
     try {
-      const result = await signIn(formData.email, formData.password);
+      const result = await signIn(formData.email, formData.password, rememberMe);
       if (result.success) {
         navigate('/m/catalog');
       }
@@ -117,6 +118,20 @@ const MobileLogin = () => {
                 />
               </button>
             </div>
+          </div>
+
+          {/* Remember Me */}
+          <div className="flex items-center">
+            <input
+              id="remember-me-mobile"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+            />
+            <label htmlFor="remember-me-mobile" className="ml-3 block text-sm text-gray-700">
+              Beni hatırla
+            </label>
           </div>
 
           {/* Error Message */}

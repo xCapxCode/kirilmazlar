@@ -201,10 +201,11 @@ jobs:
       run: |
         npm run serve &
         sleep 10
-
-    - name: ♿ Run Accessibility Tests
+        - name: Healthcheck preview server
+          run: |
+            curl -f http://localhost:5000 || exit 1
       run: |
-        npx @axe-core/cli http://localhost:4173 --exit
+        npx @axe-core/cli http://localhost:5000 --exit
       continue-on-error: true
 
     - name: 📊 Accessibility Report

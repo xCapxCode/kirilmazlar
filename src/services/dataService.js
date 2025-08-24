@@ -1,6 +1,7 @@
 // Merkezi Veri Yönetim Servisi
 import storage from '@core/storage';
 import { ALL_USERS, INITIAL_CUSTOMERS } from '../data/initialData.js';
+import { DEMO_CUSTOMERS, DEMO_ORDERS } from '../data/demoData.js';
 import dataValidator from '../utils/dataValidator.js';
 import logger from '../utils/logger.js';
 
@@ -62,19 +63,19 @@ class DataService {
     ensureBaseData() {
         // Temel verilerin varlığını kontrol et ve eksikleri tamamla
 
-        // Kullanıcılar - İlk kez yükleniyorsa gerçek verileri yükle
+        // Kullanıcılar - Sadece admin kullanıcısı yoksa yükle
         const existingUsers = storage.get('users');
         if (!existingUsers || existingUsers.length === 0) {
-            // İlk veri yükleme
+            // Sadece admin kullanıcısını yükle
             storage.set('users', ALL_USERS);
-            logger.info('👥 İlk kullanıcı verileri yüklendi:', ALL_USERS.length);
+            logger.info('👥 Admin kullanıcısı yüklendi:', ALL_USERS.length);
         }
 
-        // Müşteriler - İlk kez yükleniyorsa gerçek verileri yükle
+        // Müşteriler - Demo müşteri verilerini yükle
         const existingCustomers = storage.get('customers');
         if (!existingCustomers || existingCustomers.length === 0) {
-            storage.set('customers', INITIAL_CUSTOMERS);
-            logger.info('👤 İlk müşteri verileri yüklendi:', INITIAL_CUSTOMERS.length);
+            storage.set('customers', DEMO_CUSTOMERS);
+            logger.info('👤 Demo müşteri verileri yüklendi:', DEMO_CUSTOMERS.length);
         }
 
         // Kategoriler - Temel kategoriler oluştur
@@ -131,10 +132,26 @@ class DataService {
             });
         }
 
-        // Siparişler
-        if (!storage.get('orders')) {
+        // Siparişler - Demo sipariş verilerini yükle
+        const existingOrders = storage.get('orders');
+        const existingCustomerOrders = storage.get('customer_orders');
+        
+        if (!existingOrders || existingOrders.length === 0) {
             storage.set('orders', []);
-            logger.info('� Sipariş storage başlatıldı');
+            logger.info('📋 Seller Orders storage başlatıldı');
+        }
+        
+        if (!existingCustomerOrders || existingCustomerOrders.length === 0) {
+            storage.set('customer_orders', DEMO_ORDERS);
+            logger.info('📦 Demo sipariş verileri yüklendi:', DEMO_ORDERS.length);
+            
+            // Her müşteri için sipariş sayısını logla
+            const customerOrderCounts = {};
+            DEMO_ORDERS.forEach(order => {
+                const customerId = order.customerId;
+                customerOrderCounts[customerId] = (customerOrderCounts[customerId] || 0) + 1;
+            });
+            logger.info('👤 Müşteri sipariş sayıları:', customerOrderCounts);
         }
 
         // Sepet

@@ -206,7 +206,7 @@ npm run dev:staging
 # Production Build
 npm run build
 
-# Production Preview (Port: 4173)
+# Production Preview (Port: 5000)
 npm run serve
 ```
 
@@ -455,7 +455,7 @@ npm run docker:build
 npm run docker:run
 
 # 4. Health check
-curl http://localhost:4173/health
+curl http://localhost:5000/health
 ```
 
 ### 🔧 **Environment Variables**

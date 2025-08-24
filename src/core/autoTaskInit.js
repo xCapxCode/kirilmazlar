@@ -1,9 +1,10 @@
-// Auto task services removed - using simplified approach
+// Auto task services - import required services
+import { AutoTaskProgressionService } from '../services/autoTaskProgressionService.js';
 
 // Initialize logger
 const logger = {
-  info: (msg) => console.log(`[INFO] ${msg}`),
-  debug: (msg) => console.log(`[DEBUG] ${msg}`),
+  info: (msg) => { /* INFO: ${msg} */ },
+  debug: (msg) => { /* DEBUG: ${msg} */ },
   error: (msg) => console.error(`[ERROR] ${msg}`)
 };
 
@@ -17,19 +18,13 @@ AutoTaskProgressionService.initialize({
   BUILD_AUTO_CONTINUE: true
 });
 
-// Initialize continuous build service
-ContinuousBuildService.initialize({
-  AUTO_BUILD: true,
-  SKIP_CONFIRMATION: true,
-  LOG_BUILDS: true
-});
+// ContinuousBuildService removed - not implemented yet
 
 // Export initialized services
 export const autoTaskService = AutoTaskProgressionService;
-export const buildService = ContinuousBuildService;
 export const systemLogger = logger;
 
 // Test the system
-console.log('🚀 Testing Autonomous System...');
+// Testing Autonomous System
 autoTaskService.completeTask('TEST-001', { message: 'System test successful' });
-console.log('📊 System Status:', autoTaskService.getStatus());
+// System Status: autoTaskService.getStatus()

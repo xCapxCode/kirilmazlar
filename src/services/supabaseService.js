@@ -38,7 +38,7 @@ class SupabaseService {
       // Supabase client initialization will go here
       // import { createClient } from '@supabase/supabase-js'
       // this.client = createClient(url, key)
-      console.log('✅ Supabase client initialized');
+      // Supabase client initialized
     } catch (error) {
       console.error('❌ Supabase initialization failed:', error);
       this.isEnabled = false;
@@ -121,7 +121,7 @@ class SupabaseService {
    */
   subscribe(table, callback, filters = {}) {
     if (!this.isEnabled) {
-      console.log(`📡 Real-time not available for ${table} - using localStorage`);
+      // Real-time not available - using localStorage
       return { unsubscribe: () => { } };
     }
 

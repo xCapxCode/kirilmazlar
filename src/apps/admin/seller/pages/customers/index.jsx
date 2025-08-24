@@ -542,17 +542,14 @@ const MusteriYonetimi = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-
-      // Müşterileri yükle
       const storedCustomers = await customerService.getAll();
-
-      // Siparişleri yükle
-      const storedOrders = await storage.get('customer_orders', []);
-
+      const customerOrders = await storage.get('customer_orders', []);
+      
       setCustomers(storedCustomers);
-      setOrders(storedOrders);
+      setOrders(customerOrders);
 
     } catch (error) {
+      console.error('❌ loadData hatası:', error);
       showError('Müşteri verileri yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);
@@ -1056,7 +1053,14 @@ const MusteriYonetimi = () => {
 
 
                   return (
-                    <div key={customer.id} className="bg-gradient-to-br from-blue-50/80 to-purple-50/80 backdrop-blur-sm border border-blue-200/50 rounded-lg p-4 shadow-sm">
+                    <div
+                      key={customer.id}
+                      className="bg-gradient-to-br from-blue-50/80 to-purple-50/80 backdrop-blur-sm border border-blue-200/50 rounded-lg p-4 shadow-sm cursor-pointer hover:shadow-md transition"
+                      onClick={() => {
+                        setSelectedCustomer(customer);
+                        setShowDetailModal(true);
+                      }}
+                    >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <h3 className="font-semibold text-gray-900 text-sm truncate">{customer.name}</h3>
@@ -1071,14 +1075,14 @@ const MusteriYonetimi = () => {
                             {customer.status === 'active' ? 'Aktif' : 'Pasif'}
                           </span>
                           <button
-                            onClick={() => handleEditCustomer(customer)}
+                            onClick={(e) => { e.stopPropagation(); handleEditCustomer(customer); }}
                             className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
                             title="Müşteriyi düzenle"
                           >
                             <Icon name="Edit" size={14} />
                           </button>
                           <button
-                            onClick={() => handleDeleteCustomer(customer.id)}
+                            onClick={(e) => { e.stopPropagation(); handleDeleteCustomer(customer.id); }}
                             className="p-1 text-gray-400 hover:text-red-600 transition-colors"
                             title="Müşteriyi sil"
                           >
@@ -1105,7 +1109,10 @@ const MusteriYonetimi = () => {
                             </span>
                             <button
                               type="button"
-                              onClick={() => setShowPasswords(prev => ({ ...prev, [customer.id]: !prev[customer.id] }))}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowPasswords(prev => ({ ...prev, [customer.id]: !prev[customer.id] }));
+                              }}
                               className="text-gray-400 hover:text-gray-600 p-1"
                               title={showPasswords[customer.id] ? "Şifreyi Gizle" : "Şifreyi Göster"}
                             >
@@ -1129,7 +1136,8 @@ const MusteriYonetimi = () => {
 
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setSelectedCustomer(customer);
                             setShowDetailModal(true);
                           }}
@@ -1139,7 +1147,8 @@ const MusteriYonetimi = () => {
                           <span>Detay</span>
                         </button>
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setSelectedCustomer(customer);
                             setShowStatusModal(true);
                           }}
@@ -1150,7 +1159,7 @@ const MusteriYonetimi = () => {
                           <span>Durum</span>
                         </button>
                         <button
-                          onClick={() => handleViewOrders(customer)}
+                          onClick={(e) => { e.stopPropagation(); handleViewOrders(customer); }}
                           className="flex items-center justify-center px-3 py-2 bg-green-500/10 border border-green-400/50 text-green-700 text-xs rounded-lg font-medium backdrop-blur-sm"
                           title="Sipariş geçmişini görüntüle"
                         >

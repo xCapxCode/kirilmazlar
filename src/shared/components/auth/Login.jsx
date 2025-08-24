@@ -24,20 +24,7 @@ const Login = ({ onClose, isMobile = false }) => {
     setError('');
     setLoading(true);
     try {
-      // Debug: Kullanıcıları kontrol et
-      const users = JSON.parse(localStorage.getItem('kirilmazlar_users') || '[]');
-      console.log('🔍 Mevcut kullanıcılar (kirilmazlar_users):', users);
-      console.log('🔍 Giriş denemesi:', { username, password });
-
-      // Alternatif storage key'leri de kontrol et
-      const usersAlt = JSON.parse(localStorage.getItem('users') || '[]');
-      console.log('🔍 Alternatif users:', usersAlt);
-
-      // Storage service'i kullanarak kontrol et
-      console.log('🔍 Storage service users:', storage?.get ? storage.get('users', []) : 'storage not available');
-
-      const result = await signIn(username, password);
-      console.log('🔍 SignIn sonucu:', result);
+      const result = await signIn(username, password, rememberMe);
 
       if (result.success && result.data && result.data.user) {
         const role = result.data.user.role;
@@ -57,7 +44,6 @@ const Login = ({ onClose, isMobile = false }) => {
         setError(result.error || 'Giriş başarısız oldu.');
       }
     } catch (err) {
-      console.error('🔍 Login hatası:', err);
       setError('Bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setLoading(false);
@@ -142,6 +128,20 @@ const Login = ({ onClose, isMobile = false }) => {
                   <Icon name={showPassword ? "EyeOff" : "Eye"} size={20} className="text-gray-400" />
                 </button>
               </div>
+            </div>
+
+            {/* Remember Me Checkbox - Mobile */}
+            <div className="flex items-center">
+              <input
+                id="remember-me-mobile"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+              />
+              <label htmlFor="remember-me-mobile" className="ml-3 block text-sm text-gray-700">
+                Beni hatırla
+              </label>
             </div>
 
             {/* Error Message */}

@@ -175,7 +175,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   // Sign in function
-  const signIn = async (email, password) => {
+  const signIn = async (email, password, rememberMe = false) => {
     logger.info('🔐 AuthContext signIn çağrıldı:', { email, password });
     setLoading(true);
     setAuthError(null);
@@ -184,7 +184,7 @@ export function AuthProvider({ children }) {
     const previousUserId = user?.id;
 
     logger.info('📞 authService.login çağrılıyor...');
-    const result = await authService.login(email, password);
+    const result = await authService.login(email, password, rememberMe);
     logger.info('📋 authService.login sonucu:', result);
 
     if (result.success) {

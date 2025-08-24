@@ -4,6 +4,7 @@ import { useNotification } from '../../../../../../contexts/NotificationContext'
 import customerService from '../../../../../../services/customerService';
 
 const CustomerDetailModal = ({ customer, onClose }) => {
+  console.log('CustomerDetailModal render edildi, customer:', customer);
   const { showError } = useNotification();
   const [loading, setLoading] = useState(false); // Sadece ek veriler için loading
   const [customerData, setCustomerData] = useState(customer || null); // Prop'tan gelen veriyi başlangıç verisi olarak kullan
@@ -33,7 +34,7 @@ const CustomerDetailModal = ({ customer, onClose }) => {
       setCustomerOrders(orders);
 
     } catch (error) {
-      logger.error('Müşteri ek bilgileri yüklenirken hata:', error);
+      console.error('Müşteri ek bilgileri yüklenirken hata:', error);
       showError('Müşteri ek bilgileri yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);

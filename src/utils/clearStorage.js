@@ -26,5 +26,5 @@ if (typeof window !== 'undefined') {
     clearInterval(i);
   }
 
-  console.log('Storage and timers cleared successfully!');
+  // Storage and timers cleared successfully
 }

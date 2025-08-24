@@ -5,9 +5,9 @@
 
 // Debug info for development
 if (import.meta.env.DEV) {
-  console.log('🚀 Kırılmazlar Panel - Development Mode');
-  console.log('📱 Mobile Design Enhanced');
-  console.log('🎨 Modern UI Components Active');
+  // Kırılmazlar Panel - Development Mode
+// Mobile Design Enhanced
+// Modern UI Components Active
 }
 
 // Export empty object to prevent import errors

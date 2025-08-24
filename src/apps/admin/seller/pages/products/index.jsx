@@ -163,21 +163,18 @@ const UrunYonetimi = () => {
 
   const loadData = async () => {
     try {
-      console.log('🔄 Ürün yönetimi verileri yükleniyor...');
+      // Ürün yönetimi verileri yükleniyor
 
       const [storedProducts, storedCategories] = await Promise.all([
         storage.get('products', []),
         storage.get('categories', [])
       ]);
 
-      console.log('📊 Storage\'dan yüklenen veriler:', {
-        productsCount: storedProducts.length,
-        categoriesCount: storedCategories.length
-      });
+      // Storage'dan veriler yüklendi
 
       // Kategorileri ayarla - "Kuru Yemiş" yerine "Kasalı Ürünler"
       if (storedCategories.length === 0) {
-        console.log('🆕 Varsayılan kategoriler oluşturuluyor...');
+        // Varsayılan kategoriler oluşturuluyor
         const defaultCategories = [
           {
             id: 1,
@@ -229,24 +226,23 @@ const UrunYonetimi = () => {
           };
           updatedCategories.push(kasaliCategory);
           await storage.set('categories', updatedCategories);
-          console.log('🆕 "Kasalı Ürünler" kategorisi otomatik eklendi');
+          // "Kasalı Ürünler" kategorisi otomatik eklendi
         }
         setCategories(updatedCategories);
       }
 
       // Ürünleri ayarla - önce eksik ürünleri kontrol et ve ekle
-      console.log('🔄 Eksik ürünler kontrol ediliyor...');
+      // Eksik ürünler kontrol ediliyor
 
       try {
         // İlk başta mevcut ürünleri kontrol et
         if (storedProducts.length < 10) {
-          console.log('🆕 Otomatik ürün yükleme başlatılıyor...');
+          // Otomatik ürün yükleme başlatılıyor
           const allProducts = await loadAllProductsFromImages();
           setProducts(allProducts);
-          console.log('✅ Otomatik ürün yükleme başarılı:', allProducts.length, 'ürün');
         } else {
           setProducts(storedProducts);
-          console.log('✅ Mevcut ürünler kullanıldı:', storedProducts.length);
+          // Mevcut ürünler kullanıldı
         }
       } catch (productLoadError) {
         console.warn('⚠️ Ürün yükleme hatası, basit demo ürünler ekleniyor:', productLoadError);
@@ -288,14 +284,14 @@ const UrunYonetimi = () => {
 
           await storage.set('products', simpleProducts);
           setProducts(simpleProducts);
-          console.log('✅ Basit demo ürünler yüklendi:', simpleProducts.length);
+          // Basit demo ürünler yüklendi
         } else {
           setProducts(storedProducts);
-          console.log('✅ Mevcut stored ürünler kullanıldı:', storedProducts.length);
+          // Mevcut stored ürünler kullanıldı
         }
       }
 
-      console.log('✅ Ürün yönetimi verileri başarıyla yüklendi');
+      // Ürün yönetimi verileri başarıyla yüklendi
 
     } catch (error) {
       console.error('❌ Ürün yönetimi veri yükleme hatası:', error);
@@ -330,7 +326,7 @@ const UrunYonetimi = () => {
       setProducts(updatedProducts);
 
       // GÜÇLÜ SENKRONIZASYON - Müşteri paneline bildir
-      console.log('📢 Ürün durum değişikliği senkronizasyon sinyalleri gönderiliyor...');
+      // Ürün durum değişikliği senkronizasyon sinyalleri gönderiliyor
 
       // CustomEvent ile bildir
       window.dispatchEvent(new CustomEvent('productsUpdated', {
@@ -363,7 +359,7 @@ const UrunYonetimi = () => {
 
       const product = updatedProducts.find(p => p.id === productId);
       const statusText = product.isActive ? 'aktif' : 'pasif';
-      console.log(`✅ Ürün durumu ${statusText} olarak değiştirildi ve senkronizasyon sinyalleri gönderildi:`, productId);
+      // Ürün durumu değiştirildi ve senkronizasyon sinyalleri gönderildi
       showSuccess(`Ürün durumu ${statusText} olarak değiştirildi`);
     } catch (error) {
       console.error('❌ Ürün durum değiştirme hatası:', error);
@@ -390,7 +386,7 @@ const UrunYonetimi = () => {
         setProducts(updatedProducts);
 
         // GÜÇLÜ SENKRONIZASYON - Müşteri paneline bildir
-        console.log('📢 Ürün silme senkronizasyon sinyalleri gönderiliyor...');
+        // Ürün silme senkronizasyon sinyalleri gönderiliyor
 
         // CustomEvent ile bildir
         window.dispatchEvent(new CustomEvent('productsUpdated', {
@@ -421,7 +417,7 @@ const UrunYonetimi = () => {
           window.dispatchEvent(new CustomEvent('forceProductsReload'));
         }, 100);
 
-        console.log('✅ Ürün başarıyla silindi ve senkronizasyon sinyalleri gönderildi:', productId);
+        // Ürün başarıyla silindi ve senkronizasyon sinyalleri gönderildi
         showSuccess('Ürün başarıyla silindi');
       } catch (error) {
         console.error('❌ Ürün silme hatası:', error);
@@ -431,7 +427,7 @@ const UrunYonetimi = () => {
   };
 
   const handleSaveProduct = async (productData) => {
-    console.log('🔍 handleSaveProduct çağrıldı:', productData);
+    // handleSaveProduct çağrıldı
 
     try {
       const currentProducts = await storage.get('products', []);
@@ -440,7 +436,7 @@ const UrunYonetimi = () => {
       // Image field'ı boşsa otomatik getProductImagePath kullan
       if (!productData.image || productData.image.trim() === '') {
         productData.image = getProductImagePath(productData.name);
-        console.log('🖼️ Otomatik image path oluşturuldu:', productData.image);
+        // Otomatik image path oluşturuldu
       }
 
       if (editingProduct) {
@@ -452,7 +448,7 @@ const UrunYonetimi = () => {
             updatedAt: new Date().toISOString()
           } : p
         );
-        console.log('🔍 Ürün güncellendi:', editingProduct.id);
+        // Ürün güncellendi
       } else {
         // Yeni ekleme - string ID oluşturma (mevcut sistemle uyumlu)
         const existingIds = currentProducts.map(p => p.id);
@@ -472,11 +468,11 @@ const UrunYonetimi = () => {
           updatedAt: new Date().toISOString(),
           isActive: true
         };
-        console.log('🔍 Yeni ürün oluşturuluyor:', newProduct);
+        // Yeni ürün oluşturuluyor
         updatedProducts = [...currentProducts, newProduct];
       }
 
-      console.log('🔍 Güncellenecek tüm ürünler:', updatedProducts.length);
+      // Güncellenecek tüm ürünler
 
       // Unified storage'a kaydet (cross-device sync ile)
       await storage.set('products', updatedProducts);
@@ -484,7 +480,7 @@ const UrunYonetimi = () => {
 
       // YENİ SİSTEM: ProductSyncService ile senkronizasyon
       productSyncService.triggerSync(updatedProducts);
-      console.log('✅ Ürün başarıyla kaydedildi ve yeni senkronizasyon sistemi tetiklendi');
+      // Ürün başarıyla kaydedildi ve yeni senkronizasyon sistemi tetiklendi
 
       setShowProductModal(false);
       setEditingProduct(null);
@@ -551,7 +547,7 @@ const UrunYonetimi = () => {
       // Kategori güncellemesi için senkronizasyon sinyali
       window.dispatchEvent(new CustomEvent('categoriesUpdated', { detail: updatedCategories }));
 
-      console.log('✅ Kategori başarıyla eklendi:', newCategory.name);
+      // Kategori başarıyla eklendi
       showSuccess(`"${newCategory.name}" kategorisi başarıyla eklendi`);
     } catch (error) {
       console.error('❌ Kategori ekleme hatası:', error);
@@ -597,7 +593,7 @@ const UrunYonetimi = () => {
         // Kategori güncellemesi için senkronizasyon sinyali
         window.dispatchEvent(new CustomEvent('categoriesUpdated', { detail: updatedCategories }));
 
-        console.log('✅ Kategori başarıyla silindi:', categoryToDelete.name);
+        // Kategori başarıyla silindi
         showSuccess(`"${categoryToDelete.name}" kategorisi başarıyla silindi`);
       } catch (error) {
         console.error('❌ Kategori silme hatası:', error);

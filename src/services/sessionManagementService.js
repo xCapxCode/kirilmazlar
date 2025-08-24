@@ -22,6 +22,33 @@ class SessionManagementService {
   // Initialize session
   async initializeSession(userId) {
     try {
+      // Derive effective timeout from rememberMe/sessionExpiry settings
+      let effectiveTimeout = this.sessionTimeout;
+      try {
+        const [rememberMe, sessionExpiry] = await Promise.all([
+          storage.get('rememberMe'),
+          storage.get('sessionExpiry')
+        ]);
+
+        if (typeof sessionExpiry === 'number') {
+          const remaining = sessionExpiry - Date.now();
+          if (remaining > 0) {
+            effectiveTimeout = remaining;
+          }
+        } else if (rememberMe === true) {
+          // Fallback for rememberMe without explicit expiry
+          effectiveTimeout = 30 * 24 * 60 * 60 * 1000; // 30 days
+        } else if (rememberMe === false) {
+          effectiveTimeout = 24 * 60 * 60 * 1000; // 24 hours
+        }
+      } catch (e) {
+        // keep defaults on any error
+        logger.warn('Session timeout derivation warning:', e);
+      }
+
+      // Align instance timeout for cleanup and other checks
+      this.sessionTimeout = effectiveTimeout;
+
       // Generate new session
       this.sessionId = this.generateSessionId();
 
@@ -30,7 +57,7 @@ class SessionManagementService {
         userId,
         startTime: Date.now(),
         lastActivity: Date.now(),
-        timeout: this.sessionTimeout,
+        timeout: effectiveTimeout,
         isActive: true,
         warningShown: false,
         tabId: this.generateTabId(),

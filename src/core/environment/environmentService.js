@@ -36,7 +36,7 @@ class EnvironmentService {
         env = 'development';
       }
       // Port-based detection for dev server
-      else if (port === '5500' || port === '3000') {
+      else if (port === '5000') {
         env = 'development';
       }
       // Default fallback
@@ -121,7 +121,7 @@ class EnvironmentService {
 
       // Development Server
       dev: {
-        port: this.parseNumber(import.meta.env.VITE_DEV_SERVER_PORT, 5500),
+        port: this.parseNumber(import.meta.env.VITE_DEV_SERVER_PORT, 5000),
         host: import.meta.env.VITE_DEV_SERVER_HOST || 'localhost',
         open: this.parseBoolean(import.meta.env.VITE_DEV_SERVER_OPEN, true)
       }

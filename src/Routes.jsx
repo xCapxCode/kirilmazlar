@@ -117,16 +117,8 @@ const DeviceRedirect = ({ children }) => {
   useEffect(() => {
     // Delay to prevent rapid redirects
     const timeoutId = setTimeout(() => {
-      console.log('🔄 Processing redirect logic...', {
-        isMobile,
-        pathname: location.pathname,
-        shouldRedirectToMobile: isMobile && !location.pathname.startsWith('/m') && !location.pathname.startsWith('/ms'),
-        shouldRedirectToDesktop: !isMobile && (location.pathname.startsWith('/m') || location.pathname.startsWith('/ms'))
-      });
-
       // Eğer mobil cihazda ve mobil route'da değilse
       if (isMobile && !location.pathname.startsWith('/m') && !location.pathname.startsWith('/ms')) {
-        console.log('📱 Redirecting to mobile...');
         if (location.pathname === '/') {
           navigate('/m', { replace: true });
         }
@@ -144,10 +136,7 @@ const DeviceRedirect = ({ children }) => {
       }
       // Eğer desktop'ta ve mobil route'daysa
       else if (!isMobile && (location.pathname === '/m' || location.pathname.startsWith('/m/') || location.pathname.startsWith('/ms'))) {
-        console.log('🖥️ Redirecting to desktop from:', location.pathname);
-
         if (location.pathname === '/m') {
-          console.log('🖥️ Redirecting /m to /');
           navigate('/', { replace: true });
         }
         else if (location.pathname === '/m/login') {

@@ -2,9 +2,9 @@
     "cursor.windowSwitcher.sidebarHoverCollapsed": false,
     "21st-extension.telemetry.enabled": false,
     "CodeGPT.apiKey": "CodeGPT Plus Beta",
-    "livePreview.defaultPreviewPath": "http://localhost:5500",
+    "livePreview.defaultPreviewPath": "http://localhost:5000",
     "liveServer.settings.CustomBrowser": "msedge",
-    "fiveServer.port": 5501,
+    "fiveServer.port": 5000,
     "fiveServer.host": "localhost",
     // GitHub Copilot Configuration for GeniusCoder (Gen) System - AUTONOMOUS MODE
     "github.copilot.enable": {
@@ -110,5 +110,7 @@
     // TypeScript Configuration - Suppress node_modules warnings
     "typescript.reportStyleChecksAsWarnings": false,
     "typescript.preferences.diagnostics.showAdvanced": false,
-    "typescript.workspaceSymbols.excludeLibrarySymbols": true
+    "typescript.workspaceSymbols.excludeLibrarySymbols": true,
+    "files.autoSave": "onWindowChange",
+    "editor.cursorStyle": "line"
 }

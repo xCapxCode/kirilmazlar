@@ -121,7 +121,7 @@ class DockerManager {
   /**
    * Run development container
    */
-  async runDevelopment(port = 5500) {
+  async runDevelopment(port = 5000) {
     console.log('🚀 Starting development container...');
 
     try {
@@ -133,7 +133,7 @@ class DockerManager {
         'run',
         '-d',
         '--name', this.devContainerName,
-        '-p', `${port}:5500`,
+        '-p', `${port}:5000`,
         '-v', `${process.cwd()}:/app`,
         '-v', '/app/node_modules',
         '--env', 'CHOKIDAR_USEPOLLING=true',

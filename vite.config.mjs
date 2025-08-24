@@ -13,11 +13,12 @@ export default defineConfig({
   })],
   publicDir: 'public',
   server: {
-    port: 5500,
-    strictPort: false,
-    host: '0.0.0.0', // Network erişimi için
+    port: 5000,
+    strictPort: true,
+    host: 'localhost',
     fs: {
-      strict: false
+      strict: true,
+      allow: ['./src', './public', './node_modules']
     }
   },
   test: {
@@ -58,16 +59,39 @@ export default defineConfig({
     target: process.env.NODE_ENV === 'production' ? 'es2015' : 'esnext',
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          router: ['react-router-dom'],
-          ui: ['lucide-react']
+        manualChunks: (id) => {
+          // Vendor chunks
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'vendor-react';
+            }
+            if (id.includes('react-router')) {
+              return 'vendor-router';
+            }
+            if (id.includes('lucide-react') || id.includes('react-icons')) {
+              return 'vendor-icons';
+            }
+            return 'vendor-misc';
+          }
+          // App chunks
+          if (id.includes('/src/apps/admin/')) {
+            return 'app-admin';
+          }
+          if (id.includes('/src/apps/customer/')) {
+            return 'app-customer';
+          }
+          if (id.includes('/src/shared/')) {
+            return 'shared';
+          }
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
         assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
       }
-    }
+    },
+    // Bundle size optimizations
+    chunkSizeWarningLimit: 1000,
+    reportCompressedSize: false
   },
   define: {
     __DEV__: JSON.stringify(process.env.NODE_ENV !== 'production'),

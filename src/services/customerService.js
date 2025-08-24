@@ -1,6 +1,5 @@
 import storage from '@core/storage';
 // Removed orderService import to avoid circular dependency
-import logger from '@utils/productionLogger';
 
 /**
  * Müşteri yönetimi için servis sınıfı
@@ -16,7 +15,7 @@ class CustomerService {
       const customers = await storage.get('customers', []);
       return customers;
     } catch (error) {
-      logger.error('Müşteriler yüklenirken hata:', error);
+      console.error('Müşteriler yüklenirken hata:', error);
       throw error;
     }
   }
@@ -31,7 +30,7 @@ class CustomerService {
       const customers = await storage.get('customers', []);
       return customers.find(customer => customer.id === id) || null;
     } catch (error) {
-      logger.error(`ID'si ${id} olan müşteri yüklenirken hata:`, error);
+      console.error(`ID'si ${id} olan müşteri yüklenirken hata:`, error);
       throw error;
     }
   }
@@ -43,10 +42,10 @@ class CustomerService {
    */
   async create(customerData) {
     try {
-      logger.info('🔄 CustomerService.create başlatılıyor:', customerData);
+      console.log('🔄 CustomerService.create başlatılıyor:', customerData);
 
       const customers = await storage.get('customers', []);
-      logger.info('📋 Mevcut müşteriler:', customers.length);
+      console.log('📋 Mevcut müşteriler:', customers.length);
 
       const newCustomer = {
         id: Date.now(),
@@ -56,18 +55,18 @@ class CustomerService {
         status: 'active'
       };
 
-      logger.info('📝 Oluşturulan müşteri objesi:', newCustomer);
+      console.log('📝 Oluşturulan müşteri objesi:', newCustomer);
 
       const updatedCustomers = [...customers, newCustomer];
-      logger.info('💾 Storage\'a kaydedilecek müşteri listesi:', updatedCustomers.length);
+      console.log('💾 Storage\'a kaydedilecek müşteri listesi:', updatedCustomers.length);
 
       await storage.set('customers', updatedCustomers);
-      logger.info('✅ Müşteri storage\'a kaydedildi');
+      console.log('✅ Müşteri storage\'a kaydedildi');
 
       // Müşteri hesabını users tablosuna da ekle (giriş yapabilmesi için)
       if (customerData.username && customerData.password) {
         const users = await storage.get('users', []);
-        logger.info('👥 Mevcut users:', users.length);
+        console.log('👥 Mevcut users:', users.length);
 
         // Aynı email/username kontrolü
         const existingUser = users.find(u =>
@@ -89,13 +88,13 @@ class CustomerService {
 
           users.push(newUser);
           await storage.set('users', users);
-          logger.info('✅ Müşteri user hesabı oluşturuldu:', customerData.email);
+          console.log('✅ Müşteri user hesabı oluşturuldu:', customerData.email);
         }
       }
 
       return newCustomer;
     } catch (error) {
-      logger.error('Müşteri oluşturulurken hata:', error);
+      console.error('Müşteri oluşturulurken hata:', error);
       throw error;
     }
   }
@@ -140,13 +139,13 @@ class CustomerService {
 
           users[userIndex] = updatedUser;
           await storage.set('users', users);
-          logger.info('✅ Müşteri user hesabı da güncellendi:', updateData.email || updatedUser.email);
+          console.log('✅ Müşteri user hesabı da güncellendi:', updateData.email || updatedUser.email);
         }
       }
 
       return updatedCustomer;
     } catch (error) {
-      logger.error(`ID'si ${id} olan müşteri güncellenirken hata:`, error);
+      console.error(`ID'si ${id} olan müşteri güncellenirken hata:`, error);
       throw error;
     }
   }
@@ -177,13 +176,13 @@ class CustomerService {
 
         if (filteredUsers.length !== users.length) {
           await storage.set('users', filteredUsers);
-          logger.info('✅ Müşteri user hesabı da silindi:', customerToDelete.email);
+          console.log('✅ Müşteri user hesabı da silindi:', customerToDelete.email);
         }
       }
 
       return true;
     } catch (error) {
-      logger.error(`ID'si ${id} olan müşteri silinirken hata:`, error);
+      console.error(`ID'si ${id} olan müşteri silinirken hata:`, error);
       throw error;
     }
   }
@@ -210,7 +209,7 @@ class CustomerService {
         customer.address?.toLowerCase().includes(searchTerm)
       );
     } catch (error) {
-      logger.error('Müşteri arama işleminde hata:', error);
+      console.error('Müşteri arama işleminde hata:', error);
       throw error;
     }
   }
@@ -228,7 +227,7 @@ class CustomerService {
       // CRITICAL: Use the improved getByCustomerId method
       return await orderService.getByCustomerId(customerId);
     } catch (error) {
-      logger.error(`Müşteri ${customerId} siparişleri yüklenirken hata:`, error);
+      console.error(`Müşteri ${customerId} siparişleri yüklenirken hata:`, error);
       throw error;
     }
   }
@@ -258,7 +257,7 @@ class CustomerService {
           Math.max(...orders.map(order => new Date(order.orderDate).getTime())) : null
       };
     } catch (error) {
-      logger.error(`Müşteri ${customerId} istatistikleri yüklenirken hata:`, error);
+      console.error(`Müşteri ${customerId} istatistikleri yüklenirken hata:`, error);
       throw error;
     }
   }
@@ -285,7 +284,7 @@ class CustomerService {
         .sort((a, b) => b.totalSpent - a.totalSpent)
         .slice(0, limit);
     } catch (error) {
-      logger.error('En iyi müşteriler yüklenirken hata:', error);
+      console.error('En iyi müşteriler yüklenirken hata:', error);
       throw error;
     }
   }
@@ -299,7 +298,7 @@ class CustomerService {
       const customers = await storage.get('customers', []);
       return customers.filter(customer => customer.status === 'active').length;
     } catch (error) {
-      logger.error('Aktif müşteri sayısı yüklenirken hata:', error);
+      console.error('Aktif müşteri sayısı yüklenirken hata:', error);
       throw error;
     }
   }
@@ -314,7 +313,7 @@ class CustomerService {
     try {
       return await this.update(id, { status });
     } catch (error) {
-      logger.error(`Müşteri ${id} durumu güncellenirken hata:`, error);
+      console.error(`Müşteri ${id} durumu güncellenirken hata:`, error);
       throw error;
     }
   }

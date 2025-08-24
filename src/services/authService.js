@@ -30,7 +30,9 @@ class AuthService {
         'token_blacklist',
         'kirilmazlar_active_session',
         'kirilmazlar_concurrent_sessions',
-        'kirilmazlar_session_activity'
+        'kirilmazlar_session_activity',
+        'rememberMe',
+        'sessionExpiry'
       ];
 
       // Clear all auth items
@@ -46,9 +48,9 @@ class AuthService {
   }
 
   // Login
-  async login(emailOrUsername, password) {
+  async login(emailOrUsername, password, rememberMe = false) {
     try {
-      logger.debug('🔐 Login attempt started:', { emailOrUsername });
+      logger.debug('🔐 Login attempt started:', { emailOrUsername, rememberMe });
 
       // Storage'ı direkt kullan - DataService dependency'si yok
       logger.debug('🔐 Getting users from storage...');
@@ -101,12 +103,27 @@ class AuthService {
         await this.sessionManager.initializeSession(userWithoutPassword.id);
       }
 
-      // Set current user and auth state
+      // Set current user and auth state with remember me logic
       this.currentUser = userWithoutPassword;
       await storage.set('currentUser', userWithoutPassword);
       await storage.set('isAuthenticated', true);
+      
+      // Remember me functionality
+      if (rememberMe) {
+        // Set longer session duration (30 days)
+        const rememberExpiry = Date.now() + (30 * 24 * 60 * 60 * 1000);
+        await storage.set('rememberMe', true);
+        await storage.set('sessionExpiry', rememberExpiry);
+        logger.debug('🔐 Remember me enabled - session extended to 30 days');
+      } else {
+        // Standard session duration (24 hours)
+        const standardExpiry = Date.now() + (24 * 60 * 60 * 1000);
+        await storage.set('rememberMe', false);
+        await storage.set('sessionExpiry', standardExpiry);
+        logger.debug('🔐 Standard session - 24 hours');
+      }
 
-      logger.debug('✅ Login successful:', { userId: userWithoutPassword.id });
+      logger.debug('✅ Login successful:', { userId: userWithoutPassword.id, rememberMe });
 
       return {
         success: true,
@@ -140,6 +157,11 @@ class AuthService {
     try {
       // Memory user
       if (this.currentUser) {
+        // Check session expiry even for memory user
+        if (!this.isSessionValid()) {
+          this.clearAuthStorage();
+          return null;
+        }
         return this.currentUser;
       }
 
@@ -149,6 +171,12 @@ class AuthService {
 
       // Session validation
       if (this.sessionManager && !this.sessionManager.isSessionValid()) {
+        this.clearAuthStorage();
+        return null;
+      }
+
+      // Check custom session expiry
+      if (!this.isSessionValid()) {
         this.clearAuthStorage();
         return null;
       }
@@ -170,9 +198,29 @@ class AuthService {
     try {
       return storage.get('isAuthenticated', false) &&
         this.getCurrentUser() !== null &&
+        this.isSessionValid() &&
         (!this.sessionManager || this.sessionManager.isSessionValid());
     } catch (error) {
       logger.error('❌ Auth check error:', error);
+      return false;
+    }
+  }
+
+  // Check if session is still valid
+  isSessionValid() {
+    try {
+      const sessionExpiry = storage.get('sessionExpiry');
+      if (!sessionExpiry) {
+        return true; // No expiry set, assume valid
+      }
+      
+      const isValid = Date.now() < sessionExpiry;
+      if (!isValid) {
+        logger.debug('🔐 Session expired');
+      }
+      return isValid;
+    } catch (error) {
+      logger.error('❌ Session validation error:', error);
       return false;
     }
   }

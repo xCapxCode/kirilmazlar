@@ -600,112 +600,261 @@ export const DEMO_PRODUCTS = [
   }
 ];
 
+export const DEMO_CUSTOMERS = [
+  {
+    id: 'cust-1',
+    name: 'Ahmet Yılmaz',
+    email: 'ahmet@example.com',
+    phone: '5551234567',
+    address: 'Atatürk Cad. No:123 Kadıköy/İstanbul',
+    accountType: 'personal',
+    status: 'active',
+    createdAt: new Date('2024-01-15').toISOString(),
+    updatedAt: new Date('2024-01-15').toISOString()
+  },
+  {
+    id: 'cust-2',
+    name: 'Fatma Demir',
+    email: 'fatma@example.com',
+    phone: '5559876543',
+    address: 'İnönü Sok. No:45 Beşiktaş/İstanbul',
+    accountType: 'personal',
+    status: 'active',
+    createdAt: new Date('2024-01-20').toISOString(),
+    updatedAt: new Date('2024-01-20').toISOString()
+  },
+  {
+    id: 'cust-3',
+    name: 'Mehmet Kaya',
+    email: 'mehmet@example.com',
+    phone: '5555555555',
+    address: 'Cumhuriyet Mah. Barış Sok. No:67 Şişli/İstanbul',
+    accountType: 'business',
+    status: 'active',
+    createdAt: new Date('2024-02-01').toISOString(),
+    updatedAt: new Date('2024-02-01').toISOString()
+  },
+  {
+    id: 'cust-4',
+    name: 'Ayşe Özkan',
+    email: 'ayse@example.com',
+    phone: '5551111111',
+    address: 'Bağdat Cad. No:234 Maltepe/İstanbul',
+    accountType: 'personal',
+    status: 'active',
+    createdAt: new Date('2024-02-10').toISOString(),
+    updatedAt: new Date('2024-02-10').toISOString()
+  },
+  {
+    id: 'cust-5',
+    name: 'Ali Çelik',
+    email: 'ali@example.com',
+    phone: '5552222222',
+    address: 'Vatan Cad. No:89 Fatih/İstanbul',
+    accountType: 'business',
+    status: 'active',
+    createdAt: new Date('2024-02-15').toISOString(),
+    updatedAt: new Date('2024-02-15').toISOString()
+  }
+];
+
 export const DEMO_ORDERS = [
   {
     id: 'order-1',
-    customerId: 'customer-1',
-    customerName: 'Test Müşteri',
-    customerPhone: '0555 123 4567',
-    customerAddress: 'Test Adres, İstanbul',
+    orderNumber: 'SIP-001',
+    customerId: 'cust-1',
+    customerName: 'Ahmet Yılmaz',
+    customerEmail: 'ahmet@example.com',
+    customerPhone: '5551234567',
     items: [
       {
-        id: 'prod-1',
-        name: 'Elma',
-        price: 8.50,
+        id: 'item-1',
+        productId: 'prod-1',
+        productName: 'Elma',
         quantity: 2,
-        unit: 'kg',
-        total: 17.00
+        price: 8.50,
+        total: 17.00,
+        image: '/assets/images/products/Elma.png'
       },
       {
-        id: 'prod-22',
-        name: 'Domates',
-        price: 15.00,
+        id: 'item-2',
+        productId: 'prod-3',
+        productName: 'Muz',
         quantity: 1,
-        unit: 'kg',
-        total: 15.00
+        price: 12.00,
+        total: 12.00,
+        image: '/assets/images/products/Muz.png'
       }
     ],
-    subtotal: 32.00,
-    deliveryFee: 15.00,
-    total: 47.00,
-    status: 'pending',
-    paymentMethod: 'cash',
-    notes: 'Test sipariş',
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 saat önce
-    updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+    total: 29.00,
+    status: 'Teslim Edildi',
+    orderDate: new Date('2024-01-16').toISOString(),
+    deliveryAddress: 'Atatürk Cad. No:123 Kadıköy/İstanbul',
+    paymentMethod: 'Nakit',
+    notes: 'Kapıya bırakabilirsiniz',
+    source: 'customer',
+    createdAt: new Date('2024-01-16').toISOString()
   },
   {
     id: 'order-2',
-    customerId: 'customer-1',
-    customerName: 'Test Müşteri',
-    customerPhone: '0555 123 4567',
-    customerAddress: 'Test Adres, İstanbul',
+    orderNumber: 'SIP-002',
+    customerId: 'cust-1',
+    customerName: 'Ahmet Yılmaz',
+    customerEmail: 'ahmet@example.com',
+    customerPhone: '5551234567',
     items: [
       {
-        id: 'prod-3',
-        name: 'Muz',
-        price: 12.00,
-        quantity: 1,
-        unit: 'kg',
-        total: 12.00
-      },
-      {
-        id: 'prod-4',
-        name: 'Portakal',
+        id: 'item-3',
+        productId: 'prod-4',
+        productName: 'Portakal',
+        quantity: 3,
         price: 10.00,
-        quantity: 2,
-        unit: 'kg',
-        total: 20.00
-      },
-      {
-        id: 'prod-23',
-        name: 'Salatalık',
-        price: 8.00,
-        quantity: 1,
-        unit: 'kg',
-        total: 8.00
+        total: 30.00,
+        image: '/assets/images/products/Portakal.png'
       }
     ],
-    subtotal: 40.00,
-    deliveryFee: 15.00,
-    total: 55.00,
-    status: 'confirmed',
-    paymentMethod: 'cash',
-    notes: 'Hızlı teslimat istiyorum',
-    createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 saat önce
-    updatedAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()
+    total: 30.00,
+    status: 'Hazırlanıyor',
+    orderDate: new Date('2024-02-20').toISOString(),
+    deliveryAddress: 'Atatürk Cad. No:123 Kadıköy/İstanbul',
+    paymentMethod: 'Kredi Kartı',
+    notes: '',
+    source: 'customer',
+    createdAt: new Date('2024-02-20').toISOString()
   },
   {
     id: 'order-3',
-    customerId: 'customer-1',
-    customerName: 'Test Müşteri',
-    customerPhone: '0555 123 4567',
-    customerAddress: 'Test Adres, İstanbul',
+    orderNumber: 'SIP-003',
+    customerId: 'cust-2',
+    customerName: 'Fatma Demir',
+    customerEmail: 'fatma@example.com',
+    customerPhone: '5559876543',
     items: [
       {
-        id: 'prod-13',
-        name: 'Çilek',
-        price: 30.00,
-        quantity: 0.5,
-        unit: 'kg',
-        total: 15.00
+        id: 'item-4',
+        productId: 'prod-22',
+        productName: 'Domates',
+        quantity: 2,
+        price: 15.00,
+        total: 30.00,
+        image: '/assets/images/products/Domates.png'
       },
       {
-        id: 'prod-12',
-        name: 'Kiraz',
-        price: 35.00,
-        quantity: 0.5,
-        unit: 'kg',
-        total: 17.50
+        id: 'item-5',
+        productId: 'prod-23',
+        productName: 'Salatalık',
+        quantity: 1,
+        price: 8.00,
+        total: 8.00,
+        image: '/assets/images/products/Salatalık.png'
       }
     ],
-    subtotal: 32.50,
-    deliveryFee: 15.00,
+    total: 38.00,
+    status: 'Teslim Edildi',
+    orderDate: new Date('2024-01-25').toISOString(),
+    deliveryAddress: 'İnönü Sok. No:45 Beşiktaş/İstanbul',
+    paymentMethod: 'Nakit',
+    notes: 'Öğleden sonra teslim edilsin',
+    source: 'customer',
+    createdAt: new Date('2024-01-25').toISOString()
+  },
+  {
+    id: 'order-4',
+    orderNumber: 'SIP-004',
+    customerId: 'cust-3',
+    customerName: 'Mehmet Kaya',
+    customerEmail: 'mehmet@example.com',
+    customerPhone: '5555555555',
+    items: [
+      {
+        id: 'item-6',
+        productId: 'prod-37',
+        productName: 'Kasalı Domates',
+        quantity: 2,
+        price: 120.00,
+        total: 240.00,
+        image: '/assets/images/products/Domates.png'
+      }
+    ],
+    total: 240.00,
+    status: 'Teslim Edildi',
+    orderDate: new Date('2024-02-05').toISOString(),
+    deliveryAddress: 'Cumhuriyet Mah. Barış Sok. No:67 Şişli/İstanbul',
+    paymentMethod: 'Havale',
+    notes: 'Toptan sipariş - fatura kesilsin',
+    source: 'customer',
+    createdAt: new Date('2024-02-05').toISOString()
+  },
+  {
+    id: 'order-5',
+    orderNumber: 'SIP-005',
+    customerId: 'cust-4',
+    customerName: 'Ayşe Özkan',
+    customerEmail: 'ayse@example.com',
+    customerPhone: '5551111111',
+    items: [
+      {
+        id: 'item-7',
+        productId: 'prod-13',
+        productName: 'Çilek',
+        quantity: 1,
+        price: 30.00,
+        total: 30.00,
+        image: '/assets/images/products/Çilek.png'
+      },
+      {
+        id: 'item-8',
+        productId: 'prod-12',
+        productName: 'Kiraz',
+        quantity: 0.5,
+        price: 35.00,
+        total: 17.50,
+        image: '/assets/images/products/Kiraz.png'
+      }
+    ],
     total: 47.50,
-    status: 'delivered',
-    paymentMethod: 'cash',
-    notes: 'Teslim edildi',
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 gün önce
-    updatedAt: new Date(Date.now() - 22 * 60 * 60 * 1000).toISOString()
+    status: 'Yolda',
+    orderDate: new Date('2024-02-18').toISOString(),
+    deliveryAddress: 'Bağdat Cad. No:234 Maltepe/İstanbul',
+    paymentMethod: 'Kredi Kartı',
+    notes: 'Taze olsun lütfen',
+    source: 'customer',
+    createdAt: new Date('2024-02-18').toISOString()
+  },
+  {
+    id: 'order-6',
+    orderNumber: 'SIP-006',
+    customerId: 'cust-5',
+    customerName: 'Ali Çelik',
+    customerEmail: 'ali@example.com',
+    customerPhone: '5552222222',
+    items: [
+      {
+        id: 'item-9',
+        productId: 'prod-38',
+        productName: 'Çuvallı Patates',
+        quantity: 1,
+        price: 200.00,
+        total: 200.00,
+        image: '/assets/images/products/patates.png'
+      },
+      {
+        id: 'item-10',
+        productId: 'prod-24',
+        productName: 'Soğan',
+        quantity: 5,
+        price: 6.00,
+        total: 30.00,
+        image: '/assets/images/products/sogan-cuval.png'
+      }
+    ],
+    total: 230.00,
+    status: 'Teslim Edildi',
+    orderDate: new Date('2024-02-22').toISOString(),
+    deliveryAddress: 'Vatan Cad. No:89 Fatih/İstanbul',
+    paymentMethod: 'Nakit',
+    notes: 'İş yeri siparişi',
+    source: 'customer',
+    createdAt: new Date('2024-02-22').toISOString()
   }
 ];

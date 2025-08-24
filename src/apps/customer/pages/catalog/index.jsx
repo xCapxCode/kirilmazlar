@@ -248,17 +248,7 @@ const CustomerProductCatalog = () => {
       // Storage'dan ürünleri yükle (unified storage kullan)
       // DIREKT localStorage kontrolü
       const rawLocalStorage = localStorage.getItem('kirilmazlar_products');
-      console.log('🔍 MÜŞTERİ TRACE - localStorage:', rawLocalStorage ? JSON.parse(rawLocalStorage).length : 0, 'ürün');
-
-      // Kasalı ürünler kontrolü
-      if (rawLocalStorage) {
-        const rawProducts = JSON.parse(rawLocalStorage);
-        const kasaliCount = rawProducts.filter(p => p.category && p.category.toLowerCase().includes('kasalı')).length;
-        console.log('🔍 MÜŞTERİ TRACE - Kasalı ürünler localStorage:', kasaliCount);
-      }
-
       const savedProducts = storage.get('products', []);
-      console.log('🔍 MÜŞTERİ TRACE - Storage.get products:', savedProducts.length, 'adet');
 
       logger.info('📦 Storage\'dan ürünler alındı:', savedProducts.length, 'adet');
 
@@ -648,10 +638,8 @@ const CustomerProductCatalog = () => {
     checkProducts: () => {
       const raw = localStorage.getItem('kirilmazlar_products');
       const parsed = raw ? JSON.parse(raw) : [];
-      console.log('🔍 CUSTOMER DEBUG - localStorage products:', parsed.length);
-      console.log('🔍 CUSTOMER DEBUG - Kasalı ürünler:', parsed.filter(p =>
-        p.category && p.category.toLowerCase().includes('kasalı')
-      ));
+      // Kasalı ürünler filtreleme
+        const kasaliProducts = parsed.filter(p => p.category && p.category.toLowerCase().includes('kasalı'));
       return parsed;
     },
     currentProducts: products,
