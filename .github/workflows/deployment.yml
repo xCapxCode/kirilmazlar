@@ -10,7 +10,7 @@ on:
     workflows: ["🧪 Testing Pipeline"]
     types:
       - completed
-    branches: [main, staging]
+    branches: [master, staging]
   
   workflow_dispatch:
     inputs:
@@ -55,7 +55,7 @@ jobs:
         if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
           ENV="${{ github.event.inputs.environment }}"
           TAG="$ENV-$(date +%Y%m%d-%H%M%S)"
-        elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+        elif [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
           ENV="production"
           TAG="v$(date +%Y%m%d-%H%M%S)"
         elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
@@ -87,8 +87,8 @@ jobs:
         
         # Production deployment additional checks
         if [[ "${{ steps.determine-env.outputs.environment }}" == "production" ]]; then
-          if [[ "${{ github.ref }}" != "refs/heads/main" ]]; then
-            echo "❌ Production deployment only allowed from main branch"
+          if [[ "${{ github.ref }}" != "refs/heads/master" ]]; then
+      echo "❌ Production deployment only allowed from master branch"
             CAN_DEPLOY=false
           fi
         fi

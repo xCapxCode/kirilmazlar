@@ -7,9 +7,9 @@ name: 🧪 Testing Pipeline
 
 on:
   push:
-    branches: [ main, develop, staging ]
+    branches: [ master, develop, staging ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ master, develop ]
   schedule:
     # Run tests daily at 2 AM UTC
     - cron: '0 2 * * *'

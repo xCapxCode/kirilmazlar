@@ -7,9 +7,9 @@ name: 🚀 Kırılmazlar Panel CI/CD
 
 on:
   push:
-    branches: [ main, develop, staging ]
+    branches: [ master, develop, staging ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ master, develop ]
   workflow_dispatch:
     inputs:
       environment:
@@ -56,7 +56,7 @@ jobs:
     - name: 🎯 Environment Setup
       id: env-setup
       run: |
-        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+        if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
           echo "environment=production" >> $GITHUB_OUTPUT
           echo "deploy=true" >> $GITHUB_OUTPUT
         elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then

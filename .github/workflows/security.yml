@@ -7,9 +7,9 @@ name: 🛡️ Security Hardening
 
 on:
   push:
-    branches: [main, staging]
+    branches: [master, staging]
   pull_request:
-    branches: [main]
+    branches: [master]
   workflow_dispatch:
 
 env:
