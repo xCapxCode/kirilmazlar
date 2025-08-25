@@ -1,6 +1,7 @@
 # ===========================================
-# KIRIILMAZLAR PANEL - RAILWAY OPTIMIZED DOCKERFILE v3.0
+# KIRIILMAZLAR PANEL - RAILWAY OPTIMIZED DOCKERFILE v3.1
 # Ultra-reliable React application for Railway deployment
+# Force cache invalidation for Railway build
 # ===========================================
 
 # Use Node.js LTS with full system (not Alpine) for better compatibility
@@ -27,8 +28,9 @@ RUN npm config set registry https://registry.npmjs.org/ && \
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies with verbose logging
-RUN npm install --verbose --no-audit --no-fund
+# Clear npm cache and install dependencies with maximum reliability
+RUN npm cache clean --force && \
+    npm install --verbose --no-audit --no-fund --prefer-offline=false
 
 # Copy source code
 COPY . .
@@ -74,6 +76,6 @@ CMD ["serve", "-s", "dist", "-l", "$PORT"]
 
 # Metadata
 LABEL maintainer="GeniusCoder (Gen)" \
-  version="3.0.0" \
+  version="3.1.0" \
   description="Kırılmazlar Panel - Ultra-reliable Railway Deployment" \
   org.opencontainers.image.source="https://github.com/xCapxCode/kirilmazlar"
