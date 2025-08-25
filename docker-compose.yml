@@ -35,7 +35,7 @@ services:
   kirilmazlar-dev:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile.dev.backup
       target: development
     container_name: kirilmazlar-panel-dev
     ports:

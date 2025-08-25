@@ -78,7 +78,7 @@ class DockerManager {
     try {
       await this.executeCommand('docker', [
         'build',
-        '-f', 'Dockerfile.dev',
+        '-f', 'Dockerfile.dev.backup',
         '-t', this.devImageName,
         '.'
       ]);
