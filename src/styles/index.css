@@ -502,7 +502,6 @@ footer {
   font-feature-settings: 'kern' 1, 'liga' 1;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  font-smooth: always;
 }
 
 /* Türkçe karakter desteği */
