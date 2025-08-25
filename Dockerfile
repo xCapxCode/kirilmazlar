@@ -8,7 +8,7 @@
 # Use Ubuntu-based Node.js image (COMPLETE ALPINE ELIMINATION)
 FROM ubuntu:22.04 AS builder
 
-# Install Node.js 18 and system dependencies
+# Install Node.js 20 and system dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     python3 \
@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y \
     g++ \
     git \
     ca-certificates \
-    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
@@ -34,7 +34,9 @@ COPY package*.json ./
 
 # Clear npm cache and install dependencies with maximum reliability
 RUN npm cache clean --force && \
-    npm install --verbose --no-audit --no-fund --prefer-offline=false
+    rm -rf node_modules package-lock.json && \
+    npm install --verbose --no-audit --no-fund --prefer-offline=false && \
+    npm rebuild
 
 # Copy source code
 COPY . .
@@ -45,11 +47,11 @@ RUN npm run build
 # Production stage - use Ubuntu-based image (COMPLETE ALPINE ELIMINATION)
 FROM ubuntu:22.04 AS production
 
-# Install Node.js 18 and runtime dependencies
+# Install Node.js 20 and runtime dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     ca-certificates \
-    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
