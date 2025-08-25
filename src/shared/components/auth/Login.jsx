@@ -23,8 +23,26 @@ const Login = ({ onClose, isMobile = false }) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    
+    // Debug: Kullanıcı giriş bilgilerini logla
+    console.log('🔐 LOGIN ATTEMPT:', {
+      username: username,
+      password: password ? '***' + password.slice(-2) : 'empty',
+      rememberMe: rememberMe,
+      timestamp: new Date().toISOString()
+    });
+    
     try {
       const result = await signIn(username, password, rememberMe);
+      
+      // Debug: AuthService sonucunu logla
+      console.log('🔐 LOGIN RESULT:', {
+        success: result.success,
+        error: result.error,
+        hasData: !!result.data,
+        hasUser: !!(result.data && result.data.user),
+        userRole: result.data && result.data.user ? result.data.user.role : 'none'
+      });
 
       if (result.success && result.data && result.data.user) {
         const role = result.data.user.role;
@@ -41,9 +59,11 @@ const Login = ({ onClose, isMobile = false }) => {
         }
         if (onClose) onClose();
       } else {
+        console.error('🚫 LOGIN FAILED:', result.error || 'Giriş başarısız oldu.');
         setError(result.error || 'Giriş başarısız oldu.');
       }
     } catch (err) {
+      console.error('🚫 LOGIN ERROR:', err);
       setError('Bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setLoading(false);

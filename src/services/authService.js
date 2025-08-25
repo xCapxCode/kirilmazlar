@@ -53,11 +53,51 @@ class AuthService {
       const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
       logger.debug('🔐 Login attempt started:', { emailOrUsername, rememberMe, environment: isProduction ? 'PRODUCTION' : 'DEVELOPMENT' });
 
+      // DETAYLI STORAGE DEBUG
+      logger.debug('🔍 LocalStorage debug başlıyor...');
+      
+      // Tüm localStorage anahtarlarını kontrol et
+      const allKeys = Object.keys(localStorage);
+      logger.debug('🗝️ Tüm localStorage anahtarları:', allKeys);
+      
+      // Kirilmazlar ile başlayan anahtarları filtrele
+      const kirilmazlarKeys = allKeys.filter(key => key.startsWith('kirilmazlar_'));
+      logger.debug('🏷️ Kirilmazlar anahtarları:', kirilmazlarKeys);
+      
+      // Her anahtar için değer boyutunu kontrol et
+      kirilmazlarKeys.forEach(key => {
+        const value = localStorage.getItem(key);
+        logger.debug(`📦 ${key}: ${value ? value.length : 0} karakter`);
+      });
+      
       // Storage'ı direkt kullan - DataService dependency'si yok
       logger.debug('🔐 Getting users from storage...');
       const users = storage.get('users', []);
       logger.debug('🔐 Users found:', users.length);
       logger.debug('🔐 Users data:', users);
+      
+      // Raw localStorage kontrolü
+      const rawUsers = localStorage.getItem('kirilmazlar_users');
+      logger.debug('🔍 Raw users from localStorage:', rawUsers ? rawUsers.substring(0, 200) + '...' : 'NULL');
+      
+      // Manuel parse dene
+      if (rawUsers) {
+        try {
+          const parsedUsers = JSON.parse(rawUsers);
+          logger.debug('✅ Manuel parse başarılı:', parsedUsers.length, 'kullanıcı');
+          parsedUsers.forEach((user, index) => {
+            logger.debug(`👤 User ${index + 1}:`, {
+              username: user.username,
+              email: user.email,
+              hasPassword: !!user.password,
+              passwordLength: user.password ? user.password.length : 0,
+              role: user.role
+            });
+          });
+        } catch (parseError) {
+          logger.error('❌ Manuel parse hatası:', parseError);
+        }
+      }
       
       // Production'da kullanıcı listesini detaylı logla
       if (isProduction) {

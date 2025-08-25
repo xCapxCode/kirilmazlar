@@ -72,33 +72,53 @@ class DataService {
     ensureBaseData() {
         // Temel verilerin varlığını kontrol et ve eksikleri tamamla
 
-        // Kullanıcılar - Sadece hiç kullanıcı yoksa yükle (mevcut kullanıcıları koru)
+        // KULLANICI YÜKLEME - FORCE APPROACH
         const existingUsers = storage.get('users');
         const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
         
-        logger.info('🔍 Existing users check:', { 
+        logger.info('🔍 FORCE USER LOADING - Existing users check:', { 
             existingUsers: existingUsers?.length || 0, 
             hasUsers: !!existingUsers,
             isProduction 
         });
         
-        // Sadece hiç kullanıcı yoksa yükle - mevcut kullanıcıları koru
-        if (!existingUsers || existingUsers.length === 0) {
-            logger.info('📥 Loading ALL_USERS (no existing users found):', ALL_USERS.length, ALL_USERS.map(u => u.username));
-            storage.set('users', ALL_USERS);
-            logger.info('👥 Kullanıcılar yüklendi:', ALL_USERS.length);
+        // Raw localStorage kontrolü
+        const rawUsers = localStorage.getItem('kirilmazlar_users');
+        logger.info('🔍 Raw localStorage users:', rawUsers ? 'EXISTS' : 'NULL');
+        
+        // FORCE: Her durumda kullanıcıları yükle ve kontrol et
+        logger.info('🚀 FORCE LOADING ALL_USERS:', ALL_USERS.length);
+        
+        // Önce mevcut kullanıcıları logla
+        if (existingUsers && existingUsers.length > 0) {
+            logger.info('📋 Mevcut kullanıcılar:', existingUsers.map(u => `${u.username}:${u.password}`));
+        }
+        
+        // ALL_USERS'ı logla
+        logger.info('📋 ALL_USERS içeriği:', ALL_USERS.map(u => `${u.username}:${u.password}`));
+        
+        // FORCE: Kullanıcıları her zaman yükle
+        storage.set('users', ALL_USERS);
+        logger.info('✅ FORCE: Kullanıcılar yüklendi:', ALL_USERS.length);
+        
+        // Verify storage after setting
+        const verifyUsers = storage.get('users');
+        logger.info('✅ VERIFICATION - users in storage:', verifyUsers?.length || 0);
+        
+        // Kullanıcı detaylarını logla
+        if (verifyUsers && verifyUsers.length > 0) {
+            logger.info('🔐 VERIFIED Users loaded:', verifyUsers.map(u => `${u.username}:${u.password}`));
             
-            // Verify storage after setting
-            const verifyUsers = storage.get('users');
-            logger.info('✅ Verification - users in storage:', verifyUsers?.length || 0);
+            // Özel kullanıcıları kontrol et
+            const unerbul = verifyUsers.find(u => u.username === 'unerbul');
+            const bulent = verifyUsers.find(u => u.username === 'bulent');
+            const neset = verifyUsers.find(u => u.username === 'neset');
             
-            // Kullanıcı detaylarını logla
-            const usernames = verifyUsers?.map(u => u.username) || [];
-            logger.info('🔐 Users loaded:', usernames);
+            logger.info('👤 Unerbul user:', unerbul ? `${unerbul.username}:${unerbul.password}` : 'NOT FOUND');
+            logger.info('👤 Bulent user:', bulent ? `${bulent.username}:${bulent.password}` : 'NOT FOUND');
+            logger.info('👤 Neset user:', neset ? `${neset.username}:${neset.password}` : 'NOT FOUND');
         } else {
-            logger.info('👥 Mevcut kullanıcılar korunuyor:', existingUsers.length);
-            const existingUsernames = existingUsers.map(u => u.username);
-            logger.info('🔐 Existing users preserved:', existingUsernames);
+            logger.error('❌ VERIFICATION FAILED - No users in storage after force loading!');
         }
 
         // Müşteriler - Demo müşteri verilerini yükle
