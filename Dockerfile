@@ -1,7 +1,8 @@
 # ===========================================
-# KIRIILMAZLAR PANEL - RAILWAY OPTIMIZED DOCKERFILE v5.0
+# KIRIILMAZLAR PANEL - RAILWAY OPTIMIZED DOCKERFILE v5.1
 # Ultra-reliable React application for Railway deployment
 # Complete Ubuntu-based rebuild for cache invalidation
+# FORCE REBUILD: 2025-01-31T15:30:00Z
 # ===========================================
 
 # Use Ubuntu-based Node.js image (COMPLETE ALPINE ELIMINATION)
@@ -83,6 +84,6 @@ CMD ["serve", "-s", "dist", "-l", "$PORT"]
 
 # Metadata
 LABEL maintainer="GeniusCoder (Gen)" \
-  version="5.0.0" \
+  version="5.1.0" \
   description="Kırılmazlar Panel - Ultra-reliable Railway Deployment (UBUNTU-BASED)" \
   org.opencontainers.image.source="https://github.com/xCapxCode/kirilmazlar"
