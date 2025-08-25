@@ -218,8 +218,8 @@ npm run serve
 
 #### 🚀 **Development & Build**
 ```bash
-npm run dev              # Development server (port 5500)
-npm run dev:staging      # Staging environment (port 5501)
+npm run dev              # Development server (port 5000 - ONLY ALLOWED PORT)
+npm run dev:staging      # Staging environment (port 5000 - ONLY ALLOWED PORT)
 npm run build            # Production build
 npm run build:staging    # Staging build
 npm run build:dev        # Development build
@@ -239,6 +239,13 @@ npm run lint            # ESLint check
 npm run lint:fix        # Auto-fix linting issues
 npm run lint:prod       # Production lint check
 ```
+
+#### 🔒 **Port Security**
+```bash
+npm run security:port-check   # Check port security (only 5000 allowed)
+npm run security:port-watch   # Continuous port monitoring
+```
+**⚠️ CRITICAL RULE: Only Port 5000 is allowed. All other ports are forbidden and will be automatically closed.**
 
 #### 🐳 **Docker Operations**
 ```bash

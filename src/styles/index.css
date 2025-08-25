@@ -16,10 +16,10 @@ html {
   overflow-x: hidden;
   /* High-DPI text rendering */
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-smooth: always;
   text-rendering: optimizeLegibility;
   /* Prevent text size adjustment on mobile */
-  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -497,14 +497,13 @@ footer {
   }
 }
 
-/* K
-ategori yazıları için font düzeltmesi */
+/* Kategori yazıları için font düzeltmesi */
 .category-text-fix {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-feature-settings: 'kern' 1, 'liga' 1;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-smooth: always;
 }
 
 /* Türkçe karakter desteği */
@@ -514,8 +513,7 @@ ategori yazıları için font düzeltmesi */
   text-rendering: optimizeLegibility;
 }
 
-/* Kat
-egori butonları için genişlik düzeltmesi */
+/* Kategori butonları için genişlik düzeltmesi */
 .category-button-fix {
   min-width: max-content;
   flex-shrink: 0;

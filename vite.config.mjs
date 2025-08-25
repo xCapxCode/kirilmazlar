@@ -14,12 +14,17 @@ export default defineConfig({
   publicDir: 'public',
   server: {
     port: 5000,
-    strictPort: true,
+    strictPort: true, // ZORUNLU: Başka port kullanmaya izin verme
     host: 'localhost',
     fs: {
       strict: true,
       allow: ['./src', './public', './node_modules']
     }
+  },
+  preview: {
+    port: 5000,
+    strictPort: true, // ZORUNLU: Preview için de sadece 5000
+    host: 'localhost'
   },
   test: {
     globals: true,
