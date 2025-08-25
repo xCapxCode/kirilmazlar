@@ -1,65 +1,79 @@
 # ===========================================
-# KIRIILMAZLAR PANEL - RAILWAY OPTIMIZED DOCKERFILE v2.1
-# Production-ready React application for Railway deployment
+# KIRIILMAZLAR PANEL - RAILWAY OPTIMIZED DOCKERFILE v3.0
+# Ultra-reliable React application for Railway deployment
 # ===========================================
 
-# Build stage
-FROM node:18-alpine AS builder
+# Use Node.js LTS with full system (not Alpine) for better compatibility
+FROM node:18-slim AS builder
 
-# Install system dependencies for node-gyp and native modules
-RUN apk add --no-cache python3 make g++ git
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files first for better caching
+# Set npm configuration for better reliability
+RUN npm config set registry https://registry.npmjs.org/ && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000 && \
+    npm config set fetch-retries 3
+
+# Copy package files
 COPY package*.json ./
 
-# Clear npm cache and install dependencies
-RUN npm cache clean --force && \
-    npm install --silent --no-optional
+# Install dependencies with verbose logging
+RUN npm install --verbose --no-audit --no-fund
 
 # Copy source code
 COPY . .
 
-# Build application for production
+# Build application
 RUN npm run build
 
-# Production stage
-FROM node:18-alpine AS production
+# Production stage - use slim for smaller size
+FROM node:18-slim AS production
+
+# Install only runtime dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
 
-# Install serve globally for serving static files
-RUN apk add --no-cache python3 make g++ && \
-    npm install -g serve@14.2.1 --silent
+# Install serve globally
+RUN npm install -g serve@14.2.1
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S kirilmazlar -u 1001 -G nodejs
+# Create non-root user
+RUN groupadd -r nodejs && useradd -r -g nodejs kirilmazlar
 
-# Copy built application from builder stage
+# Copy built application
 COPY --from=builder /app/dist ./dist
 
-# Change ownership of the app directory
+# Set ownership
 RUN chown -R kirilmazlar:nodejs /app
 
 # Switch to non-root user
 USER kirilmazlar
 
-# Expose port (Railway will set PORT environment variable)
+# Expose port
 EXPOSE $PORT
 
-# Health check (using wget which is available in Alpine)
+# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:$PORT/ || exit 1
+  CMD curl -f http://localhost:$PORT/ || exit 1
 
-# Start the application using serve
+# Start application
 CMD ["serve", "-s", "dist", "-l", "$PORT"]
 
 # Metadata
 LABEL maintainer="GeniusCoder (Gen)" \
-  version="1.0.0" \
-  description="Kırılmazlar Panel - Production React Application for Railway" \
-  org.opencontainers.image.source="https://github.com/Ofis-Net/kirilmazlar"
+  version="3.0.0" \
+  description="Kırılmazlar Panel - Ultra-reliable Railway Deployment" \
+  org.opencontainers.image.source="https://github.com/xCapxCode/kirilmazlar"
