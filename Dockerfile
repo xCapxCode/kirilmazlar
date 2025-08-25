@@ -74,15 +74,16 @@ RUN chown -R kirilmazlar:nodejs /app
 # Switch to non-root user
 USER kirilmazlar
 
-# Expose port
-EXPOSE $PORT
+# Expose port (Railway provides PORT at runtime)
+EXPOSE 3000
+ENV PORT=3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:$PORT/ || exit 1
+  CMD curl -f http://localhost:${PORT}/ || exit 1
 
 # Start application
-CMD ["serve", "-s", "dist", "-l", "$PORT"]
+CMD ["sh", "-c", "serve -s dist -l ${PORT}"]
 
 # Metadata
 LABEL maintainer="GeniusCoder (Gen)" \
