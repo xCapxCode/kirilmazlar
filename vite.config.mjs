@@ -62,6 +62,22 @@ export default defineConfig({
     sourcemap: process.env.NODE_ENV !== 'production',
     minify: process.env.NODE_ENV === 'production' ? 'terser' : false,
     target: process.env.NODE_ENV === 'production' ? 'es2020' : 'esnext',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log'],
+        passes: 2
+      },
+      mangle: {
+        safari10: true,
+        keep_fnames: false
+      },
+      format: {
+        comments: false,
+        safari10: true
+      }
+    },
     rollupOptions: {
       output: {
         manualChunks: (id) => {
