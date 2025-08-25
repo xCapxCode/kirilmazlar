@@ -18,6 +18,43 @@ export const INITIAL_USERS = [
     isActive: true,
     createdAt: new Date().toISOString(),
     registeredAt: new Date().toISOString()
+  },
+  // Test kullanıcıları
+  {
+    id: 'user-seller-unerbul',
+    username: 'unerbul',
+    email: 'unerbul@hotmail.com',
+    password: '237711',
+    name: 'Üner Bul',
+    phone: '5XXXXXXXXX',
+    role: 'seller',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    registeredAt: new Date().toISOString()
+  },
+  {
+    id: 'user-customer-neset',
+    username: 'neset',
+    email: 'neset@example.com',
+    password: '237711',
+    name: 'Neşet',
+    phone: '5XXXXXXXXX',
+    role: 'customer',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    registeredAt: new Date().toISOString()
+  },
+  {
+    id: 'user-admin-bulent',
+    username: 'bulent',
+    email: 'bulent@example.com',
+    password: '237711',
+    name: 'Bülent',
+    phone: '5XXXXXXXXX',
+    role: 'admin',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    registeredAt: new Date().toISOString()
   }
 ];
 
