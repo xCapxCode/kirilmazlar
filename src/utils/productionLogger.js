@@ -223,13 +223,13 @@ class ProductionLogger {
 }
 
 // Create singleton instance
-const productionLogger = new ProductionLogger();
+const logger = new ProductionLogger();
 
 // Global access for debugging (development only)
-if (productionLogger.isDevelopment) {
-  window.productionLogger = productionLogger;
+if (logger.isDevelopment) {
+  window.logger = logger;
 }
 
-export default productionLogger;
-export { productionLogger as logger };
+export default logger;
+export { logger };
 
