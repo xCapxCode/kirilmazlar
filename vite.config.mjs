@@ -60,24 +60,9 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: process.env.NODE_ENV !== 'production',
-    minify: process.env.NODE_ENV === 'production' ? 'terser' : false,
-    target: process.env.NODE_ENV === 'production' ? 'es2020' : 'esnext',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-        pure_funcs: ['console.log'],
-        passes: 2
-      },
-      mangle: {
-        safari10: true,
-        keep_fnames: false
-      },
-      format: {
-        comments: false,
-        safari10: true
-      }
-    },
+    // Production optimizations - Minification kapatıldı lexical declaration hatası için
+    minify: false,
+    target: 'es2022',
     rollupOptions: {
       output: {
         manualChunks: (id) => {
