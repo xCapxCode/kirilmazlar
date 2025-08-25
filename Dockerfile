@@ -1,11 +1,11 @@
 # ===========================================
-# KIRIILMAZLAR PANEL - RAILWAY OPTIMIZED DOCKERFILE v3.1
+# KIRIILMAZLAR PANEL - RAILWAY OPTIMIZED DOCKERFILE v4.0
 # Ultra-reliable React application for Railway deployment
-# Force cache invalidation for Railway build
+# Complete cache invalidation and Alpine elimination
 # ===========================================
 
-# Use Node.js LTS with full system (not Alpine) for better compatibility
-FROM node:18-slim AS builder
+# Use Node.js LTS Debian-based image (NO ALPINE)
+FROM node:18-bullseye-slim AS builder
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -38,8 +38,8 @@ COPY . .
 # Build application
 RUN npm run build
 
-# Production stage - use slim for smaller size
-FROM node:18-slim AS production
+# Production stage - use Debian-based image (NO ALPINE)
+FROM node:18-bullseye-slim AS production
 
 # Install only runtime dependencies
 RUN apt-get update && apt-get install -y \
@@ -76,6 +76,6 @@ CMD ["serve", "-s", "dist", "-l", "$PORT"]
 
 # Metadata
 LABEL maintainer="GeniusCoder (Gen)" \
-  version="3.1.0" \
-  description="Kırılmazlar Panel - Ultra-reliable Railway Deployment" \
+  version="4.0.0" \
+  description="Kırılmazlar Panel - Ultra-reliable Railway Deployment (NO ALPINE)" \
   org.opencontainers.image.source="https://github.com/xCapxCode/kirilmazlar"
