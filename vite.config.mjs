@@ -79,6 +79,10 @@ export default defineConfig({
             }
             return 'vendor-misc';
           }
+          // ProductionLogger goes to vendor-misc to avoid conflicts
+          if (id.includes('/utils/productionLogger')) {
+            return 'vendor-misc';
+          }
           // App chunks
           if (id.includes('/src/apps/admin/')) {
             return 'app-admin';
