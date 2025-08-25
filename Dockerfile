@@ -1,19 +1,22 @@
 # ===========================================
-# KIRIILMAZLAR PANEL - RAILWAY OPTIMIZED DOCKERFILE v4.0
+# KIRIILMAZLAR PANEL - RAILWAY OPTIMIZED DOCKERFILE v5.0
 # Ultra-reliable React application for Railway deployment
-# Complete cache invalidation and Alpine elimination
+# Complete Ubuntu-based rebuild for cache invalidation
 # ===========================================
 
-# Use Node.js LTS Debian-based image (NO ALPINE)
-FROM node:18-bullseye-slim AS builder
+# Use Ubuntu-based Node.js image (COMPLETE ALPINE ELIMINATION)
+FROM ubuntu:22.04 AS builder
 
-# Install system dependencies
+# Install Node.js 18 and system dependencies
 RUN apt-get update && apt-get install -y \
+    curl \
     python3 \
     make \
     g++ \
     git \
-    curl \
+    ca-certificates \
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -38,12 +41,15 @@ COPY . .
 # Build application
 RUN npm run build
 
-# Production stage - use Debian-based image (NO ALPINE)
-FROM node:18-bullseye-slim AS production
+# Production stage - use Ubuntu-based image (COMPLETE ALPINE ELIMINATION)
+FROM ubuntu:22.04 AS production
 
-# Install only runtime dependencies
+# Install Node.js 18 and runtime dependencies
 RUN apt-get update && apt-get install -y \
     curl \
+    ca-certificates \
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -53,7 +59,8 @@ WORKDIR /app
 RUN npm install -g serve@14.2.1
 
 # Create non-root user
-RUN groupadd -r nodejs && useradd -r -g nodejs kirilmazlar
+RUN groupadd --system --gid 1001 nodejs && \
+    useradd --system --uid 1001 --gid nodejs kirilmazlar
 
 # Copy built application
 COPY --from=builder /app/dist ./dist
@@ -76,6 +83,6 @@ CMD ["serve", "-s", "dist", "-l", "$PORT"]
 
 # Metadata
 LABEL maintainer="GeniusCoder (Gen)" \
-  version="4.0.0" \
-  description="Kırılmazlar Panel - Ultra-reliable Railway Deployment (NO ALPINE)" \
+  version="5.0.0" \
+  description="Kırılmazlar Panel - Ultra-reliable Railway Deployment (UBUNTU-BASED)" \
   org.opencontainers.image.source="https://github.com/xCapxCode/kirilmazlar"
