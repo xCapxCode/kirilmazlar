@@ -21,15 +21,24 @@ class DataService {
 
         try {
             logger.info('🚀 DataService initialization başlıyor...');
+            
+            // Production environment kontrolü
+            const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+            logger.info('🌍 Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
+            
             this.isInitialized = true; // Hemen başlangıçta true yapalım
+            
             // Veri versiyonu kontrolü
             const currentVersion = '1.0.0';
             const savedVersion = storage.get('dataVersion');
 
             if (savedVersion !== currentVersion) {
                 logger.info('🔄 Veri versiyonu güncelleniyor:', savedVersion, '→', currentVersion);
-                // VERSİYON GÜNCELLEMEDE KULLANICI VERİLERİNİ SİLME
-                // this.resetAllData(); // KALDIRILDI - Kullanıcı verilerini koruyalım
+                // Production'da veri sıfırlama yapmayalım
+                if (!isProduction) {
+                    logger.info('🧹 Development ortamında veri sıfırlanıyor');
+                    // this.resetAllData(); // Gerekirse aktif et
+                }
                 storage.set('dataVersion', currentVersion);
             }
 
@@ -63,12 +72,33 @@ class DataService {
     ensureBaseData() {
         // Temel verilerin varlığını kontrol et ve eksikleri tamamla
 
-        // Kullanıcılar - Sadece admin kullanıcısı yoksa yükle
+        // Kullanıcılar - Sadece hiç kullanıcı yoksa yükle (mevcut kullanıcıları koru)
         const existingUsers = storage.get('users');
+        const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+        
+        logger.info('🔍 Existing users check:', { 
+            existingUsers: existingUsers?.length || 0, 
+            hasUsers: !!existingUsers,
+            isProduction 
+        });
+        
+        // Sadece hiç kullanıcı yoksa yükle - mevcut kullanıcıları koru
         if (!existingUsers || existingUsers.length === 0) {
-            // Sadece admin kullanıcısını yükle
+            logger.info('📥 Loading ALL_USERS (no existing users found):', ALL_USERS.length, ALL_USERS.map(u => u.username));
             storage.set('users', ALL_USERS);
-            logger.info('👥 Admin kullanıcısı yüklendi:', ALL_USERS.length);
+            logger.info('👥 Kullanıcılar yüklendi:', ALL_USERS.length);
+            
+            // Verify storage after setting
+            const verifyUsers = storage.get('users');
+            logger.info('✅ Verification - users in storage:', verifyUsers?.length || 0);
+            
+            // Kullanıcı detaylarını logla
+            const usernames = verifyUsers?.map(u => u.username) || [];
+            logger.info('🔐 Users loaded:', usernames);
+        } else {
+            logger.info('👥 Mevcut kullanıcılar korunuyor:', existingUsers.length);
+            const existingUsernames = existingUsers.map(u => u.username);
+            logger.info('🔐 Existing users preserved:', existingUsernames);
         }
 
         // Müşteriler - Demo müşteri verilerini yükle

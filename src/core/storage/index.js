@@ -120,9 +120,9 @@ class KirilmazlarStorage {
     if (!deviceId) {
       deviceId = 'device_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
       this.setRaw('device_id', deviceId);
-
-      // İlk kez cihaz ID oluşturulduğunda storage'ı temizle
-      this.clearAllData();
+      
+      // Device ID sadece unique identifier - veri silme işlemi yapma
+      logger.info('🆔 New device ID created:', deviceId);
     }
     return deviceId;
   }

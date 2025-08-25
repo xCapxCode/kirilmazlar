@@ -50,12 +50,31 @@ class AuthService {
   // Login
   async login(emailOrUsername, password, rememberMe = false) {
     try {
-      logger.debug('🔐 Login attempt started:', { emailOrUsername, rememberMe });
+      const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+      logger.debug('🔐 Login attempt started:', { emailOrUsername, rememberMe, environment: isProduction ? 'PRODUCTION' : 'DEVELOPMENT' });
 
       // Storage'ı direkt kullan - DataService dependency'si yok
       logger.debug('🔐 Getting users from storage...');
       const users = storage.get('users', []);
       logger.debug('🔐 Users found:', users.length);
+      logger.debug('🔐 Users data:', users);
+      
+      // Production'da kullanıcı listesini detaylı logla
+      if (isProduction) {
+        const usernames = users.map(u => u.username || u.email);
+        logger.info('🔐 Production users available:', usernames);
+        
+        // Storage durumunu kontrol et
+        const storageKeys = Object.keys(localStorage);
+        logger.info('💾 LocalStorage keys:', storageKeys.length, storageKeys.slice(0, 5));
+      }
+      
+      // Debug: Check if specific user exists
+      const testUser = users.find(u => u.username === emailOrUsername || u.email === emailOrUsername);
+      logger.debug('🔐 Test user found:', testUser);
+      if (testUser) {
+        logger.debug('🔐 Password match:', testUser.password === password);
+      }
 
       // Find user by email or username
       const user = users.find(u =>
@@ -64,6 +83,7 @@ class AuthService {
       );
 
       if (!user) {
+        logger.warn('❌ User not found:', emailOrUsername, 'Available users:', users.map(u => u.username || u.email));
         throw new Error('Invalid email/username or password');
       }
 
@@ -125,6 +145,17 @@ class AuthService {
 
       logger.debug('✅ Login successful:', { userId: userWithoutPassword.id, rememberMe });
 
+      // Production'da başarılı giriş detaylarını logla
+      if (isProduction) {
+        logger.info('🎉 Production login success:', {
+          username: userWithoutPassword.username || userWithoutPassword.email,
+          role: userWithoutPassword.role,
+          userId: userWithoutPassword.id,
+          rememberMe,
+          timestamp: new Date().toISOString()
+        });
+      }
+
       return {
         success: true,
         user: userWithoutPassword
@@ -132,6 +163,20 @@ class AuthService {
 
     } catch (error) {
       logger.error('❌ Login error:', error);
+      
+      // Production'da hata detaylarını logla
+      const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+      if (isProduction) {
+        const users = storage.get('users', []);
+        logger.error('🚨 Production login error details:', {
+          emailOrUsername,
+          error: error.message,
+          usersCount: users.length,
+          availableUsers: users.map(u => u.username || u.email),
+          storageSize: Object.keys(localStorage).length
+        });
+      }
+      
       await this.clearAuthStorage(); // Clear on error
       return {
         success: false,

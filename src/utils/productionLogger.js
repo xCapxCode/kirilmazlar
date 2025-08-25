@@ -165,14 +165,29 @@ class ProductionLogger {
    * @param {any[]} args - Error arguments
    */
   reportToErrorService(args) {
-    // TODO: Implement external error reporting
-    // For now, store in localStorage for later collection
     try {
+      // Railway deployment bilgilerini topla
+      const railwayInfo = {
+        environment: import.meta.env.VITE_APP_ENVIRONMENT || 'unknown',
+        railwayUrl: import.meta.env.VITE_API_BASE_URL || 'not-set',
+        nodeEnv: import.meta.env.NODE_ENV || 'unknown',
+        mode: import.meta.env.MODE || 'unknown',
+        prod: import.meta.env.PROD || false
+      };
+      
+      // Gerçek bir hata servisi entegrasyonu burada olabilir
+      // Şimdilik localStorage'a kaydet
       const errorLog = {
         timestamp: new Date().toISOString(),
         error: args,
         userAgent: navigator.userAgent,
-        url: window.location.href
+        url: window.location.href,
+        railway: railwayInfo,
+        storage: {
+          localStorageSize: Object.keys(localStorage).length,
+          hasUsers: !!localStorage.getItem('users'),
+          hasCurrentUser: !!localStorage.getItem('currentUser')
+        }
       };
 
       const errors = JSON.parse(localStorage.getItem('error_logs') || '[]');
@@ -184,8 +199,21 @@ class ProductionLogger {
       }
 
       localStorage.setItem('error_logs', JSON.stringify(errors));
+      
+      // Railway production'da console'a da yaz (Railway logs için)
+      if (railwayInfo.environment === 'production' || railwayInfo.prod) {
+        console.log('🚂 RAILWAY LOG:', JSON.stringify({
+          level: 'error',
+          message: args,
+          timestamp: errorLog.timestamp,
+          railway: railwayInfo,
+          data: typeof args === 'object' ? JSON.stringify(args) : args
+        }));
+      }
+      
     } catch (e) {
       // Silent fail - don't break the app
+      console.error('Error reporting failed:', e);
     }
   }
 
@@ -219,6 +247,29 @@ class ProductionLogger {
   clearErrorLogs() {
     localStorage.removeItem('error_logs');
     this.success('Error logs cleared');
+  }
+
+  /**
+   * Railway-specific logging method
+   * @param {string} message - Log message
+   * @param {any} data - Additional data
+   */
+  railway(message, data = {}) {
+    const railwayLog = {
+      timestamp: new Date().toISOString(),
+      message,
+      data,
+      environment: import.meta.env.VITE_APP_ENVIRONMENT || 'unknown',
+      url: window.location.href
+    };
+    
+    // Her zaman console'a yaz (Railway logs için)
+    console.log('🚂 RAILWAY:', JSON.stringify(railwayLog));
+    
+    // Development'da da detaylı göster
+    if (this.isDevelopment) {
+      console.info(`🚂 [RAILWAY] ${message}`, data);
+    }
   }
 }
 
