@@ -60,8 +60,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: process.env.NODE_ENV !== 'production',
-    minify: process.env.NODE_ENV === 'production' ? 'esbuild' : false,
-    target: process.env.NODE_ENV === 'production' ? 'es2015' : 'esnext',
+    minify: process.env.NODE_ENV === 'production' ? 'terser' : false,
+    target: process.env.NODE_ENV === 'production' ? 'es2020' : 'esnext',
     rollupOptions: {
       output: {
         manualChunks: (id) => {
