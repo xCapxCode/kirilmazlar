@@ -3,7 +3,7 @@ import { useNotification } from '../../../../../../contexts/NotificationContext'
 import storage from '../../../../../../core/storage';
 import productSyncService from '../../../../../../services/productSyncService';
 import Icon from '../../../../../../shared/components/AppIcon';
-import logger from '../../../../../../utils/logger';
+import logger from '../../../../../../utils/productionLogger';
 
 const ModernUrunModali = ({ product, categories, activeCategory, onSave, onClose }) => {
   const { showSuccess, showError } = useNotification();

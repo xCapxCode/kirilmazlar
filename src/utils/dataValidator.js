@@ -1,6 +1,6 @@
 // Veri Doğrulama ve Tutarlılık Kontrolü
 import storage from '@core/storage';
-import logger from './logger.js';
+import logger from './productionLogger.js';
 
 class DataValidator {
   constructor() {

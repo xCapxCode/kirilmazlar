@@ -3,7 +3,7 @@ import storage from '@core/storage';
 import { ALL_USERS, INITIAL_CUSTOMERS } from '../data/initialData.js';
 import { DEMO_CUSTOMERS, DEMO_ORDERS } from '../data/demoData.js';
 import dataValidator from '../utils/dataValidator.js';
-import logger from '../utils/logger.js';
+import logger from '../utils/productionLogger.js';
 
 class DataService {
     constructor() {
