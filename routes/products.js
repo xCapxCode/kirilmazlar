@@ -34,7 +34,7 @@ router.get('/', async (req, res) => {
     
     let query = `
       SELECT p.id, p.name, p.description, p.sku, p.price, p.cost_price, 
-             p.stock_quantity, p.min_stock_level, p.active, p.image_url,
+             p.stock_quantity, p.min_stock_level, p.status, p.image_url,
              p.created_at, p.updated_at,
              c.name as category_name, c.id as category_id
       FROM products p
@@ -50,8 +50,9 @@ router.get('/', async (req, res) => {
     }
     
     if (active !== undefined) {
-      params.push(active === 'true');
-      query += ` AND p.active = $${params.length}`;
+      const statusValue = active === 'true' ? 'active' : 'inactive';
+      params.push(statusValue);
+      query += ` AND p.status = $${params.length}`;
     }
     
     if (in_stock === 'true') {
@@ -100,8 +101,9 @@ router.get('/', async (req, res) => {
     }
     
     if (active !== undefined) {
-      countParams.push(active === 'true');
-      countQuery += ` AND p.active = $${countParams.length}`;
+      const statusValue = active === 'true' ? 'active' : 'inactive';
+      countParams.push(statusValue);
+      countQuery += ` AND p.status = $${countParams.length}`;
     }
     
     if (in_stock === 'true') {
@@ -151,7 +153,7 @@ router.get('/:id', async (req, res) => {
     
     const query = `
       SELECT p.id, p.name, p.description, p.sku, p.price, p.cost_price, 
-             p.stock_quantity, p.min_stock_level, p.active, p.image_url,
+             p.stock_quantity, p.min_stock_level, p.status, p.image_url,
              p.created_at, p.updated_at,
              c.name as category_name, c.id as category_id
       FROM products p
@@ -245,7 +247,7 @@ router.post('/', authenticateToken, requireRole(['admin', 'seller']), async (req
       // Insert new product
       const insertProductQuery = `
         INSERT INTO products (name, description, sku, price, cost_price, category_id, 
-                             stock_quantity, min_stock_level, active, image_url, created_at, updated_at)
+                             stock_quantity, min_stock_level, status, featured_image, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
         RETURNING *
       `;
@@ -259,7 +261,7 @@ router.post('/', authenticateToken, requireRole(['admin', 'seller']), async (req
         category_id || null,
         parseInt(stock_quantity),
         parseInt(min_stock_level),
-        active,
+        active ? 'active' : 'inactive',
         image_url
       ]);
 
@@ -268,9 +270,9 @@ router.post('/', authenticateToken, requireRole(['admin', 'seller']), async (req
       // Record initial stock if any
       if (stock_quantity > 0) {
         await client.query(
-          `INSERT INTO inventory_movements (product_id, movement_type, quantity, reference_type, notes, created_at)
-           VALUES ($1, 'in', $2, 'initial_stock', 'Initial stock entry', NOW())`,
-          [newProduct.id, stock_quantity]
+          `INSERT INTO inventory_movements (product_id, movement_type, quantity, previous_stock, new_stock, reference_type, notes, created_at)
+           VALUES ($1, 'purchase', $2, 0, $2, 'initial_stock', 'Initial stock entry', NOW())`,
+          [newProduct.id, stock_quantity, stock_quantity]
         );
       }
 
@@ -401,8 +403,8 @@ router.put('/:id', authenticateToken, requireRole(['admin', 'seller']), async (r
       updateValues.push(image_url);
     }
     if (active !== undefined) {
-      updateFields.push(`active = $${++paramCount}`);
-      updateValues.push(active);
+      updateFields.push(`status = $${++paramCount}`);
+      updateValues.push(active ? 'active' : 'inactive');
     }
 
     if (updateFields.length === 0) {
@@ -460,10 +462,10 @@ router.put('/:id/stock', authenticateToken, requireRole(['admin', 'seller']), as
       return res.status(400).json({ success: false, error: 'Valid quantity is required' });
     }
 
-    if (!movement_type || !['in', 'out', 'adjustment'].includes(movement_type)) {
+    if (!movement_type || !['purchase', 'sale', 'adjustment', 'return', 'damage', 'transfer'].includes(movement_type)) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Valid movement_type is required (in, out, adjustment)' 
+        error: 'Valid movement_type is required (purchase, sale, adjustment, return, damage, transfer)' 
       });
     }
 
@@ -648,7 +650,7 @@ router.get('/stats/overview', authenticateToken, requireRole(['admin', 'seller']
         COUNT(p.id) as product_count,
         ROUND(AVG(p.price), 2) as avg_price
       FROM categories c
-      LEFT JOIN products p ON c.id = p.category_id AND p.active = true
+      LEFT JOIN products p ON c.id = p.category_id AND p.status = 'active'
       GROUP BY c.id, c.name
       ORDER BY product_count DESC
     `);
@@ -676,7 +678,7 @@ router.get('/categories/list', async (req, res) => {
       SELECT c.id, c.name, c.description, c.active, c.created_at,
              COUNT(p.id) as product_count
       FROM categories c
-      LEFT JOIN products p ON c.id = p.category_id AND p.active = true
+      LEFT JOIN products p ON c.id = p.category_id AND p.status = 'active'
       WHERE c.active = true
       GROUP BY c.id, c.name, c.description, c.active, c.created_at
       ORDER BY c.name

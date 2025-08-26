@@ -95,9 +95,20 @@ export default defineConfig({
             return 'shared';
           }
         },
-        chunkFileNames: `assets/js/[name]-[hash]-${Date.now()}.js`,
-        entryFileNames: `assets/js/[name]-[hash]-${Date.now()}.js`,
-        assetFileNames: `assets/[ext]/[name]-[hash]-${Date.now()}.[ext]`
+        chunkFileNames: () => `js/chunk-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.js`,
+        entryFileNames: () => `js/app-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.js`,
+        assetFileNames: (assetInfo) => {
+          const extType = assetInfo.name.split('.').at(1);
+          const timestamp = Date.now();
+          const random = Math.random().toString(36).substr(2, 9);
+          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(extType)) {
+            return `images/${assetInfo.name.split('.')[0]}-${timestamp}-${random}[extname]`;
+          }
+          if (/css/i.test(extType)) {
+            return `css/${assetInfo.name.split('.')[0]}-${timestamp}-${random}[extname]`;
+          }
+          return `assets/${assetInfo.name.split('.')[0]}-${timestamp}-${random}[extname]`;
+        }
       },
       external: []
     },
