@@ -34,7 +34,7 @@ router.get('/', async (req, res) => {
     
     let query = `
       SELECT p.id, p.name, p.description, p.sku, p.price, p.cost_price, 
-             p.stock_quantity, p.min_stock_level, p.status, p.image_url,
+             p.stock_quantity, p.min_stock_level, p.status, p.featured_image as image_url,
              p.created_at, p.updated_at,
              c.name as category_name, c.id as category_id
       FROM products p
@@ -153,7 +153,7 @@ router.get('/:id', async (req, res) => {
     
     const query = `
       SELECT p.id, p.name, p.description, p.sku, p.price, p.cost_price, 
-             p.stock_quantity, p.min_stock_level, p.status, p.image_url,
+             p.stock_quantity, p.min_stock_level, p.status, p.featured_image as image_url,
              p.created_at, p.updated_at,
              c.name as category_name, c.id as category_id
       FROM products p
