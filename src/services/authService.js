@@ -33,7 +33,9 @@ class AuthService {
         'kirilmazlar_concurrent_sessions',
         'kirilmazlar_session_activity',
         'rememberMe',
-        'sessionExpiry'
+        'sessionExpiry',
+        'auth_token',
+        'kirilmazlar_auth_token'
       ];
 
       // Clear all auth items
@@ -190,10 +192,28 @@ class AuthService {
         await this.sessionManager.initializeSession(userWithoutPassword.id);
       }
 
+      // Generate JWT token for API authentication
+      const tokenPayload = {
+        userId: userWithoutPassword.id,
+        username: userWithoutPassword.username,
+        role: userWithoutPassword.role,
+        sessionId: Date.now().toString()
+      };
+      
+      // Create a simple token for API authentication
+      const token = btoa(JSON.stringify(tokenPayload));
+      
+      // Set token in API service
+      if (apiService && apiService.setToken) {
+        apiService.setToken(token);
+        logger.debug('🔑 API token set for authentication');
+      }
+      
       // Set current user and auth state with remember me logic
       this.currentUser = userWithoutPassword;
       await storage.set('currentUser', userWithoutPassword);
       await storage.set('isAuthenticated', true);
+      await storage.set('auth_token', token);
       
       // Remember me functionality
       if (rememberMe) {
@@ -255,6 +275,12 @@ class AuthService {
   // Logout
   async logout() {
     try {
+      // Clear API token
+      if (apiService && apiService.setToken) {
+        apiService.setToken(null);
+        logger.debug('🔑 API token cleared');
+      }
+      
       await this.clearAuthStorage();
       logger.info('👋 Logout successful');
       return { success: true };
@@ -295,6 +321,14 @@ class AuthService {
 
       if (savedUser && isAuthenticated) {
         this.currentUser = savedUser;
+        
+        // Restore API token if available
+        const savedToken = storage.get('auth_token');
+        if (savedToken && apiService && apiService.setToken) {
+          apiService.setToken(savedToken);
+          logger.debug('🔑 API token restored from storage');
+        }
+        
         return savedUser;
       }
 
@@ -335,6 +369,16 @@ class AuthService {
     } catch (error) {
       logger.error('❌ Session validation error:', error);
       return false;
+    }
+  }
+
+  // Get current authentication token
+  getToken() {
+    try {
+      return storage.get('auth_token');
+    } catch (error) {
+      logger.error('❌ Get token error:', error);
+      return null;
     }
   }
 
