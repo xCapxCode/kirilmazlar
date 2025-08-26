@@ -111,7 +111,6 @@ export default defineConfig({
           });
         }
       }]
-      }
     },
     // Bundle size optimizations
     chunkSizeWarningLimit: 1000,
