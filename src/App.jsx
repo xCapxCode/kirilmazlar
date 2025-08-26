@@ -35,8 +35,8 @@ function App() {
         // Initialize security hardening
         securityService.initialize();
 
-        // Initialize performance monitoring
-        bundleAnalyzer.initialize();
+        // Initialize performance monitoring - DISABLED to fix CSS loading issue
+        // bundleAnalyzer.initialize();
 
         // Initialize service worker
         await serviceWorkerManager.initialize();
