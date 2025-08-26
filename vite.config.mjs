@@ -94,9 +94,9 @@ export default defineConfig({
             return 'shared';
           }
         },
-        chunkFileNames: 'assets/js/[name]-[hash].js',
-        entryFileNames: 'assets/js/[name]-[hash].js',
-        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
+        chunkFileNames: `assets/js/[name]-[hash]-${Date.now()}.js`,
+        entryFileNames: `assets/js/[name]-[hash]-${Date.now()}.js`,
+        assetFileNames: `assets/[ext]/[name]-[hash]-${Date.now()}.[ext]`
       },
       external: [],
       // Force new hash generation
