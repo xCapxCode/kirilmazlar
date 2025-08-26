@@ -23,6 +23,7 @@ import http from 'http';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import socketManager from './websocket/socketManager.js';
+import { initializeDatabase } from './src/utils/dbMigration.js';
 import dotenv from 'dotenv';
 
 // Environment configuration
@@ -61,14 +62,15 @@ ordersRoutes.setPool(pool);
 productsRoutes.setPool(pool);
 authMiddleware.setPool(pool);
 
-// Test database connection
-pool.connect((err, client, release) => {
-  if (err) {
-    console.error('❌ Database connection error:', err.stack);
+// Initialize database with migrations
+initializeDatabase().then((result) => {
+  if (result.success) {
+    console.log('✅ Database initialized successfully');
   } else {
-    console.log('✅ Database connected successfully');
-    release();
+    console.log(`⚠️  Running in ${result.mode} mode:`, result.error || 'No database connection');
   }
+}).catch((error) => {
+  console.error('❌ Database initialization failed:', error);
 });
 
 // Security middleware

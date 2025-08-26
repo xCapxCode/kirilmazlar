@@ -250,7 +250,6 @@ class BundleAnalyzer {
       // Preload critical resources in production
       if (this.isProduction) {
         this.preloadCriticalResources([
-          { href: '/assets/main.css', as: 'style' },
           { href: '/favicon.svg', as: 'image' }
         ]);
       }

@@ -69,6 +69,7 @@ COPY routes ./routes
 COPY middleware ./middleware
 COPY websocket ./websocket
 COPY database ./database
+COPY src ./src
 
 # Set environment variables
 ENV NODE_ENV=production
