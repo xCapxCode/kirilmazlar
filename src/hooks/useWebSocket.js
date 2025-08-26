@@ -135,7 +135,32 @@ export const useProductEvents = () => {
 };
 
 export const useNotifications = () => {
-  const { subscribe, unsubscribe } = useWebSocket();
+  const listenersRef = useRef(new Map());
+
+  // Subscribe to events without auth dependency
+  const subscribe = useCallback((event, callback) => {
+    // Remove existing listener if any
+    if (listenersRef.current.has(event)) {
+      websocketService.off(event, listenersRef.current.get(event));
+    }
+
+    // Add new listener
+    websocketService.on(event, callback);
+    listenersRef.current.set(event, callback);
+
+    // Return unsubscribe function
+    return () => {
+      websocketService.off(event, callback);
+      listenersRef.current.delete(event);
+    };
+  }, []);
+
+  const unsubscribe = useCallback((event) => {
+    if (listenersRef.current.has(event)) {
+      websocketService.off(event, listenersRef.current.get(event));
+      listenersRef.current.delete(event);
+    }
+  }, []);
 
   const onNotification = useCallback((callback) => {
     return subscribe('notification', callback);
