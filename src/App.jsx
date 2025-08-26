@@ -15,7 +15,7 @@ import ConcurrentSessionModal from "./shared/components/ConcurrentSessionModal";
 import NetworkStatus from "./shared/components/NetworkStatus";
 import SecurityAlertModal from "./shared/components/SecurityAlertModal";
 import SessionWarningModal from "./shared/components/SessionWarningModal";
-import bundleAnalyzer from "./utils/BundleAnalyzer";
+// import bundleAnalyzer from "./utils/BundleAnalyzer"; // DISABLED to fix CSS loading issue
 import errorTracker from "./utils/ErrorTracker";
 import healthMonitor from "./utils/HealthMonitor";
 import maintenanceManager from "./utils/MaintenanceManager";
