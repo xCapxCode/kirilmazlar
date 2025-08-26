@@ -31,8 +31,11 @@
   ],
   "rewrites": [
     {
-      "source": "**",
+      "source": "!(assets/**|favicon.*|manifest.json)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "cleanUrls": false,
+  "trailingSlash": false,
+  "directoryListing": false
 }
