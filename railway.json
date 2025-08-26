@@ -3,7 +3,6 @@
   "build": {
     "builder": "DOCKERFILE",
     "dockerfilePath": "Dockerfile",
-    "buildCommand": "npm ci --production=false && npm run build",
     "watchPatterns": [
       "src/**",
       "public/**",
