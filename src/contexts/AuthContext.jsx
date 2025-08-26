@@ -4,6 +4,7 @@ import authService from "../services/authService";
 import profileIsolationService from "../services/profileIsolationService";
 import securityMonitorService from "../services/securityMonitorService";
 import sessionManagementService from "../services/sessionManagementService";
+import logger from "../utils/productionLogger";
 
 const AuthContext = createContext();
 
