@@ -65,8 +65,9 @@ RUN npm install -g serve@14.2.1
 RUN groupadd --system --gid 1001 nodejs && \
     useradd --system --uid 1001 --gid nodejs kirilmazlar
 
-# Copy built application
+# Copy built application and serve config
 COPY --from=builder /app/dist ./dist
+COPY serve.json ./serve.json
 
 # Set ownership
 RUN chown -R kirilmazlar:nodejs /app
@@ -82,8 +83,8 @@ ENV PORT=3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:${PORT}/ || exit 1
 
-# Start application
-CMD ["sh", "-c", "serve -s dist -l ${PORT}"]
+# Start application with proper MIME types
+CMD ["sh", "-c", "serve -c serve.json -l ${PORT}"]
 
 # Metadata
 LABEL maintainer="GeniusCoder (Gen)" \
