@@ -65,53 +65,62 @@ export default defineConfig({
     minify: false,
     target: 'es2022',
     rollupOptions: {
-      output: {
-        manualChunks: (id) => {
-          // Vendor chunks
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'vendor-react';
+        output: {
+          manualChunks: (id) => {
+            // Vendor chunks
+            if (id.includes('node_modules')) {
+              if (id.includes('react') || id.includes('react-dom')) {
+                return 'vendor-react';
+              }
+              if (id.includes('react-router')) {
+                return 'vendor-router';
+              }
+              if (id.includes('lucide-react') || id.includes('react-icons')) {
+                return 'vendor-icons';
+              }
+              return 'vendor-misc';
             }
-            if (id.includes('react-router')) {
-              return 'vendor-router';
+            // ProductionLogger goes to vendor-misc to avoid conflicts
+            if (id.includes('/utils/productionLogger')) {
+              return 'vendor-misc';
             }
-            if (id.includes('lucide-react') || id.includes('react-icons')) {
-              return 'vendor-icons';
+            // App chunks
+            if (id.includes('/src/apps/admin/')) {
+              return 'app-admin';
             }
-            return 'vendor-misc';
-          }
-          // ProductionLogger goes to vendor-misc to avoid conflicts
-          if (id.includes('/utils/productionLogger')) {
-            return 'vendor-misc';
-          }
-          // App chunks
-          if (id.includes('/src/apps/admin/')) {
-            return 'app-admin';
-          }
-          if (id.includes('/src/apps/customer/')) {
-            return 'app-customer';
-          }
-          if (id.includes('/src/shared/')) {
-            return 'shared';
+            if (id.includes('/src/apps/customer/')) {
+              return 'app-customer';
+            }
+            if (id.includes('/src/shared/')) {
+              return 'shared';
+            }
+          },
+          chunkFileNames: () => {
+            const timestamp = Date.now();
+            const random = Math.random().toString(36).substring(2, 8);
+            return `js/chunk-${timestamp}-${random}.js`;
+          },
+          entryFileNames: () => {
+            const timestamp = Date.now();
+            const random = Math.random().toString(36).substring(2, 8);
+            return `js/[name]-${timestamp}-${random}.js`;
+          },
+          assetFileNames: (assetInfo) => {
+            const timestamp = Date.now();
+            const random = Math.random().toString(36).substring(2, 8);
+            const info = assetInfo.name.split('.');
+            const ext = info[info.length - 1];
+            if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext)) {
+              return `images/[name]-${timestamp}-${random}.[ext]`;
+            }
+            if (/css/i.test(ext)) {
+              return `css/[name]-${timestamp}-${random}.[ext]`;
+            }
+            return `assets/[name]-${timestamp}-${random}.[ext]`;
           }
         },
-        chunkFileNames: () => `js/chunk-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.js`,
-        entryFileNames: () => `js/app-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.js`,
-        assetFileNames: (assetInfo) => {
-          const extType = assetInfo.name.split('.').at(1);
-          const timestamp = Date.now();
-          const random = Math.random().toString(36).substr(2, 9);
-          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(extType)) {
-            return `images/${assetInfo.name.split('.')[0]}-${timestamp}-${random}[extname]`;
-          }
-          if (/css/i.test(extType)) {
-            return `css/${assetInfo.name.split('.')[0]}-${timestamp}-${random}[extname]`;
-          }
-          return `assets/${assetInfo.name.split('.')[0]}-${timestamp}-${random}[extname]`;
-        }
+        external: []
       },
-      external: []
-    },
     // Bundle size optimizations
     chunkSizeWarningLimit: 1000,
     reportCompressedSize: false
