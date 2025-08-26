@@ -9,7 +9,7 @@
     "build:auto-task": "cd packages/auto-task-progression && npm run build",
     "dev": "vite --mode development --port 5000 --strictPort",
     "dev:staging": "vite --mode staging --port 5000 --strictPort",
-    "build": "vite build --mode production",
+    "build": "vite build --mode production --define.BUILD_TIMESTAMP='\"$(date +%s)\"'",
     "build:staging": "vite build --mode staging",
     "build:dev": "vite build --mode development",
     "analyze": "vite build --mode production && npx vite-bundle-analyzer dist",
