@@ -125,7 +125,6 @@ export const NotificationProvider = ({ children }) => {
   // Legacy state for backward compatibility
   const [legacyNotifications, setLegacyNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const { onNotification, onSystemMaintenance } = useNotifications();
 
   // Legacy notification methods
   const addNotification = useCallback((message, type = 'info', title = null, duration = 5000) => {
@@ -194,36 +193,8 @@ export const NotificationProvider = ({ children }) => {
     setUnreadCount(0);
   }, []);
 
-  // Listen to WebSocket notifications
-  useEffect(() => {
-    const unsubscribeNotification = onNotification((data) => {
-      const notificationId = addNotification(
-        data.message,
-        data.type || 'info',
-        data.title,
-        data.persistent ? 0 : 5000
-      );
-      
-      // Update unread count
-      setUnreadCount(prev => prev + 1);
-    });
-
-    const unsubscribeMaintenance = onSystemMaintenance((data) => {
-      addNotification(
-        data.message || 'Sistem bakımı planlanmıştır',
-        'warning',
-        'Sistem Bakımı',
-        0 // Persistent
-      );
-      
-      setUnreadCount(prev => prev + 1);
-    });
-
-    return () => {
-      if (unsubscribeNotification) unsubscribeNotification();
-      if (unsubscribeMaintenance) unsubscribeMaintenance();
-    };
-  }, [onNotification, onSystemMaintenance, addNotification]);
+  // WebSocket notifications will be handled separately when auth is available
+  // This prevents the AuthProvider dependency issue during app initialization
 
   const contextValue = {
     // Legacy methods
