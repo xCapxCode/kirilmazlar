@@ -7,7 +7,7 @@
  * @date July 24, 2025
  */
 
-import { createContext, useCallback, useContext, useState, useEffect } from 'react';
+import { createContext, useCallback, useContext, useState } from 'react';
 import {
   EnhancedNotificationProvider,
   TOAST_DURATIONS,
@@ -16,7 +16,6 @@ import {
   useEnhancedNotification
 } from '../components/ui/EnhancedNotifications';
 import Icon from '../shared/components/AppIcon';
-import { useNotifications } from '../hooks/useWebSocket';
 
 const NotificationContext = createContext();
 
