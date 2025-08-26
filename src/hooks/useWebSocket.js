@@ -1,29 +1,24 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useRef, useCallback } from 'react';
 import { websocketService } from '../services/websocketService';
-import { useAuth } from '../contexts/AuthContext';
 
 export const useWebSocket = () => {
-  const { isAuthenticated } = useAuth();
   const listenersRef = useRef(new Map());
 
-  // Connect when authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      websocketService.connect().catch(error => {
-        console.error('WebSocket connection failed:', error);
-      });
-    } else {
-      websocketService.disconnect();
-    }
+  // Manual connection control - no automatic auth dependency
+  const connect = useCallback(() => {
+    return websocketService.connect().catch(error => {
+      console.error('WebSocket connection failed:', error);
+    });
+  }, []);
 
-    return () => {
-      // Clean up listeners when component unmounts
-      listenersRef.current.forEach((callback, event) => {
-        websocketService.off(event, callback);
-      });
-      listenersRef.current.clear();
-    };
-  }, [isAuthenticated]);
+  const disconnect = useCallback(() => {
+    websocketService.disconnect();
+    // Clean up listeners when disconnecting
+    listenersRef.current.forEach((callback, event) => {
+      websocketService.off(event, callback);
+    });
+    listenersRef.current.clear();
+  }, []);
 
   // Subscribe to events
   const subscribe = useCallback((event, callback) => {
@@ -72,6 +67,8 @@ export const useWebSocket = () => {
   }, []);
 
   return {
+    connect,
+    disconnect,
     subscribe,
     unsubscribe,
     send,
