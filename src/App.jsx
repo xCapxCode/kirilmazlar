@@ -91,10 +91,10 @@ function App() {
   }, []);
 
   return (
-    <NotificationProvider>
-      <ModalProvider>
-        <BusinessProvider>
-          <AuthProvider>
+    <AuthProvider>
+      <NotificationProvider>
+        <ModalProvider>
+          <BusinessProvider>
             <CartProvider>
               <NetworkStatus />
               <SessionWarningModal />
@@ -102,10 +102,10 @@ function App() {
               <SecurityAlertModal />
               <Routes />
             </CartProvider>
-          </AuthProvider>
-        </BusinessProvider>
-      </ModalProvider>
-    </NotificationProvider>
+          </BusinessProvider>
+        </ModalProvider>
+      </NotificationProvider>
+    </AuthProvider>
   );
 }
 
