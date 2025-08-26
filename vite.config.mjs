@@ -95,23 +95,11 @@ export default defineConfig({
             return 'shared';
           }
         },
-        chunkFileNames: `assets/js/[name]-[hash]-${Date.now()}.js`,
-        entryFileNames: `assets/js/[name]-[hash]-${Date.now()}.js`,
-        assetFileNames: `assets/[ext]/[name]-[hash]-${Date.now()}.[ext]`
+        chunkFileNames: `assets/js/[name]-[hash].js`,
+        entryFileNames: `assets/js/[name]-[hash].js`,
+        assetFileNames: `assets/[ext]/[name]-[hash].[ext]`
       },
-      external: [],
-      // Force new hash generation
-      plugins: [{
-        name: 'force-rebuild',
-        generateBundle() {
-          // Force cache invalidation with timestamp
-          this.emitFile({
-            type: 'asset',
-            fileName: '.build-timestamp',
-            source: Date.now().toString()
-          });
-        }
-      }]
+      external: []
     },
     // Bundle size optimizations
     chunkSizeWarningLimit: 1000,
