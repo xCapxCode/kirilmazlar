@@ -40,6 +40,7 @@ export const CSP_POLICY = {
   'connect-src': [
     "'self'",
     'ws:', 'wss:', // For WebSocket connections
+    'https://kirilmazlar.up.railway.app', // Railway API endpoints
     'https://api.kirilmazlar.com' // API endpoints
   ],
   'media-src': ["'self'", 'data:', 'blob:'],
@@ -88,7 +89,7 @@ export const PRODUCTION_CSP_POLICY = {
   'style-src': ["'self'", "'sha256-HASH_OF_INLINE_STYLES'"],
   'img-src': ["'self'", 'data:', 'https:'],
   'font-src': ["'self'", 'data:', 'https://fonts.gstatic.com'],
-  'connect-src': ["'self'", 'https://api.kirilmazlar.com'],
+  'connect-src': ["'self'", 'https://kirilmazlar.up.railway.app', 'https://api.kirilmazlar.com'],
   'media-src': ["'self'", 'data:'],
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
