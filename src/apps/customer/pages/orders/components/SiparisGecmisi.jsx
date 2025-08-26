@@ -5,6 +5,7 @@ import { useNotification } from '../../../../../contexts/NotificationContext';
 import orderService from '../../../../../services/orderService';
 // Order sync utility removed - using direct order service
 import storage from '@core/storage';
+import logger from '@utils/productionLogger';
 import SiparisDetayModali from './SiparisDetayModali';
 import SiparisIptalModali from './SiparisIptalModali';
 
@@ -86,6 +87,41 @@ const SiparisGecmisi = ({ customerId }) => {
       logger.error('Error cancelling order:', error);
       showError('Sipariş iptal edilirken bir hata oluştu');
       return false;
+    }
+  };
+
+  const handleDeleteOrder = async (orderId) => {
+    const confirmed = await showConfirm(
+      'Bu siparişi silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz.',
+      {
+        title: 'Sipariş Sil',
+        confirmText: 'Sil',
+        cancelText: 'İptal',
+        type: 'danger'
+      }
+    );
+
+    if (confirmed) {
+      try {
+        logger.info('🗑️ Sipariş siliniyor:', orderId);
+
+        // OrderService kullanarak siparişi sil
+        const success = await orderService.delete(orderId);
+
+        if (!success) {
+          throw new Error('Sipariş bulunamadı veya silinemedi');
+        }
+
+        // Local state'i güncelle
+        setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
+
+        logger.info('✅ Sipariş silindi');
+        showSuccess('Sipariş başarıyla silindi');
+
+      } catch (error) {
+        logger.error('❌ Sipariş silme hatası:', error);
+        showError('Sipariş silinirken hata oluştu');
+      }
     }
   };
 
@@ -332,6 +368,7 @@ const SiparisGecmisi = ({ customerId }) => {
             setSelectedOrder(order);
             setShowCancelModal(true);
           }}
+          onDelete={handleDeleteOrder}
         />
       )}
     </div>

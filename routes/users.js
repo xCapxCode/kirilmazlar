@@ -3,9 +3,9 @@
  * User management endpoints
  */
 
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const { authenticateToken, requireRole, requireAdmin } = require('../middleware/auth');
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import { authenticateToken, requireRole, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -480,4 +480,4 @@ router.get('/stats/overview', authenticateToken, requireRole(['admin']), async (
   }
 });
 
-module.exports = { router, setPool };
+export default { router, setPool };

@@ -1,6 +1,7 @@
 import Icon from '@shared/components/AppIcon';
 import { useEffect, useState } from 'react';
 import { useNotification } from '../../../../../contexts/NotificationContext';
+import logger from '@utils/productionLogger';
 // Order cleanup utility removed - using direct order service
 
 const ArsivlenmisModali = ({ onClose }) => {

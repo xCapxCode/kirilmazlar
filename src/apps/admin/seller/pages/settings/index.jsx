@@ -5,6 +5,7 @@ import { useModal } from '../../../../../contexts/ModalContext';
 import { useNotification } from '../../../../../contexts/NotificationContext';
 import Icon from '../../../../../shared/components/AppIcon';
 import SaticiHeader from '../../../../../shared/components/ui/SaticiHeader';
+import logger from '@utils/productionLogger';
 
 // Toggle Switch Component
 const ToggleSwitch = ({ checked, onChange, color = 'green' }) => {

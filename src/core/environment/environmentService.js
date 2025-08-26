@@ -107,7 +107,7 @@ class EnvironmentService {
 
       // Storage Configuration
       storage: {
-        type: import.meta.env.VITE_STORAGE_TYPE || 'localStorage',
+        type: 'localStorage', // FIXED: Always use localStorage - unified storage approach
         prefix: import.meta.env.VITE_STORAGE_PREFIX || this.getStoragePrefix(),
         encrypt: this.parseBoolean(import.meta.env.VITE_STORAGE_ENCRYPT, false)
       },

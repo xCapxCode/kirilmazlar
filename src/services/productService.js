@@ -15,24 +15,7 @@ class ProductService {
    */
   async getAll(filters = {}) {
     try {
-      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
-      
-      if (storageType === 'api') {
-        try {
-          const result = await apiService.getProducts(filters);
-          if (result.success) {
-            // Cache the data locally
-            await storage.set('products', result.products || []);
-            return result;
-          }
-          throw new Error(result.error || 'API call failed');
-        } catch (apiError) {
-          logger.warn('API call failed, using localStorage fallback:', apiError.message);
-          // Fall back to localStorage
-        }
-      }
-      
-      // localStorage implementation
+      // FIXED: Always use localStorage - unified storage approach
       let products = await storage.get('products', []);
       
       // Filtreleme
@@ -112,22 +95,7 @@ class ProductService {
    */
   async getById(id) {
     try {
-      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
-      
-      if (storageType === 'api') {
-        try {
-          const result = await apiService.getProduct(id);
-          if (result.success) {
-            return result;
-          }
-          throw new Error(result.error || 'API call failed');
-        } catch (apiError) {
-          logger.warn('API call failed, using localStorage fallback:', apiError.message);
-          // Fall back to localStorage
-        }
-      }
-      
-      // localStorage implementation
+      // FIXED: Always use localStorage - unified storage approach
       const products = await storage.get('products', []);
       const product = products.find(p => p.id === id);
       
@@ -168,26 +136,7 @@ class ProductService {
         };
       }
       
-      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
-      
-      if (storageType === 'api') {
-        try {
-          const result = await apiService.createProduct(productData);
-          if (result.success) {
-            // Update local cache
-            const products = await storage.get('products', []);
-            products.push(result.product);
-            await storage.set('products', products);
-            return result;
-          }
-          throw new Error(result.error || 'API call failed');
-        } catch (apiError) {
-          logger.warn('API call failed, using localStorage fallback:', apiError.message);
-          // Fall back to localStorage
-        }
-      }
-      
-      // localStorage implementation
+      // FIXED: Always use localStorage - unified storage approach
       const products = await storage.get('products', []);
       
       // SKU kontrolü
@@ -252,29 +201,7 @@ class ProductService {
    */
   async update(id, productData) {
     try {
-      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
-      
-      if (storageType === 'api') {
-        try {
-          const result = await apiService.updateProduct(id, productData);
-          if (result.success) {
-            // Update local cache
-            const products = await storage.get('products', []);
-            const productIndex = products.findIndex(p => p.id === id);
-            if (productIndex !== -1) {
-              products[productIndex] = result.product;
-              await storage.set('products', products);
-            }
-            return result;
-          }
-          throw new Error(result.error || 'API call failed');
-        } catch (apiError) {
-          logger.warn('API call failed, using localStorage fallback:', apiError.message);
-          // Fall back to localStorage
-        }
-      }
-      
-      // localStorage implementation
+      // FIXED: Always use localStorage - unified storage approach
       const products = await storage.get('products', []);
       const index = products.findIndex(product => product.id === id);
 
@@ -378,26 +305,7 @@ class ProductService {
    */
   async delete(id) {
     try {
-      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
-      
-      if (storageType === 'api') {
-        try {
-          const result = await apiService.deleteProduct(id);
-          if (result.success) {
-            // Update local cache
-            const products = await storage.get('products', []);
-            const filteredProducts = products.filter(p => p.id !== id);
-            await storage.set('products', filteredProducts);
-            return result;
-          }
-          throw new Error(result.error || 'API call failed');
-        } catch (apiError) {
-          logger.warn('API call failed, using localStorage fallback:', apiError.message);
-          // Fall back to localStorage
-        }
-      }
-      
-      // localStorage implementation
+      // FIXED: Always use localStorage - unified storage approach
       const products = await storage.get('products', []);
       const updatedProducts = products.filter(product => product.id !== id);
 

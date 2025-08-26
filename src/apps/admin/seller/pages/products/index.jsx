@@ -8,6 +8,7 @@ import productSyncService from '../../../../../services/productSyncService';
 import Icon from '../../../../../shared/components/AppIcon';
 import SaticiHeader from '../../../../../shared/components/ui/SaticiHeader';
 import { getProductImagePath } from '../../../../../utils/imagePathHelper';
+import logger from '@utils/productionLogger';
 
 // Bileşenler
 import ModernUrunModali from './components/ModernUrunModali';

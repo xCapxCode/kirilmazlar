@@ -150,7 +150,53 @@ class DataValidator {
     return { isValid: errors.length === 0, errors };
   }
 
-  // Sipariş doğrulama
+  // Tekil sipariş doğrulama (OrderService için)
+  validateOrder(orderData) {
+    if (!orderData || typeof orderData !== 'object') {
+      return { isValid: false, errors: ['Order data must be an object'] };
+    }
+
+    const errors = [];
+
+    // Gerekli alanlar
+    if (!orderData.customerId) {
+      errors.push('Customer ID is required');
+    }
+
+    // Items kontrolü
+    if (!Array.isArray(orderData.items) || orderData.items.length === 0) {
+      errors.push('Order must contain at least one item');
+    } else {
+      orderData.items.forEach((item, index) => {
+        if (!item.id && !item.productId) {
+          errors.push(`Item ${index}: Product ID is required`);
+        }
+        if (typeof item.quantity !== 'number' || item.quantity <= 0) {
+          errors.push(`Item ${index}: Valid quantity is required`);
+        }
+        if (typeof item.price !== 'number' || item.price < 0) {
+          errors.push(`Item ${index}: Valid price is required`);
+        }
+      });
+    }
+
+    // Total kontrolü (eğer varsa)
+    if (orderData.total !== undefined && (typeof orderData.total !== 'number' || orderData.total < 0)) {
+      errors.push('Total must be a valid positive number');
+    }
+
+    // Status kontrolü (eğer varsa)
+    if (orderData.status) {
+      const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'];
+      if (!validStatuses.includes(orderData.status)) {
+        errors.push(`Invalid status: ${orderData.status}`);
+      }
+    }
+
+    return { isValid: errors.length === 0, errors };
+  }
+
+  // Sipariş listesi doğrulama
   validateOrders(orders) {
     if (!Array.isArray(orders)) {
       return { isValid: false, errors: ['Orders must be an array'] };

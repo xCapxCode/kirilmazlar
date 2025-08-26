@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Icon from '@shared/components/AppIcon';
 import { useNotification } from '../../../../../../contexts/NotificationContext';
+import logger from '@utils/productionLogger';
 
 const RolYonetimiModali = ({ role, onClose, onSave }) => {
   const { showSuccess, showError } = useNotification();

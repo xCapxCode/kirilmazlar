@@ -3,6 +3,9 @@ import App from "./App";
 import "./styles/index.css";
 import "./styles/tailwind.css";
 
+// Cache utilities'i yükle (console erişimi için)
+import './utils/clearCache.js';
+
 // Storage başlatma - DataService kullan
 import storage from './core/storage';
 import dataService from './services/dataService';

@@ -545,12 +545,16 @@ const MusteriYonetimi = () => {
       const storedCustomers = await customerService.getAll();
       const customerOrders = await storage.get('customer_orders', []);
       
-      setCustomers(storedCustomers);
-      setOrders(customerOrders);
+      // Customers verisi array olduğundan emin ol
+      setCustomers(Array.isArray(storedCustomers) ? storedCustomers : []);
+      setOrders(Array.isArray(customerOrders) ? customerOrders : []);
 
     } catch (error) {
       console.error('❌ loadData hatası:', error);
       showError('Müşteri verileri yüklenirken bir hata oluştu');
+      // Hata durumunda boş array set et
+      setCustomers([]);
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -600,21 +604,28 @@ const MusteriYonetimi = () => {
 
   // Müşteri istatistikleri
   const customerStats = useMemo(() => {
-    const total = customers.length;
-    const active = customers.filter(c => c.status === 'active').length;
-    const inactive = customers.filter(c => c.status === 'inactive').length;
-    const business = customers.filter(c => c.accountType === 'business').length;
-    const personal = customers.filter(c => c.accountType === 'personal').length;
-    const blocked = customers.filter(c => c.status === 'blocked').length;
-    const pending = customers.filter(c => c.status === 'pending').length;
+    // customers'ın array olduğundan emin ol
+    const customersArray = Array.isArray(customers) ? customers : [];
+    
+    const total = customersArray.length;
+    const active = customersArray.filter(c => c.status === 'active').length;
+    const inactive = customersArray.filter(c => c.status === 'inactive').length;
+    const business = customersArray.filter(c => c.accountType === 'business').length;
+    const personal = customersArray.filter(c => c.accountType === 'personal').length;
+    const blocked = customersArray.filter(c => c.status === 'blocked').length;
+    const pending = customersArray.filter(c => c.status === 'pending').length;
 
     return { total, active, inactive, business, personal, blocked, pending };
   }, [customers]);
 
   // Müşteri sipariş istatistikleri
   const enhancedCustomers = useMemo(() => {
-    return customers.map(customer => {
-      const customerOrders = orders.filter(order => order.customerId === customer.id);
+    // customers ve orders'ın array olduğundan emin ol
+    const customersArray = Array.isArray(customers) ? customers : [];
+    const ordersArray = Array.isArray(orders) ? orders : [];
+    
+    return customersArray.map(customer => {
+      const customerOrders = ordersArray.filter(order => order.customerId === customer.id);
       const totalSpent = customerOrders.reduce((sum, order) => sum + (order.total || 0), 0);
       const lastOrder = customerOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
 
@@ -632,7 +643,9 @@ const MusteriYonetimi = () => {
 
   // Filtreleme
   const filteredCustomers = useMemo(() => {
-    let filtered = enhancedCustomers;
+    // enhancedCustomers'ın array olduğundan emin ol
+    const enhancedArray = Array.isArray(enhancedCustomers) ? enhancedCustomers : [];
+    let filtered = enhancedArray;
 
     // Arama filtresi
     if (filters.search) {
@@ -789,7 +802,8 @@ const MusteriYonetimi = () => {
 
   // Müşteri silme
   const handleDeleteCustomer = async (customerId) => {
-    const customer = customers.find(c => c.id === customerId);
+    const customersArray = Array.isArray(customers) ? customers : [];
+    const customer = customersArray.find(c => c.id === customerId);
     const customerName = customer ? customer.name : 'Bu müşteri';
 
     const confirmed = await showConfirm(

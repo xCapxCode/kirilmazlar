@@ -57,7 +57,7 @@ function App() {
 
         // DataService'i başlat - İlk veri yükleme için
         logger.info('🔄 DataService başlatılıyor...');
-        dataService.initializeData();
+        await dataService.initializeData();
         logger.info('✅ DataService başlatıldı');
 
         // Kullanıcıları kontrol et (mobil erişim için login sayfasında yüklenecek)

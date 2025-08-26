@@ -23,24 +23,19 @@ class DataService {
         try {
             logger.info('🔄 DataService başlatılıyor...');
             
-            const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
-            logger.info(`📦 Storage type: ${storageType}`);
+            // FIXED: Always use localStorage - no API mode conflict
+            logger.info('📦 Storage type: localStorage (unified)');
             
-            if (storageType === 'api') {
-                // API mode - test connection and sync initial data
-                try {
-                    await apiService.healthCheck();
-                    logger.info('🌐 API connection successful');
-                    
-                    // Load initial data from API if needed
-                    await this.syncFromAPI();
-                } catch (apiError) {
-                    logger.warn('🌐 API connection failed, using localStorage fallback:', apiError.message);
-                    await this.initializeLocalStorage();
-                }
-            } else {
-                // localStorage mode
-                await this.initializeLocalStorage();
+            // Initialize localStorage data
+            await this.initializeLocalStorage();
+            
+            // Optional: Background API sync for production
+            const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+            if (isProduction) {
+                // Non-blocking background sync in production
+                this.backgroundSync().catch(error => {
+                    logger.warn('🌐 Background API sync failed (non-critical):', error.message);
+                });
             }
             
             this.isInitialized = true;
@@ -277,23 +272,58 @@ class DataService {
         const existingOrders = storage.get('orders');
         const existingCustomerOrders = storage.get('customer_orders');
         
+        // Seller Orders (admin siparişleri)
         if (!existingOrders || existingOrders.length === 0) {
             storage.set('orders', []);
             logger.info('📋 Seller Orders storage başlatıldı');
         }
         
-        if (!existingCustomerOrders || existingCustomerOrders.length === 0) {
-            storage.set('customer_orders', DEMO_ORDERS);
-            logger.info('📦 Demo sipariş verileri yüklendi:', DEMO_ORDERS.length);
-            
-            // Her müşteri için sipariş sayısını logla
-            const customerOrderCounts = {};
-            DEMO_ORDERS.forEach(order => {
-                const customerId = order.customerId;
-                customerOrderCounts[customerId] = (customerOrderCounts[customerId] || 0) + 1;
-            });
-            logger.info('👤 Müşteri sipariş sayıları:', customerOrderCounts);
+        // Customer Orders (müşteri siparişleri) - PERSISTENT DATA FIX
+        // KÖK NEDEN: Sipariş silme kalıcılığı - sadece ilk yüklemede demo veri
+        logger.info('🔍 CUSTOMER_ORDERS KONTROL BAŞLADI');
+        logger.info(`📊 existingCustomerOrders: ${existingCustomerOrders ? existingCustomerOrders.length : 'NULL'}`);
+        
+        // Raw localStorage kontrolü
+        const rawCustomerOrders = localStorage.getItem('kirilmazlar_customer_orders');
+        logger.info(`🔍 RAW localStorage customer_orders: ${rawCustomerOrders ? 'EXISTS' : 'NULL'}`);
+        if (rawCustomerOrders) {
+            try {
+                const parsed = JSON.parse(rawCustomerOrders);
+                logger.info(`📊 RAW localStorage customer_orders sayısı: ${parsed.length}`);
+            } catch (e) {
+                logger.error('❌ RAW localStorage parse hatası:', e);
+            }
         }
+        
+        if (!existingCustomerOrders || existingCustomerOrders.length === 0) {
+            // İlk yükleme - demo veriyi yükle
+            logger.info('🚀 İLK YÜKLEME: Demo siparişler yükleniyor...');
+            storage.set('customer_orders', DEMO_ORDERS);
+            logger.info(`📦 İLK YÜKLEME TAMAMLANDI: ${DEMO_ORDERS.length} demo sipariş yüklendi`);
+            
+            // Doğrulama
+            const verifyAfterSet = storage.get('customer_orders', []);
+            logger.info(`✅ DOĞRULAMA - Set sonrası: ${verifyAfterSet.length} sipariş`);
+        } else {
+            // Mevcut veri var - koru ve logla
+            logger.info(`💾 MEVCUT VERİ KORUNDU: ${existingCustomerOrders.length} sipariş`);
+            
+            // Mevcut siparişlerin ID'lerini logla
+            const orderIds = existingCustomerOrders.map(o => o.id);
+            logger.info(`📋 Mevcut sipariş ID'leri:`, orderIds);
+        }
+        
+        // Güncellenmiş sipariş sayılarını logla
+        const finalOrders = storage.get('customer_orders', []);
+        const customerOrderCounts = {};
+        finalOrders.forEach(order => {
+            const customerId = order.customerId;
+            customerOrderCounts[customerId] = (customerOrderCounts[customerId] || 0) + 1;
+        });
+        logger.info('👤 Müşteri sipariş sayıları (fresh):', customerOrderCounts);
+        
+        // Veri tutarlılığı doğrulaması
+        logger.info(`✅ TUTARLILIK: customer_orders=${finalOrders.length}, DEMO_ORDERS=${DEMO_ORDERS.length}`);
 
         // Sepet
         if (!storage.get('cart')) {

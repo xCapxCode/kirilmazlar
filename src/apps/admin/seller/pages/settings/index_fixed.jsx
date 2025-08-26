@@ -5,6 +5,7 @@ import { useNotification } from '../../../../../contexts/NotificationContext';
 import SaticiHeader from '../../../../../shared/components/ui/SaticiHeader';
 import Icon from '../../../../../shared/components/AppIcon';
 import storage from '@core/storage';
+import logger from '@utils/productionLogger';
 
 const GenelAyarlar = () => {
   const { user, userProfile, loading: authLoading } = useAuth();

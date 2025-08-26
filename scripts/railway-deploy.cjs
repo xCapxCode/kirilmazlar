@@ -126,14 +126,14 @@ class RailwayDeployer {
 
     envLines.forEach(line => {
       const [key, ...valueParts] = line.split('=');
-      const value = valueParts.join('=').replace(/"/g, '');
+      const value = valueParts.join('=').replace(/"/g, '').trim();
 
-      if (key && value) {
+      if (key && value && key.trim()) {
         try {
-          execSync(`railway variables set ${key}="${value}"`, { stdio: 'pipe' });
-          this.log(`Set ${key}`, 'success');
+          execSync(`railway variables set ${key.trim()}=${value}`, { stdio: 'pipe' });
+          this.log(`Set ${key.trim()}`, 'success');
         } catch (error) {
-          this.log(`Failed to set ${key}`, 'warning');
+          this.log(`Failed to set ${key.trim()}: ${error.message}`, 'warning');
         }
       }
     });
@@ -159,8 +159,8 @@ class RailwayDeployer {
     this.checkPrerequisites();
     this.validateEnvironment();
     this.buildProject();
-    this.setEnvironmentVariables();
     this.deployToRailway();
+    this.setEnvironmentVariables();
     this.showDeploymentInfo();
 
     this.log('Deployment process completed!', 'success');

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '@shared/components/AppIcon';
+import logger from '@utils/productionLogger';
 
 const MusteriGecmisiModali = ({ customer, onClose }) => {
   const [customerHistory, setCustomerHistory] = useState({

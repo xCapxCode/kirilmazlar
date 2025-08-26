@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Icon from '@shared/components/AppIcon';
 import { useNotification } from '../../../../../../contexts/NotificationContext';
 import authorizationService from '../../../../../../services/authorizationService';
+import logger from '@utils/productionLogger';
 
 const YetkiMatrisiModali = ({ role, onClose, onSave }) => {
   const { showSuccess, showError } = useNotification();

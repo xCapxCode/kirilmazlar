@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../../../../contexts/AuthContext';
 import Icon from '../../../../../shared/components/AppIcon';
 import SaticiHeader from '../../../../../shared/components/ui/SaticiHeader';
+import logger from '@utils/productionLogger';
 import GunlukOzet from './components/GunlukOzet';
 import HizliIstatistikler from './components/HizliIstatistikler';
 import SonSiparisler from './components/SonSiparisler';

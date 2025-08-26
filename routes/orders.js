@@ -3,8 +3,8 @@
  * Order management endpoints
  */
 
-const express = require('express');
-const { authenticateToken, requireRole, requireSellerOrAdmin } = require('../middleware/auth');
+import express from 'express';
+import { authenticateToken, requireRole, requireSellerOrAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -661,4 +661,4 @@ router.get('/stats/overview', authenticateToken, requireRole(['admin', 'seller']
   }
 });
 
-module.exports = { router, setPool };
+export default { router, setPool };

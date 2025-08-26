@@ -4,7 +4,7 @@ import { useAuth } from '../../../../contexts/AuthContext';
 import { useCart } from '../../../../contexts/CartContext';
 import { useBreakpoint } from '../../../../hooks/useBreakpoint';
 import Icon from '../../../../shared/components/AppIcon';
-import { logger } from '../../../../utils/productionLogger';
+import logger from '../../../../utils/productionLogger';
 import EditProfileModal from './components/EditProfileModal';
 
 logger.info('🔥 MusteriProfil module loaded!');
@@ -434,4 +434,4 @@ const MusteriProfil = () => {
   );
 };
 
-export default MusteriProfil; 
+export default MusteriProfil;

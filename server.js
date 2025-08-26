@@ -8,21 +8,29 @@
  * @date 2025-01-31
  */
 
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const compression = require('compression');
-const rateLimit = require('express-rate-limit');
-const { Pool } = require('pg');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const path = require('path');
-const fs = require('fs');
-const http = require('http');
-const socketManager = require('./websocket/socketManager');
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
+import rateLimit from 'express-rate-limit';
+import pkg from 'pg';
+const { Pool } = pkg;
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import path from 'path';
+import fs from 'fs';
+import http from 'http';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import socketManager from './websocket/socketManager.js';
+import dotenv from 'dotenv';
 
 // Environment configuration
-require('dotenv').config();
+dotenv.config();
+
+// ES module __dirname equivalent
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
@@ -38,12 +46,12 @@ const pool = new Pool({
 });
 
 // Import routes and middleware
-const authRoutes = require('./routes/auth');
-const usersRoutes = require('./routes/users');
-const customersRoutes = require('./routes/customers');
-const ordersRoutes = require('./routes/orders');
-const productsRoutes = require('./routes/products');
-const authMiddleware = require('./middleware/auth');
+import authRoutes from './routes/auth.js';
+import usersRoutes from './routes/users.js';
+import customersRoutes from './routes/customers.js';
+import ordersRoutes from './routes/orders.js';
+import productsRoutes from './routes/products.js';
+import authMiddleware from './middleware/auth.js';
 
 // Set database pool for routes and middleware
 authRoutes.setPool(pool);
@@ -236,4 +244,4 @@ process.on('SIGINT', () => {
   });
 });
 
-module.exports = app;
+export default app;

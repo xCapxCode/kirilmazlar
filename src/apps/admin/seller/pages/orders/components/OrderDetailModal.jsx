@@ -1,5 +1,6 @@
 import React from 'react';
 import Icon from 'components/AppIcon';
+import logger from '@utils/productionLogger';
 
 const OrderDetailModal = ({ order, onClose, onStatusUpdate }) => {
   const getStatusColor = (status) => {

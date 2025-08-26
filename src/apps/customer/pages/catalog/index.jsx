@@ -2,7 +2,7 @@ import storage from '@core/storage';
 import { getProductImagePath } from '@utils/imagePathHelper';
 import { useMemoizedCallbacks } from '@utils/memoizationHelpers';
 // import { migrateCategoryIds } from '@utils/productLoader'; // DEVRE DIŞI - HARDCODED DATA KULLANILMAZ
-import { logger } from '@utils/productionLogger';
+import logger from '@utils/productionLogger';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useCart } from '../../../../contexts/CartContext';

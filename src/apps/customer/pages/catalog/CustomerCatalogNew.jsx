@@ -4,7 +4,7 @@
  */
 
 import storage from '@core/storage';
-import { logger } from '@utils/productionLogger';
+import logger from '@utils/productionLogger';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useCart } from '../../../../contexts/CartContext';

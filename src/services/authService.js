@@ -61,44 +61,7 @@ class AuthService {
         storageType 
       });
 
-      // Use API if configured, fallback to localStorage
-      if (storageType === 'api') {
-        try {
-          logger.debug('🌐 Attempting API login...');
-          const response = await apiService.login(emailOrUsername, password, rememberMe);
-          
-          if (response.success) {
-            // Set current user and auth state with remember me logic
-            this.currentUser = response.user;
-            await storage.set('currentUser', response.user);
-            await storage.set('isAuthenticated', true);
-            
-            // Remember me functionality
-            if (rememberMe) {
-              const rememberExpiry = Date.now() + (30 * 24 * 60 * 60 * 1000);
-              await storage.set('rememberMe', true);
-              await storage.set('sessionExpiry', rememberExpiry);
-              logger.debug('🔐 Remember me enabled - session extended to 30 days');
-            } else {
-              const standardExpiry = Date.now() + (24 * 60 * 60 * 1000);
-              await storage.set('rememberMe', false);
-              await storage.set('sessionExpiry', standardExpiry);
-              logger.debug('🔐 Standard session - 24 hours');
-            }
-            
-            logger.info('✅ API Login successful for user:', response.user.username || response.user.email);
-            return {
-              success: true,
-              user: response.user
-            };
-          }
-        } catch (apiError) {
-          logger.warn('🌐 API login failed, falling back to localStorage:', apiError.message);
-          // Continue with localStorage fallback
-        }
-      }
-
-      // localStorage fallback
+      // Use localStorage authentication
       logger.debug('💾 Using localStorage authentication...');
 
       // DETAYLI STORAGE DEBUG
@@ -120,7 +83,23 @@ class AuthService {
       
       // Storage'ı direkt kullan - DataService dependency'si yok
       logger.debug('🔐 Getting users from storage...');
-      const users = storage.get('users', []);
+      let users = storage.get('users', []);
+      
+      // Eğer storage'dan kullanıcı gelmiyorsa, direkt localStorage'dan dene
+      if (!users || users.length === 0) {
+        logger.debug('🔍 Storage boş, direkt localStorage kontrol ediliyor...');
+        const rawUsers = localStorage.getItem('kirilmazlar_users');
+        if (rawUsers) {
+          try {
+            users = JSON.parse(rawUsers);
+            logger.debug('✅ localStorage\'dan kullanıcılar alındı:', users.length);
+          } catch (parseError) {
+            logger.error('❌ localStorage parse hatası:', parseError);
+            users = [];
+          }
+        }
+      }
+      
       logger.debug('🔐 Users found:', users.length);
       logger.debug('🔐 Users data:', users);
       
@@ -276,18 +255,6 @@ class AuthService {
   // Logout
   async logout() {
     try {
-      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
-      
-      // API logout if configured
-      if (storageType === 'api') {
-        try {
-          await apiService.logout();
-          logger.info('🌐 API logout successful');
-        } catch (apiError) {
-          logger.warn('🌐 API logout failed:', apiError.message);
-        }
-      }
-      
       await this.clearAuthStorage();
       logger.info('👋 Logout successful');
       return { success: true };
@@ -354,14 +321,6 @@ class AuthService {
   // Check if session is still valid
   isSessionValid() {
     try {
-      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
-      
-      // API validation if configured
-      if (storageType === 'api') {
-        // For API mode, we rely on token validation
-        return apiService.isTokenValid();
-      }
-      
       // Local session validation
       const sessionExpiry = storage.get('sessionExpiry');
       if (!sessionExpiry) {
@@ -470,12 +429,37 @@ class AuthService {
     try {
       logger.info('👤 Yeni kullanıcı kaydı başlatılıyor:', { email });
 
+      // Import FormValidationService for validation
+      const { FormValidationService } = await import('./securityService.js');
+
+      // Comprehensive validation
+      const validationData = {
+        name: additionalData.name || '',
+        email,
+        password,
+        phone: additionalData.phone || ''
+      };
+
+      const validation = FormValidationService.validateUserRegistration(validationData);
+      if (!validation.isValid) {
+        const errorMessage = Object.values(validation.errors).join(', ');
+        throw new Error(errorMessage);
+      }
+
       const users = await storage.get('users', []);
 
       // Email kontrolü
       const existingUser = users.find(u => u.email === email);
       if (existingUser) {
         throw new Error('Bu email adresi zaten kullanılıyor');
+      }
+
+      // Username kontrolü (eğer verilmişse)
+      if (additionalData.username) {
+        const existingUsername = users.find(u => u.username === additionalData.username);
+        if (existingUsername) {
+          throw new Error('Bu kullanıcı adı zaten kullanılıyor');
+        }
       }
 
       // Yeni kullanıcı oluştur
@@ -485,6 +469,7 @@ class AuthService {
         password, // Production'da hash'lenecek
         username: additionalData.username || email.split('@')[0],
         name: additionalData.name || '',
+        phone: additionalData.phone || '',
         role: additionalData.role || 'customer',
         isActive: true,
         createdAt: new Date().toISOString(),

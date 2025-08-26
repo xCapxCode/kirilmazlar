@@ -3,8 +3,8 @@
  * Handles real-time updates for orders, products, and inventory
  */
 
-const { Server } = require('socket.io');
-const jwt = require('jsonwebtoken');
+import { Server } from 'socket.io';
+import jwt from 'jsonwebtoken';
 
 class SocketManager {
   constructor() {
@@ -317,7 +317,11 @@ class SocketManager {
   }
 }
 
-// Create singleton instance
+// Create and export singleton instance
 const socketManager = new SocketManager();
 
-module.exports = socketManager;
+// Export the instance as default
+export default socketManager;
+
+// Also export the class for testing purposes
+export { SocketManager };

@@ -3,11 +3,12 @@
  * JWT-based authentication system
  */
 
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { Pool } = require('pg');
-const crypto = require('crypto');
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import pkg from 'pg';
+const { Pool } = pkg;
+import crypto from 'crypto';
 
 const router = express.Router();
 
@@ -412,4 +413,4 @@ router.post('/refresh', async (req, res) => {
   }
 });
 
-module.exports = { router, setPool };
+export default { router, setPool };

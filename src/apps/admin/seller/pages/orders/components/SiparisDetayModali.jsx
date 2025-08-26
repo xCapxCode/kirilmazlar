@@ -1,6 +1,7 @@
 import React from 'react';
 import Icon from '@shared/components/AppIcon';
 import { useNotification } from '../../../../../../contexts/NotificationContext';
+import logger from '@utils/productionLogger';
 
 const SiparisDetayModali = ({ order, onClose, onStatusUpdate }) => {
   // Debug: Log order data to understand structure
@@ -210,4 +211,4 @@ const SiparisDetayModali = ({ order, onClose, onStatusUpdate }) => {
   );
 };
 
-export default SiparisDetayModali; 
+export default SiparisDetayModali;

@@ -3,8 +3,9 @@
  * Validates JWT tokens and sets user context
  */
 
-const jwt = require('jsonwebtoken');
-const { Pool } = require('pg');
+import jwt from 'jsonwebtoken';
+import pkg from 'pg';
+const { Pool } = pkg;
 
 // Database connection (will be set from main server)
 let pool;
@@ -319,7 +320,20 @@ const validateSession = async (token) => {
   }
 };
 
-module.exports = {
+export {
+  authenticateToken,
+  optionalAuth,
+  requireRole,
+  requireAdmin,
+  requireSellerOrAdmin,
+  requireOwnershipOrRole,
+  createRateLimiter,
+  cleanupExpiredSessions,
+  validateSession,
+  setPool
+};
+
+export default {
   authenticateToken,
   optionalAuth,
   requireRole,

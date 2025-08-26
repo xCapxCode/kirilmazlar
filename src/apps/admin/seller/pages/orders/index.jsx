@@ -5,7 +5,7 @@ import { useModal } from '../../../../../contexts/ModalContext';
 import { useNotification } from '../../../../../contexts/NotificationContext';
 import { useOrderEvents } from '../../../../../hooks/useWebSocket';
 import orderService from '../../../../../services/orderService';
-import { logger } from '../../../../../utils/productionLogger';
+import logger from '../../../../../utils/productionLogger';
 import Icon from '../../../../../shared/components/AppIcon';
 import SaticiHeader from '../../../../../shared/components/ui/SaticiHeader';
 

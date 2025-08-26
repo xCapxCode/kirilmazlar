@@ -2,7 +2,7 @@ import React from 'react';
 import Icon from '@shared/components/AppIcon';
 import { useNotification } from '../../../../../contexts/NotificationContext';
 
-const SiparisDetayModali = ({ order, onClose, onCancel }) => {
+const SiparisDetayModali = ({ order, onClose, onCancel, onDelete }) => {
   const { showSuccess, showError } = useNotification();
 
   const formatCurrency = (amount) => {
@@ -395,14 +395,26 @@ const SiparisDetayModali = ({ order, onClose, onCancel }) => {
           >
             Kapat
           </button>
-          {canCancel(order) && (
-            <button
-              onClick={() => onCancel(order)}
-              className="px-4 py-2 bg-red-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-            >
-              Siparişi İptal Et
-            </button>
-          )}
+          <div className="flex space-x-3">
+            {onDelete && (
+              <button
+                onClick={() => onDelete(order.id)}
+                className="px-4 py-2 bg-red-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 flex items-center space-x-2"
+              >
+                <Icon name="Trash2" size={16} />
+                <span>Sil</span>
+              </button>
+            )}
+            {canCancel(order) && (
+              <button
+                onClick={() => onCancel(order)}
+                className="px-4 py-2 bg-orange-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 flex items-center space-x-2"
+              >
+                <Icon name="X" size={16} />
+                <span>İptal Et</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

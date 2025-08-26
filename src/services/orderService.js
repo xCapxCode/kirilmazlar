@@ -15,23 +15,6 @@ class OrderService {
    */
   async getAll(options = {}) {
     try {
-      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
-      
-      if (storageType === 'api') {
-        try {
-          const result = await apiService.getOrders(options);
-          if (result.success) {
-            // Cache the data locally
-            await storage.set('customer_orders', result.orders || []);
-            return this.normalizeOrders(result.orders || [], options);
-          }
-          throw new Error(result.error || 'API call failed');
-        } catch (apiError) {
-          logger.warn('API call failed, using localStorage fallback:', apiError.message);
-          // Fall back to localStorage
-        }
-      }
-      
       // localStorage implementation
       // PRIMARY SOURCE: customer_orders storage'ı ana kaynak
       const customerOrders = await storage.get('customer_orders', []);
@@ -176,21 +159,6 @@ class OrderService {
    */
   async getById(id) {
     try {
-      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
-      
-      if (storageType === 'api') {
-        try {
-          const result = await apiService.getOrder(id);
-          if (result.success) {
-            return result.order;
-          }
-          throw new Error(result.error || 'API call failed');
-        } catch (apiError) {
-          logger.warn('API call failed, using localStorage fallback:', apiError.message);
-          // Fall back to localStorage
-        }
-      }
-      
       // localStorage implementation
       const customerOrders = await storage.get('customer_orders', []);
       const sellerOrders = await storage.get('orders', []);
@@ -240,25 +208,6 @@ class OrderService {
       const validation = dataValidator.validateOrder(orderData);
       if (!validation.isValid) {
         throw new Error('Geçersiz sipariş verisi: ' + validation.errors.join(', '));
-      }
-      
-      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
-      
-      if (storageType === 'api') {
-        try {
-          const result = await apiService.createOrder(orderData);
-          if (result.success) {
-            // Update local cache
-            const customerOrders = await storage.get('customer_orders', []);
-            customerOrders.push(result.order);
-            await storage.set('customer_orders', customerOrders);
-            return result.order;
-          }
-          throw new Error(result.error || 'API call failed');
-        } catch (apiError) {
-          logger.warn('API call failed, using localStorage fallback:', apiError.message);
-          // Fall back to localStorage
-        }
       }
       
       // localStorage implementation
@@ -418,37 +367,6 @@ class OrderService {
    */
   async update(id, updateData) {
     try {
-      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
-      
-      if (storageType === 'api') {
-        try {
-          const result = await apiService.updateOrder(id, updateData);
-          if (result.success) {
-            // Update local cache
-            const customerOrders = await storage.get('customer_orders', []);
-            const sellerOrders = await storage.get('orders', []);
-            
-            const customerOrderIndex = customerOrders.findIndex(order => order.id === id);
-            if (customerOrderIndex !== -1) {
-              customerOrders[customerOrderIndex] = result.order;
-              await storage.set('customer_orders', customerOrders);
-            }
-            
-            const sellerOrderIndex = sellerOrders.findIndex(order => order.id === id);
-            if (sellerOrderIndex !== -1) {
-              sellerOrders[sellerOrderIndex] = result.order;
-              await storage.set('orders', sellerOrders);
-            }
-            
-            return result.order;
-          }
-          throw new Error(result.error || 'API call failed');
-        } catch (apiError) {
-          logger.warn('API call failed, using localStorage fallback:', apiError.message);
-          // Fall back to localStorage
-        }
-      }
-      
       // localStorage implementation
       const customerOrders = await storage.get('customer_orders', []);
       const sellerOrders = await storage.get('orders', []);
@@ -491,50 +409,69 @@ class OrderService {
    */
   async delete(id) {
     try {
-      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
+      logger.info(`🗑️ SİPARİŞ SİLME BAŞLADI: ID=${id}`);
       
-      if (storageType === 'api') {
-        try {
-          const result = await apiService.deleteOrder(id);
-          if (result.success) {
-            // Update local cache
-            const customerOrders = await storage.get('customer_orders', []);
-            const sellerOrders = await storage.get('orders', []);
-            
-            const updatedCustomerOrders = customerOrders.filter(order => order.id !== id);
-            const updatedSellerOrders = sellerOrders.filter(order => order.id !== id);
-            
-            await storage.set('customer_orders', updatedCustomerOrders);
-            await storage.set('orders', updatedSellerOrders);
-            
-            return true;
-          }
-          throw new Error(result.error || 'API call failed');
-        } catch (apiError) {
-          logger.warn('API call failed, using localStorage fallback:', apiError.message);
-          // Fall back to localStorage
-        }
-      }
+      // localStorage implementation - ENHANCED DEBUG
+      logger.info('📦 localStorage silme işlemi başlıyor...');
       
-      // localStorage implementation
-      // Hem customer_orders hem de orders storage'larından sil
+      // ÖNCE: Mevcut durumu logla
       const customerOrders = await storage.get('customer_orders', []);
       const sellerOrders = await storage.get('orders', []);
-
-      const updatedCustomerOrders = customerOrders.filter(order => order.id !== id);
-      const updatedSellerOrders = sellerOrders.filter(order => order.id !== id);
-
+      
+      logger.info(`📊 ÖNCE - customer_orders: ${customerOrders.length}, orders: ${sellerOrders.length}`);
+      logger.info(`🔍 Silinecek sipariş ID: ${id} (tip: ${typeof id})`);
+      
+      // Silinecek siparişi bul
+      const targetOrder = customerOrders.find(order => order.id === id || String(order.id) === String(id));
+      if (targetOrder) {
+        logger.info(`✅ Hedef sipariş bulundu:`, {
+          id: targetOrder.id,
+          orderNumber: targetOrder.orderNumber,
+          customerId: targetOrder.customerId
+        });
+      } else {
+        logger.warn(`❌ Hedef sipariş bulunamadı! Mevcut ID'ler:`, customerOrders.map(o => o.id));
+      }
+      
+      // Filtreleme işlemi
+      const updatedCustomerOrders = customerOrders.filter(order => {
+        const shouldKeep = order.id !== id && String(order.id) !== String(id);
+        if (!shouldKeep) {
+          logger.info(`🗑️ Sipariş siliniyor: ${order.id} (${order.orderNumber})`);
+        }
+        return shouldKeep;
+      });
+      
+      const updatedSellerOrders = sellerOrders.filter(order => order.id !== id && String(order.id) !== String(id));
+      
+      logger.info(`📊 SONRA - customer_orders: ${updatedCustomerOrders.length}, orders: ${updatedSellerOrders.length}`);
+      
       if (updatedCustomerOrders.length === customerOrders.length &&
         updatedSellerOrders.length === sellerOrders.length) {
-        return false; // Sipariş bulunamadı
+        logger.warn('❌ Hiçbir sipariş silinmedi - sipariş bulunamadı');
+        return false;
       }
-
+      
+      // Storage'a kaydet
+      logger.info('💾 Storage güncelleniyor...');
       await storage.set('customer_orders', updatedCustomerOrders);
       await storage.set('orders', updatedSellerOrders);
-
+      
+      // DOĞRULAMA: Storage'dan tekrar oku
+      const verifyCustomerOrders = await storage.get('customer_orders', []);
+      logger.info(`✅ DOĞRULAMA - customer_orders: ${verifyCustomerOrders.length}`);
+      
+      // Raw localStorage kontrolü
+      const rawData = localStorage.getItem('kirilmazlar_customer_orders');
+      if (rawData) {
+        const parsedData = JSON.parse(rawData);
+        logger.info(`🔍 RAW localStorage - customer_orders: ${parsedData.length}`);
+      }
+      
+      logger.info('✅ SİPARİŞ SİLME TAMAMLANDI');
       return true;
     } catch (error) {
-      logger.error(`ID'si ${id} olan sipariş silinirken hata:`, error);
+      logger.error(`❌ ID'si ${id} olan sipariş silinirken hata:`, error);
       throw error;
     }
   }

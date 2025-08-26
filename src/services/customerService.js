@@ -16,25 +16,33 @@ class CustomerService {
    */
   async getAll(filters = {}) {
     try {
-      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
-      
-      if (storageType === 'api') {
-        try {
-          const result = await apiService.getCustomers(filters);
-          if (result.success) {
-            // Cache the data locally
-            await storage.set('customers', result.customers || []);
-            return result;
-          }
-          throw new Error(result.error || 'API call failed');
-        } catch (apiError) {
-          logger.warn('API call failed, using localStorage fallback:', apiError.message);
-          // Fall back to localStorage
-        }
-      }
-      
-      // localStorage implementation
+      // FIXED: Always use localStorage - unified storage approach
       let customers = await storage.get('customers', []);
+      
+      // Sipariş verilerini al ve müşteri-sipariş ilişkisini kur
+      const orders = await storage.get('customer_orders', []);
+      
+      // Her müşteri için sipariş istatistiklerini hesapla
+      customers = customers.map(customer => {
+        const customerOrders = orders.filter(order => order.customerId === customer.id);
+        
+        const orderCount = customerOrders.length;
+        const totalSpent = customerOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+        const lastOrderDate = customerOrders.length > 0 
+          ? customerOrders.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate))[0].orderDate
+          : null;
+        
+        return {
+          ...customer,
+          orderCount,
+          totalSpent,
+          lastOrderDate,
+          // Eski verilerle uyumluluk için
+          city: customer.city || customer.address?.split('/')[1]?.split('/')[0] || 'Belirtilmemiş'
+        };
+      });
+      
+      logger.info(`👤 Müşteri-sipariş ilişkisi kuruldu: ${customers.length} müşteri, ${orders.length} sipariş`);
       
       // Filtreleme
       if (filters.search) {
@@ -48,7 +56,7 @@ class CustomerService {
       
       if (filters.city) {
         customers = customers.filter(customer => 
-          customer.address?.city?.toLowerCase() === filters.city.toLowerCase()
+          customer.city?.toLowerCase() === filters.city.toLowerCase()
         );
       }
       
@@ -98,22 +106,7 @@ class CustomerService {
    */
   async getById(id) {
     try {
-      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
-      
-      if (storageType === 'api') {
-        try {
-          const result = await apiService.getCustomer(id);
-          if (result.success) {
-            return result;
-          }
-          throw new Error(result.error || 'API call failed');
-        } catch (apiError) {
-          logger.warn('API call failed, using localStorage fallback:', apiError.message);
-          // Fall back to localStorage
-        }
-      }
-      
-      // localStorage implementation
+      // FIXED: Always use localStorage - unified storage approach
       const customers = await storage.get('customers', []);
       const customer = customers.find(customer => customer.id === id);
       
@@ -154,24 +147,7 @@ class CustomerService {
         };
       }
       
-      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
-      
-      if (storageType === 'api') {
-        try {
-          const result = await apiService.createCustomer(customerData);
-          if (result.success) {
-            // Update local cache
-            const customers = await storage.get('customers', []);
-            customers.push(result.customer);
-            await storage.set('customers', customers);
-            return result;
-          }
-          throw new Error(result.error || 'API call failed');
-        } catch (apiError) {
-          logger.warn('API call failed, using localStorage fallback:', apiError.message);
-          // Fall back to localStorage
-        }
-      }
+      // FIXED: Always use localStorage - unified storage approach
       
       console.log('🔄 CustomerService.create başlatılıyor:', customerData);
 
@@ -257,29 +233,7 @@ class CustomerService {
    */
   async update(id, updateData) {
     try {
-      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
-      
-      if (storageType === 'api') {
-        try {
-          const result = await apiService.updateCustomer(id, updateData);
-          if (result.success) {
-            // Update local cache
-            const customers = await storage.get('customers', []);
-            const customerIndex = customers.findIndex(c => c.id === id);
-            if (customerIndex !== -1) {
-              customers[customerIndex] = result.customer;
-              await storage.set('customers', customers);
-            }
-            return result.customer;
-          }
-          throw new Error(result.error || 'API call failed');
-        } catch (apiError) {
-          logger.warn('API call failed, using localStorage fallback:', apiError.message);
-          // Fall back to localStorage
-        }
-      }
-      
-      // localStorage implementation
+      // FIXED: Always use localStorage - unified storage approach
       const customers = await storage.get('customers', []);
       const customerIndex = customers.findIndex(customer => customer.id === id);
 
@@ -330,26 +284,7 @@ class CustomerService {
    */
   async delete(id) {
     try {
-      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
-      
-      if (storageType === 'api') {
-        try {
-          const result = await apiService.deleteCustomer(id);
-          if (result.success) {
-            // Update local cache
-            const customers = await storage.get('customers', []);
-            const filteredCustomers = customers.filter(c => c.id !== id);
-            await storage.set('customers', filteredCustomers);
-            return true;
-          }
-          throw new Error(result.error || 'API call failed');
-        } catch (apiError) {
-          logger.warn('API call failed, using localStorage fallback:', apiError.message);
-          // Fall back to localStorage
-        }
-      }
-      
-      // localStorage implementation
+      // FIXED: Always use localStorage - unified storage approach
       const customers = await storage.get('customers', []);
       const customerToDelete = customers.find(customer => customer.id === id);
       const filteredCustomers = customers.filter(customer => customer.id !== id);

@@ -9,7 +9,7 @@ import { useBreakpoint } from '../../../../hooks/useBreakpoint';
 import { useOrderEvents } from '../../../../hooks/useWebSocket';
 import orderService from '../../../../services/orderService';
 // Order cleanup utility removed - using direct order service
-import { logger } from '../../../../utils/productionLogger';
+import logger from '../../../../utils/productionLogger';
 import ArsivlenmisModali from './components/ArsivlenmisModali';
 import SiparisGecmisi from './components/SiparisGecmisi';
 import SiparisIptalModali from './components/SiparisIptalModali';

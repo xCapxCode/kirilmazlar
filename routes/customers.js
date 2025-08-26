@@ -3,9 +3,9 @@
  * Customer management endpoints
  */
 
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const { authenticateToken, requireRole, requireAdmin, requireSellerOrAdmin } = require('../middleware/auth');
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import { authenticateToken, requireRole, requireAdmin, requireSellerOrAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -15,21 +15,6 @@ let pool;
 // Function to set database pool
 const setPool = (dbPool) => {
   pool = dbPool;
-};
-
-// Authorization middleware
-const requireRole = (roles) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ success: false, error: 'Authentication required' });
-    }
-    
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ success: false, error: 'Insufficient permissions' });
-    }
-    
-    next();
-  };
 };
 
 // Get all customers
@@ -581,4 +566,4 @@ router.post('/:id/loyalty', authenticateToken, requireRole(['admin', 'seller']),
   }
 });
 
-module.exports = { router, setPool };
+export default { router, setPool };

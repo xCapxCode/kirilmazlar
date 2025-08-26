@@ -5,7 +5,7 @@ import { useCart } from '../../../../contexts/CartContext';
 import { useBreakpoint } from '../../../../hooks/useBreakpoint';
 import Icon from '../../../../shared/components/AppIcon';
 import Image from '../../../../shared/components/AppImage';
-import { logger } from '../../../../utils/productionLogger';
+import logger from '../../../../utils/productionLogger';
 
 const ShoppingCartCheckout = () => {
   const navigate = useNavigate();
