@@ -6,6 +6,7 @@ import { useAuth } from '../../../../contexts/AuthContext';
 import { useModal } from '../../../../contexts/ModalContext';
 import { useNotification } from '../../../../contexts/NotificationContext';
 import { useBreakpoint } from '../../../../hooks/useBreakpoint';
+import { useOrderEvents } from '../../../../hooks/useWebSocket';
 import orderService from '../../../../services/orderService';
 // Order cleanup utility removed - using direct order service
 import { logger } from '../../../../utils/productionLogger';
@@ -29,6 +30,38 @@ const CustomerOrders = () => {
     completedOrders: 0,
     cancelledOrders: 0,
     totalSpent: 0
+  });
+
+  // WebSocket order events
+  useOrderEvents({
+    onOrderCreated: (order) => {
+      // Sadece bu müşterinin siparişi ise güncelle
+      if (order.customer_id === userProfile?.id) {
+        logger.info('🔄 Yeni sipariş oluşturuldu:', order);
+        loadOrders();
+        showSuccess('Yeni siparişiniz oluşturuldu!');
+      }
+    },
+    onOrderUpdated: (order) => {
+      // Sadece bu müşterinin siparişi ise güncelle
+      if (order.customer_id === userProfile?.id) {
+        logger.info('🔄 Sipariş güncellendi:', order);
+        setOrders(prevOrders => 
+          prevOrders.map(o => o.id === order.id ? { ...o, ...order } : o)
+        );
+        showSuccess('Sipariş durumunuz güncellendi!');
+      }
+    },
+    onOrderStatusChanged: (data) => {
+      // Sadece bu müşterinin siparişi ise güncelle
+      if (data.customer_id === userProfile?.id) {
+        logger.info('🔄 Sipariş durumu değişti:', data);
+        setOrders(prevOrders => 
+          prevOrders.map(o => o.id === data.order_id ? { ...o, status: data.status } : o)
+        );
+        showSuccess(`Sipariş durumunuz "${data.status}" olarak güncellendi!`);
+      }
+    }
   });
 
   const calculateStats = useCallback((orders) => {

@@ -7,7 +7,7 @@
  * @date July 24, 2025
  */
 
-import { createContext, useCallback, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useState, useEffect } from 'react';
 import {
   EnhancedNotificationProvider,
   TOAST_DURATIONS,
@@ -16,6 +16,7 @@ import {
   useEnhancedNotification
 } from '../components/ui/EnhancedNotifications';
 import Icon from '../shared/components/AppIcon';
+import { useNotifications } from '../hooks/useWebSocket';
 
 const NotificationContext = createContext();
 
@@ -123,6 +124,8 @@ const NotificationContainer = ({ notifications, onClose }) => {
 export const NotificationProvider = ({ children }) => {
   // Legacy state for backward compatibility
   const [legacyNotifications, setLegacyNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const { onNotification, onSystemMaintenance } = useNotifications();
 
   // Legacy notification methods
   const addNotification = useCallback((message, type = 'info', title = null, duration = 5000) => {
@@ -169,13 +172,67 @@ export const NotificationProvider = ({ children }) => {
 
   const clearAll = useCallback(() => {
     setLegacyNotifications([]);
+    setUnreadCount(0);
   }, []);
+
+  const markAsRead = useCallback((id) => {
+    setLegacyNotifications(prev => 
+      prev.map(notification => {
+        if (notification.id === id && !notification.read) {
+          setUnreadCount(count => Math.max(0, count - 1));
+          return { ...notification, read: true };
+        }
+        return notification;
+      })
+    );
+  }, []);
+
+  const markAllAsRead = useCallback(() => {
+    setLegacyNotifications(prev => 
+      prev.map(notification => ({ ...notification, read: true }))
+    );
+    setUnreadCount(0);
+  }, []);
+
+  // Listen to WebSocket notifications
+  useEffect(() => {
+    const unsubscribeNotification = onNotification((data) => {
+      const notificationId = addNotification(
+        data.message,
+        data.type || 'info',
+        data.title,
+        data.persistent ? 0 : 5000
+      );
+      
+      // Update unread count
+      setUnreadCount(prev => prev + 1);
+    });
+
+    const unsubscribeMaintenance = onSystemMaintenance((data) => {
+      addNotification(
+        data.message || 'Sistem bakımı planlanmıştır',
+        'warning',
+        'Sistem Bakımı',
+        0 // Persistent
+      );
+      
+      setUnreadCount(prev => prev + 1);
+    });
+
+    return () => {
+      if (unsubscribeNotification) unsubscribeNotification();
+      if (unsubscribeMaintenance) unsubscribeMaintenance();
+    };
+  }, [onNotification, onSystemMaintenance, addNotification]);
 
   const contextValue = {
     // Legacy methods
     notifications: legacyNotifications,
+    unreadCount,
     addNotification,
     removeNotification,
+    markAsRead,
+    markAllAsRead,
     showSuccess,
     showError,
     showWarning,

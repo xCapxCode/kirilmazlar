@@ -3,6 +3,7 @@ import storage from '@core/storage';
 import logger from '@utils/productionLogger';
 import { TEST_BUSINESS } from '../data/testUsers.js';
 import sessionManagementService from './sessionManagementService.js';
+import apiService from './apiService.js';
 
 class AuthService {
   constructor() {
@@ -51,7 +52,54 @@ class AuthService {
   async login(emailOrUsername, password, rememberMe = false) {
     try {
       const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
-      logger.debug('🔐 Login attempt started:', { emailOrUsername, rememberMe, environment: isProduction ? 'PRODUCTION' : 'DEVELOPMENT' });
+      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
+      
+      logger.debug('🔐 Login attempt started:', { 
+        emailOrUsername, 
+        rememberMe, 
+        environment: isProduction ? 'PRODUCTION' : 'DEVELOPMENT',
+        storageType 
+      });
+
+      // Use API if configured, fallback to localStorage
+      if (storageType === 'api') {
+        try {
+          logger.debug('🌐 Attempting API login...');
+          const response = await apiService.login(emailOrUsername, password, rememberMe);
+          
+          if (response.success) {
+            // Set current user and auth state with remember me logic
+            this.currentUser = response.user;
+            await storage.set('currentUser', response.user);
+            await storage.set('isAuthenticated', true);
+            
+            // Remember me functionality
+            if (rememberMe) {
+              const rememberExpiry = Date.now() + (30 * 24 * 60 * 60 * 1000);
+              await storage.set('rememberMe', true);
+              await storage.set('sessionExpiry', rememberExpiry);
+              logger.debug('🔐 Remember me enabled - session extended to 30 days');
+            } else {
+              const standardExpiry = Date.now() + (24 * 60 * 60 * 1000);
+              await storage.set('rememberMe', false);
+              await storage.set('sessionExpiry', standardExpiry);
+              logger.debug('🔐 Standard session - 24 hours');
+            }
+            
+            logger.info('✅ API Login successful for user:', response.user.username || response.user.email);
+            return {
+              success: true,
+              user: response.user
+            };
+          }
+        } catch (apiError) {
+          logger.warn('🌐 API login failed, falling back to localStorage:', apiError.message);
+          // Continue with localStorage fallback
+        }
+      }
+
+      // localStorage fallback
+      logger.debug('💾 Using localStorage authentication...');
 
       // DETAYLI STORAGE DEBUG
       logger.debug('🔍 LocalStorage debug başlıyor...');
@@ -228,6 +276,18 @@ class AuthService {
   // Logout
   async logout() {
     try {
+      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
+      
+      // API logout if configured
+      if (storageType === 'api') {
+        try {
+          await apiService.logout();
+          logger.info('🌐 API logout successful');
+        } catch (apiError) {
+          logger.warn('🌐 API logout failed:', apiError.message);
+        }
+      }
+      
       await this.clearAuthStorage();
       logger.info('👋 Logout successful');
       return { success: true };
@@ -294,6 +354,15 @@ class AuthService {
   // Check if session is still valid
   isSessionValid() {
     try {
+      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
+      
+      // API validation if configured
+      if (storageType === 'api') {
+        // For API mode, we rely on token validation
+        return apiService.isTokenValid();
+      }
+      
+      // Local session validation
       const sessionExpiry = storage.get('sessionExpiry');
       if (!sessionExpiry) {
         return true; // No expiry set, assume valid

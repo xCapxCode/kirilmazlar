@@ -4,6 +4,7 @@ import { ALL_USERS, INITIAL_CUSTOMERS } from '../data/initialData.js';
 import { DEMO_CUSTOMERS, DEMO_ORDERS } from '../data/demoData.js';
 import dataValidator from '../utils/dataValidator.js';
 import logger from '../utils/productionLogger.js';
+import apiService from './apiService.js';
 
 class DataService {
     constructor() {
@@ -12,59 +13,149 @@ class DataService {
         this.initializeData();
     }
 
-    // Veri başlatma - Sadece bir kez çalışır
-    initializeData() {
+    // Veri yükleme ve başlatma
+    async initializeData() {
         if (this.isInitialized) {
             logger.debug('DataService zaten initialize edilmiş, atlanıyor');
             return;
         }
 
         try {
-            logger.info('🚀 DataService initialization başlıyor...');
+            logger.info('🔄 DataService başlatılıyor...');
             
-            // Production environment kontrolü
-            const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
-            logger.info('🌍 Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
+            const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
+            logger.info(`📦 Storage type: ${storageType}`);
             
-            this.isInitialized = true; // Hemen başlangıçta true yapalım
-            
-            // Veri versiyonu kontrolü
-            const currentVersion = '1.0.0';
-            const savedVersion = storage.get('dataVersion');
-
-            if (savedVersion !== currentVersion) {
-                logger.info('🔄 Veri versiyonu güncelleniyor:', savedVersion, '→', currentVersion);
-                // Production'da veri sıfırlama yapmayalım
-                if (!isProduction) {
-                    logger.info('🧹 Development ortamında veri sıfırlanıyor');
-                    // this.resetAllData(); // Gerekirse aktif et
+            if (storageType === 'api') {
+                // API mode - test connection and sync initial data
+                try {
+                    await apiService.healthCheck();
+                    logger.info('🌐 API connection successful');
+                    
+                    // Load initial data from API if needed
+                    await this.syncFromAPI();
+                } catch (apiError) {
+                    logger.warn('🌐 API connection failed, using localStorage fallback:', apiError.message);
+                    await this.initializeLocalStorage();
                 }
-                storage.set('dataVersion', currentVersion);
+            } else {
+                // localStorage mode
+                await this.initializeLocalStorage();
             }
-
-            // Temel verileri kontrol et ve eksikleri tamamla
-            this.ensureBaseData();
-
-            // Veri doğrulaması yap
-            const validation = dataValidator.validateAll();
-            if (!validation.isValid) {
-                logger.warn('⚠️ Veri doğrulama sorunları tespit edildi');
-                // Otomatik düzeltme dene
-                const fixes = dataValidator.autoFix();
-                if (fixes.length > 0) {
-                    logger.info('🔧 Otomatik düzeltmeler uygulandı:', fixes);
-                }
-            }
-
-            // Periyodik doğrulama başlat (sadece development'da)
-            if (import.meta.env.DEV) {
-                dataValidator.startPeriodicValidation(10); // 10 dakikada bir
-            }
-
+            
             this.isInitialized = true;
-            logger.info('✅ Veri servisi başlatıldı');
+            logger.info('✅ DataService başarıyla başlatıldı');
+            return true;
         } catch (error) {
-            logger.error('❌ Veri servisi başlatma hatası:', error);
+            logger.error('❌ DataService başlatma hatası:', error);
+            return false;
+        }
+    }
+    
+    // Initialize localStorage data
+    async initializeLocalStorage() {
+        // Production environment kontrolü
+        const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+        logger.info('🌍 Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
+        
+        // Veri versiyonu kontrolü
+        const currentVersion = '1.0.0';
+        const savedVersion = storage.get('dataVersion');
+
+        if (savedVersion !== currentVersion) {
+            logger.info('🔄 Veri versiyonu güncelleniyor:', savedVersion, '→', currentVersion);
+            // Production'da veri sıfırlama yapmayalım
+            if (!isProduction) {
+                logger.info('🧹 Development ortamında veri sıfırlanıyor');
+                // this.resetAllData(); // Gerekirse aktif et
+            }
+            storage.set('dataVersion', currentVersion);
+        }
+
+        // Temel verileri kontrol et ve eksikleri tamamla
+        this.ensureBaseData();
+
+        // Veri doğrulaması yap
+        const validation = dataValidator.validateAll();
+        if (!validation.isValid) {
+            logger.warn('⚠️ Veri doğrulama sorunları tespit edildi');
+            // Otomatik düzeltme dene
+            const fixes = dataValidator.autoFix();
+            if (fixes.length > 0) {
+                logger.info('🔧 Otomatik düzeltmeler uygulandı:', fixes);
+            }
+        }
+
+        // Periyodik doğrulama başlat (sadece development'da)
+        if (import.meta.env.DEV) {
+            dataValidator.startPeriodicValidation(10); // 10 dakikada bir
+        }
+    }
+    
+    // Sync data from API
+    async syncFromAPI() {
+        try {
+            logger.info('🔄 Syncing data from API...');
+            
+            // Check if we have any local data
+            const hasLocalData = storage.get('dataVersion');
+            
+            if (!hasLocalData) {
+                // First time setup - load initial data locally as fallback
+                this.ensureBaseData();
+                logger.info('📦 Initial data loaded as fallback');
+            }
+            
+            // Try to sync with API (non-blocking)
+            this.backgroundSync();
+            
+        } catch (error) {
+            logger.error('❌ API sync error:', error);
+            throw error;
+        }
+    }
+    
+    // Background sync with API
+    async backgroundSync() {
+        try {
+            // This runs in background and doesn't block initialization
+            setTimeout(async () => {
+                try {
+                    const [users, customers, products, orders] = await Promise.allSettled([
+                        apiService.getUsers(),
+                        apiService.getCustomers(),
+                        apiService.getProducts(),
+                        apiService.getOrders()
+                    ]);
+                    
+                    // Update local cache with API data
+                    if (users.status === 'fulfilled' && users.value.success) {
+                        await storage.set('users', users.value.users || []);
+                        logger.debug('📥 Users synced from API');
+                    }
+                    
+                    if (customers.status === 'fulfilled' && customers.value.success) {
+                        await storage.set('customers', customers.value.customers || []);
+                        logger.debug('📥 Customers synced from API');
+                    }
+                    
+                    if (products.status === 'fulfilled' && products.value.success) {
+                        await storage.set('products', products.value.products || []);
+                        logger.debug('📥 Products synced from API');
+                    }
+                    
+                    if (orders.status === 'fulfilled' && orders.value.success) {
+                        await storage.set('orders', orders.value.orders || []);
+                        logger.debug('📥 Orders synced from API');
+                    }
+                    
+                    logger.info('✅ Background sync completed');
+                } catch (syncError) {
+                    logger.warn('⚠️ Background sync failed:', syncError.message);
+                }
+            }, 1000); // 1 second delay
+        } catch (error) {
+            logger.error('❌ Background sync setup error:', error);
         }
     }
 

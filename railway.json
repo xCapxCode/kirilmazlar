@@ -3,12 +3,39 @@
   "build": {
     "builder": "DOCKERFILE",
     "dockerfilePath": "Dockerfile",
-    "buildCommand": "npm install && npm run build"
+    "buildCommand": "npm ci --production=false && npm run build",
+    "watchPatterns": [
+      "src/**",
+      "public/**",
+      "package.json",
+      "vite.config.js",
+      "Dockerfile"
+    ]
   },
   "deploy": {
     "healthcheckPath": "/",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 3
+    "restartPolicyMaxRetries": 3,
+    "numReplicas": 1,
+    "sleepApplication": false
+  },
+  "environments": {
+    "production": {
+      "variables": {
+        "NODE_ENV": "production",
+        "VITE_APP_ENVIRONMENT": "production",
+        "VITE_APP_DEBUG": "false",
+        "VITE_ENABLE_CONSOLE_LOGS": "false",
+        "VITE_ENABLE_DEVELOPER_TOOLS": "false",
+        "VITE_ENABLE_MOCK_DATA": "false",
+        "VITE_STORAGE_TYPE": "api",
+        "VITE_ENABLE_SERVICE_WORKER": "true",
+        "VITE_ENABLE_CSP": "true",
+        "VITE_ENABLE_HTTPS": "true",
+        "VITE_BUILD_SOURCEMAP": "false",
+        "VITE_BUILD_MINIFY": "true"
+      }
+    }
   }
 }

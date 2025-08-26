@@ -8,6 +8,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useCart } from '../../../../contexts/CartContext';
 import { useNotification } from '../../../../contexts/NotificationContext';
 import { useBreakpoint } from '../../../../hooks/useBreakpoint';
+import { useProductEvents } from '../../../../hooks/useWebSocket';
 
 import Icon from '@shared/components/AppIcon';
 import CategoryChips from './components/CategoryChips';
@@ -21,6 +22,7 @@ const CustomerProductCatalog = () => {
   const { addToCart } = useCart();
   const { showSuccess } = useNotification();
   const { isMobile, isTablet } = useBreakpoint(); // Responsive hook
+  const { onProductCreated, onProductUpdated, onProductDeleted } = useProductEvents();
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -118,6 +120,45 @@ const CustomerProductCatalog = () => {
       clearInterval(interval);
     };
   }, []);
+
+  // WebSocket real-time events
+  useEffect(() => {
+    // Yeni ürün oluşturulduğunda
+    const handleProductCreated = (product) => {
+      setProducts(prev => {
+        const exists = prev.some(p => p.id === product.id);
+        if (!exists) {
+          logger.info('🆕 Yeni ürün eklendi:', product.name);
+          return [...prev, product];
+        }
+        return prev;
+      });
+    };
+
+    // Ürün güncellendiğinde
+    const handleProductUpdated = (updatedProduct) => {
+      setProducts(prev => {
+        const updated = prev.map(p => 
+          p.id === updatedProduct.id ? { ...p, ...updatedProduct } : p
+        );
+        logger.info('🔄 Ürün güncellendi:', updatedProduct.name);
+        return updated;
+      });
+    };
+
+    // Ürün silindiğinde
+    const handleProductDeleted = (productId) => {
+      setProducts(prev => {
+        const filtered = prev.filter(p => p.id !== productId);
+        logger.info('🗑️ Ürün silindi:', productId);
+        return filtered;
+      });
+    };
+
+    onProductCreated(handleProductCreated);
+    onProductUpdated(handleProductUpdated);
+    onProductDeleted(handleProductDeleted);
+  }, [onProductCreated, onProductUpdated, onProductDeleted]);
 
   // Custom filtered products - daha basit ve güvenilir
   const filteredProductsMemo = useMemo(() => {

@@ -1,4 +1,8 @@
 import storage from '@core/storage';
+import logger from '../utils/productionLogger.js';
+import { generateId } from '../utils/helpers.js';
+import dataValidator from '../utils/dataValidator.js';
+import apiService from './apiService.js';
 // Removed orderService import to avoid circular dependency
 
 /**
@@ -10,13 +14,80 @@ class CustomerService {
    * Tüm müşterileri getirir
    * @returns {Promise<Array>} - Müşteri listesi
    */
-  async getAll() {
+  async getAll(filters = {}) {
     try {
-      const customers = await storage.get('customers', []);
-      return customers;
+      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
+      
+      if (storageType === 'api') {
+        try {
+          const result = await apiService.getCustomers(filters);
+          if (result.success) {
+            // Cache the data locally
+            await storage.set('customers', result.customers || []);
+            return result;
+          }
+          throw new Error(result.error || 'API call failed');
+        } catch (apiError) {
+          logger.warn('API call failed, using localStorage fallback:', apiError.message);
+          // Fall back to localStorage
+        }
+      }
+      
+      // localStorage implementation
+      let customers = await storage.get('customers', []);
+      
+      // Filtreleme
+      if (filters.search) {
+        const searchTerm = filters.search.toLowerCase();
+        customers = customers.filter(customer => 
+          customer.name?.toLowerCase().includes(searchTerm) ||
+          customer.email?.toLowerCase().includes(searchTerm) ||
+          customer.phone?.includes(searchTerm)
+        );
+      }
+      
+      if (filters.city) {
+        customers = customers.filter(customer => 
+          customer.address?.city?.toLowerCase() === filters.city.toLowerCase()
+        );
+      }
+      
+      if (filters.status) {
+        customers = customers.filter(customer => customer.status === filters.status);
+      }
+      
+      // Sıralama
+      if (filters.sortBy) {
+        customers.sort((a, b) => {
+          const aVal = a[filters.sortBy];
+          const bVal = b[filters.sortBy];
+          
+          if (filters.sortOrder === 'desc') {
+            return bVal > aVal ? 1 : -1;
+          }
+          return aVal > bVal ? 1 : -1;
+        });
+      }
+      
+      // Sayfalama
+      if (filters.page && filters.limit) {
+        const start = (filters.page - 1) * filters.limit;
+        const end = start + filters.limit;
+        customers = customers.slice(start, end);
+      }
+      
+      return {
+        success: true,
+        customers,
+        total: customers.length
+      };
     } catch (error) {
-      console.error('Müşteriler yüklenirken hata:', error);
-      throw error;
+      logger.error('Müşteri listesi getirme hatası:', error);
+      return {
+        success: false,
+        error: error.message,
+        customers: []
+      };
     }
   }
 
@@ -27,11 +98,42 @@ class CustomerService {
    */
   async getById(id) {
     try {
+      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
+      
+      if (storageType === 'api') {
+        try {
+          const result = await apiService.getCustomer(id);
+          if (result.success) {
+            return result;
+          }
+          throw new Error(result.error || 'API call failed');
+        } catch (apiError) {
+          logger.warn('API call failed, using localStorage fallback:', apiError.message);
+          // Fall back to localStorage
+        }
+      }
+      
+      // localStorage implementation
       const customers = await storage.get('customers', []);
-      return customers.find(customer => customer.id === id) || null;
+      const customer = customers.find(customer => customer.id === id);
+      
+      if (!customer) {
+        return {
+          success: false,
+          error: 'Müşteri bulunamadı'
+        };
+      }
+      
+      return {
+        success: true,
+        customer
+      };
     } catch (error) {
-      console.error(`ID'si ${id} olan müşteri yüklenirken hata:`, error);
-      throw error;
+      logger.error('Müşteri getirme hatası:', error);
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
 
@@ -42,17 +144,57 @@ class CustomerService {
    */
   async create(customerData) {
     try {
+      // Veri doğrulama
+      const validation = dataValidator.validateCustomer(customerData);
+      if (!validation.isValid) {
+        return {
+          success: false,
+          error: 'Geçersiz müşteri verisi',
+          details: validation.errors
+        };
+      }
+      
+      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
+      
+      if (storageType === 'api') {
+        try {
+          const result = await apiService.createCustomer(customerData);
+          if (result.success) {
+            // Update local cache
+            const customers = await storage.get('customers', []);
+            customers.push(result.customer);
+            await storage.set('customers', customers);
+            return result;
+          }
+          throw new Error(result.error || 'API call failed');
+        } catch (apiError) {
+          logger.warn('API call failed, using localStorage fallback:', apiError.message);
+          // Fall back to localStorage
+        }
+      }
+      
       console.log('🔄 CustomerService.create başlatılıyor:', customerData);
 
       const customers = await storage.get('customers', []);
       console.log('📋 Mevcut müşteriler:', customers.length);
+      
+      // Email kontrolü
+      if (customers.some(c => c.email === customerData.email)) {
+        return {
+          success: false,
+          error: 'Bu email adresi zaten kullanılıyor'
+        };
+      }
 
       const newCustomer = {
-        id: Date.now(),
+        id: generateId(),
         ...customerData,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        status: 'active'
+        status: 'active',
+        loyaltyPoints: 0,
+        totalSpent: 0,
+        orderCount: 0
       };
 
       console.log('📝 Oluşturulan müşteri objesi:', newCustomer);
@@ -91,11 +233,19 @@ class CustomerService {
           console.log('✅ Müşteri user hesabı oluşturuldu:', customerData.email);
         }
       }
-
-      return newCustomer;
+      
+      logger.info('Yeni müşteri oluşturuldu:', newCustomer.id);
+      
+      return {
+        success: true,
+        customer: newCustomer
+      };
     } catch (error) {
-      console.error('Müşteri oluşturulurken hata:', error);
-      throw error;
+      logger.error('Müşteri oluşturma hatası:', error);
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
 
@@ -107,6 +257,29 @@ class CustomerService {
    */
   async update(id, updateData) {
     try {
+      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
+      
+      if (storageType === 'api') {
+        try {
+          const result = await apiService.updateCustomer(id, updateData);
+          if (result.success) {
+            // Update local cache
+            const customers = await storage.get('customers', []);
+            const customerIndex = customers.findIndex(c => c.id === id);
+            if (customerIndex !== -1) {
+              customers[customerIndex] = result.customer;
+              await storage.set('customers', customers);
+            }
+            return result.customer;
+          }
+          throw new Error(result.error || 'API call failed');
+        } catch (apiError) {
+          logger.warn('API call failed, using localStorage fallback:', apiError.message);
+          // Fall back to localStorage
+        }
+      }
+      
+      // localStorage implementation
       const customers = await storage.get('customers', []);
       const customerIndex = customers.findIndex(customer => customer.id === id);
 
@@ -157,6 +330,26 @@ class CustomerService {
    */
   async delete(id) {
     try {
+      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
+      
+      if (storageType === 'api') {
+        try {
+          const result = await apiService.deleteCustomer(id);
+          if (result.success) {
+            // Update local cache
+            const customers = await storage.get('customers', []);
+            const filteredCustomers = customers.filter(c => c.id !== id);
+            await storage.set('customers', filteredCustomers);
+            return true;
+          }
+          throw new Error(result.error || 'API call failed');
+        } catch (apiError) {
+          logger.warn('API call failed, using localStorage fallback:', apiError.message);
+          // Fall back to localStorage
+        }
+      }
+      
+      // localStorage implementation
       const customers = await storage.get('customers', []);
       const customerToDelete = customers.find(customer => customer.id === id);
       const filteredCustomers = customers.filter(customer => customer.id !== id);

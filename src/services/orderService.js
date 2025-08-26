@@ -1,4 +1,8 @@
 import storage from '@core/storage';
+import logger from '../utils/productionLogger.js';
+import { generateId } from '../utils/helpers.js';
+import dataValidator from '../utils/dataValidator.js';
+import apiService from './apiService.js';
 /**
  * Sipariş yönetimi için servis sınıfı
  * Sipariş CRUD işlemleri ve senkronizasyon için kullanılır
@@ -11,6 +15,24 @@ class OrderService {
    */
   async getAll(options = {}) {
     try {
+      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
+      
+      if (storageType === 'api') {
+        try {
+          const result = await apiService.getOrders(options);
+          if (result.success) {
+            // Cache the data locally
+            await storage.set('customer_orders', result.orders || []);
+            return this.normalizeOrders(result.orders || [], options);
+          }
+          throw new Error(result.error || 'API call failed');
+        } catch (apiError) {
+          logger.warn('API call failed, using localStorage fallback:', apiError.message);
+          // Fall back to localStorage
+        }
+      }
+      
+      // localStorage implementation
       // PRIMARY SOURCE: customer_orders storage'ı ana kaynak
       const customerOrders = await storage.get('customer_orders', []);
       const sellerOrders = await storage.get('orders', []);
@@ -154,6 +176,22 @@ class OrderService {
    */
   async getById(id) {
     try {
+      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
+      
+      if (storageType === 'api') {
+        try {
+          const result = await apiService.getOrder(id);
+          if (result.success) {
+            return result.order;
+          }
+          throw new Error(result.error || 'API call failed');
+        } catch (apiError) {
+          logger.warn('API call failed, using localStorage fallback:', apiError.message);
+          // Fall back to localStorage
+        }
+      }
+      
+      // localStorage implementation
       const customerOrders = await storage.get('customer_orders', []);
       const sellerOrders = await storage.get('orders', []);
 
@@ -198,6 +236,32 @@ class OrderService {
    */
   async create(orderData) {
     try {
+      // Veri doğrulama
+      const validation = dataValidator.validateOrder(orderData);
+      if (!validation.isValid) {
+        throw new Error('Geçersiz sipariş verisi: ' + validation.errors.join(', '));
+      }
+      
+      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
+      
+      if (storageType === 'api') {
+        try {
+          const result = await apiService.createOrder(orderData);
+          if (result.success) {
+            // Update local cache
+            const customerOrders = await storage.get('customer_orders', []);
+            customerOrders.push(result.order);
+            await storage.set('customer_orders', customerOrders);
+            return result.order;
+          }
+          throw new Error(result.error || 'API call failed');
+        } catch (apiError) {
+          logger.warn('API call failed, using localStorage fallback:', apiError.message);
+          // Fall back to localStorage
+        }
+      }
+      
+      // localStorage implementation
       // Order settings'i yükle
       const orderSettings = await storage.get('order_settings', {
         orderPrefix: 'SIP',
@@ -208,9 +272,7 @@ class OrderService {
       const customerOrders = await storage.get('customer_orders', []);
 
       // Yeni ID oluştur
-      const newId = customerOrders.length > 0
-        ? Math.max(...customerOrders.map(o => typeof o.id === 'number' ? o.id : 0)) + 1
-        : 1;
+      const newId = generateId();
 
       // Business ayarlarına göre sipariş numarası oluştur
       const sequenceNumber = orderSettings.orderNumberStart + customerOrders.length;
@@ -222,6 +284,7 @@ class OrderService {
         id: newId,
         orderNumber,
         status: orderData.status || 'pending',
+        paymentStatus: 'pending',
         customerId: orderData.customerId, // Bu field kesinlikle set edilmeli
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -243,9 +306,11 @@ class OrderService {
       const updatedSellerOrders = [...sellerOrders, newOrder];
       await storage.set('orders', updatedSellerOrders);
 
+      logger.info('Yeni sipariş oluşturuldu:', newOrder.id);
+
       return newOrder;
     } catch (error) {
-      console.error('Sipariş oluşturulurken hata:', error);
+      logger.error('Sipariş oluşturulurken hata:', error);
       throw error;
     }
   }
@@ -346,12 +411,112 @@ class OrderService {
   }
 
   /**
+   * Sipariş günceller
+   * @param {number|string} id - Sipariş ID'si
+   * @param {Object} updateData - Güncellenecek veriler
+   * @returns {Promise<Object|null>} - Güncellenen sipariş veya null
+   */
+  async update(id, updateData) {
+    try {
+      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
+      
+      if (storageType === 'api') {
+        try {
+          const result = await apiService.updateOrder(id, updateData);
+          if (result.success) {
+            // Update local cache
+            const customerOrders = await storage.get('customer_orders', []);
+            const sellerOrders = await storage.get('orders', []);
+            
+            const customerOrderIndex = customerOrders.findIndex(order => order.id === id);
+            if (customerOrderIndex !== -1) {
+              customerOrders[customerOrderIndex] = result.order;
+              await storage.set('customer_orders', customerOrders);
+            }
+            
+            const sellerOrderIndex = sellerOrders.findIndex(order => order.id === id);
+            if (sellerOrderIndex !== -1) {
+              sellerOrders[sellerOrderIndex] = result.order;
+              await storage.set('orders', sellerOrders);
+            }
+            
+            return result.order;
+          }
+          throw new Error(result.error || 'API call failed');
+        } catch (apiError) {
+          logger.warn('API call failed, using localStorage fallback:', apiError.message);
+          // Fall back to localStorage
+        }
+      }
+      
+      // localStorage implementation
+      const customerOrders = await storage.get('customer_orders', []);
+      const sellerOrders = await storage.get('orders', []);
+      
+      // Customer orders'da ara
+      const customerOrderIndex = customerOrders.findIndex(order => order.id === id);
+      if (customerOrderIndex !== -1) {
+        customerOrders[customerOrderIndex] = {
+          ...customerOrders[customerOrderIndex],
+          ...updateData,
+          updatedAt: new Date().toISOString()
+        };
+        await storage.set('customer_orders', customerOrders);
+        return customerOrders[customerOrderIndex];
+      }
+      
+      // Seller orders'da ara
+      const sellerOrderIndex = sellerOrders.findIndex(order => order.id === id);
+      if (sellerOrderIndex !== -1) {
+        sellerOrders[sellerOrderIndex] = {
+          ...sellerOrders[sellerOrderIndex],
+          ...updateData,
+          updatedAt: new Date().toISOString()
+        };
+        await storage.set('orders', sellerOrders);
+        return sellerOrders[sellerOrderIndex];
+      }
+      
+      return null;
+    } catch (error) {
+      logger.error('Sipariş güncellenirken hata:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Sipariş siler
    * @param {number|string} id - Sipariş ID'si
    * @returns {Promise<boolean>} - Başarılı ise true, değilse false
    */
   async delete(id) {
     try {
+      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
+      
+      if (storageType === 'api') {
+        try {
+          const result = await apiService.deleteOrder(id);
+          if (result.success) {
+            // Update local cache
+            const customerOrders = await storage.get('customer_orders', []);
+            const sellerOrders = await storage.get('orders', []);
+            
+            const updatedCustomerOrders = customerOrders.filter(order => order.id !== id);
+            const updatedSellerOrders = sellerOrders.filter(order => order.id !== id);
+            
+            await storage.set('customer_orders', updatedCustomerOrders);
+            await storage.set('orders', updatedSellerOrders);
+            
+            return true;
+          }
+          throw new Error(result.error || 'API call failed');
+        } catch (apiError) {
+          logger.warn('API call failed, using localStorage fallback:', apiError.message);
+          // Fall back to localStorage
+        }
+      }
+      
+      // localStorage implementation
       // Hem customer_orders hem de orders storage'larından sil
       const customerOrders = await storage.get('customer_orders', []);
       const sellerOrders = await storage.get('orders', []);
@@ -369,7 +534,7 @@ class OrderService {
 
       return true;
     } catch (error) {
-      console.error(`ID'si ${id} olan sipariş silinirken hata:`, error);
+      logger.error(`ID'si ${id} olan sipariş silinirken hata:`, error);
       throw error;
     }
   }

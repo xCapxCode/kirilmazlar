@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../../../../contexts/AuthContext';
 import { useModal } from '../../../../../contexts/ModalContext';
 import { useNotification } from '../../../../../contexts/NotificationContext';
+import { useProductEvents } from '../../../../../hooks/useWebSocket';
 import productSyncService from '../../../../../services/productSyncService';
 import Icon from '../../../../../shared/components/AppIcon';
 import SaticiHeader from '../../../../../shared/components/ui/SaticiHeader';
@@ -15,6 +16,7 @@ const UrunYonetimi = () => {
   const { user, userProfile, loading: authLoading } = useAuth();
   const { showConfirm } = useModal();
   const { showSuccess, showError } = useNotification();
+  const { onProductCreated, onProductUpdated, onProductDeleted } = useProductEvents();
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -55,6 +57,47 @@ const UrunYonetimi = () => {
       };
     }
   }, [user, userProfile]);
+
+  // WebSocket real-time events
+  useEffect(() => {
+    if (!user || !userProfile) return;
+
+    // Yeni ürün oluşturulduğunda
+    const handleProductCreated = (product) => {
+      setProducts(prev => {
+        const exists = prev.some(p => p.id === product.id);
+        if (!exists) {
+          showSuccess(`Yeni ürün eklendi: ${product.name}`);
+          return [...prev, product];
+        }
+        return prev;
+      });
+    };
+
+    // Ürün güncellendiğinde
+    const handleProductUpdated = (updatedProduct) => {
+      setProducts(prev => {
+        const updated = prev.map(p => 
+          p.id === updatedProduct.id ? { ...p, ...updatedProduct } : p
+        );
+        showSuccess(`Ürün güncellendi: ${updatedProduct.name}`);
+        return updated;
+      });
+    };
+
+    // Ürün silindiğinde
+    const handleProductDeleted = (productId) => {
+      setProducts(prev => {
+        const filtered = prev.filter(p => p.id !== productId);
+        showSuccess('Ürün silindi');
+        return filtered;
+      });
+    };
+
+    onProductCreated(handleProductCreated);
+    onProductUpdated(handleProductUpdated);
+    onProductDeleted(handleProductDeleted);
+  }, [user, userProfile, onProductCreated, onProductUpdated, onProductDeleted, showSuccess]);
 
   // Tüm ürünleri otomatik yükle fonksiyonu
   const loadAllProductsFromImages = async () => {

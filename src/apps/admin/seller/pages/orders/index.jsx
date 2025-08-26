@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../../../../contexts/AuthContext';
 import { useModal } from '../../../../../contexts/ModalContext';
 import { useNotification } from '../../../../../contexts/NotificationContext';
+import { useOrderEvents } from '../../../../../hooks/useWebSocket';
 import orderService from '../../../../../services/orderService';
+import { logger } from '../../../../../utils/productionLogger';
 import Icon from '../../../../../shared/components/AppIcon';
 import SaticiHeader from '../../../../../shared/components/ui/SaticiHeader';
 
@@ -29,6 +31,29 @@ const SiparisYonetimi = () => {
     status: '',
     dateRange: 'all',
     sortBy: 'newest'
+  });
+
+  // WebSocket order events
+  useOrderEvents({
+    onOrderCreated: (order) => {
+      logger.info('🔄 Yeni sipariş oluşturuldu:', order);
+      setOrders(prevOrders => [order, ...prevOrders]);
+      showSuccess(`Yeni sipariş alındı: ${order.order_number || order.id}`);
+    },
+    onOrderUpdated: (order) => {
+      logger.info('🔄 Sipariş güncellendi:', order);
+      setOrders(prevOrders => 
+        prevOrders.map(o => o.id === order.id ? { ...o, ...order } : o)
+      );
+      showSuccess('Sipariş güncellendi');
+    },
+    onOrderStatusChanged: (data) => {
+      logger.info('🔄 Sipariş durumu değişti:', data);
+      setOrders(prevOrders => 
+        prevOrders.map(o => o.id === data.order_id ? { ...o, status: data.status } : o)
+      );
+      showSuccess(`Sipariş durumu "${data.status}" olarak güncellendi`);
+    }
   });
 
   // Real-time sipariş güncellemeleri için subscriptions

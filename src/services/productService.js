@@ -1,6 +1,8 @@
 import storage from '@core/storage';
-
-import logger from '@utils/productionLogger';
+import logger from '../utils/productionLogger.js';
+import { generateId } from '../utils/helpers.js';
+import dataValidator from '../utils/dataValidator.js';
+import apiService from './apiService.js';
 /**
  * Ürün yönetimi için servis sınıfı
  * Ürün CRUD işlemleri ve senkronizasyon için kullanılır
@@ -8,40 +10,144 @@ import logger from '@utils/productionLogger';
 class ProductService {
   /**
    * Tüm ürünleri getirir
-   * @param {Object} options - Filtreleme seçenekleri
-   * @returns {Promise<Array>} - Ürün listesi
+   * @param {Object} filters - Filtreleme seçenekleri
+   * @returns {Promise<Object>} - Ürün listesi ve sonuç bilgisi
    */
-  async getAll(options = {}) {
+  async getAll(filters = {}) {
     try {
-      const products = await storage.get('products', []);
-
-      if (options.activeOnly) {
-        return products.filter(product =>
+      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
+      
+      if (storageType === 'api') {
+        try {
+          const result = await apiService.getProducts(filters);
+          if (result.success) {
+            // Cache the data locally
+            await storage.set('products', result.products || []);
+            return result;
+          }
+          throw new Error(result.error || 'API call failed');
+        } catch (apiError) {
+          logger.warn('API call failed, using localStorage fallback:', apiError.message);
+          // Fall back to localStorage
+        }
+      }
+      
+      // localStorage implementation
+      let products = await storage.get('products', []);
+      
+      // Filtreleme
+      if (filters.search) {
+        const searchTerm = filters.search.toLowerCase();
+        products = products.filter(product => 
+          product.name?.toLowerCase().includes(searchTerm) ||
+          product.description?.toLowerCase().includes(searchTerm) ||
+          product.sku?.toLowerCase().includes(searchTerm)
+        );
+      }
+      
+      if (filters.category) {
+        products = products.filter(product => product.category === filters.category);
+      }
+      
+      if (filters.status) {
+        products = products.filter(product => product.status === filters.status);
+      }
+      
+      if (filters.activeOnly) {
+        products = products.filter(product =>
           product.isActive === true ||
           product.status === 'active' ||
           product.status === 'available'
         );
       }
-
-      return products;
+      
+      if (filters.minPrice || filters.maxPrice) {
+        products = products.filter(product => {
+          const price = parseFloat(product.price);
+          if (filters.minPrice && price < parseFloat(filters.minPrice)) return false;
+          if (filters.maxPrice && price > parseFloat(filters.maxPrice)) return false;
+          return true;
+        });
+      }
+      
+      // Sıralama
+      if (filters.sortBy) {
+        products.sort((a, b) => {
+          const aVal = a[filters.sortBy];
+          const bVal = b[filters.sortBy];
+          
+          if (filters.sortOrder === 'desc') {
+            return bVal > aVal ? 1 : -1;
+          }
+          return aVal > bVal ? 1 : -1;
+        });
+      }
+      
+      // Sayfalama
+      if (filters.page && filters.limit) {
+        const start = (filters.page - 1) * filters.limit;
+        const end = start + filters.limit;
+        products = products.slice(start, end);
+      }
+      
+      return {
+        success: true,
+        products,
+        total: products.length
+      };
     } catch (error) {
       logger.error('Ürünler yüklenirken hata:', error);
-      throw error;
+      return {
+        success: false,
+        error: error.message,
+        products: []
+      };
     }
   }
 
   /**
    * ID'ye göre ürün getirir
    * @param {number|string} id - Ürün ID'si
-   * @returns {Promise<Object|null>} - Ürün nesnesi veya null
+   * @returns {Promise<Object>} - Ürün nesnesi ve sonuç bilgisi
    */
   async getById(id) {
     try {
+      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
+      
+      if (storageType === 'api') {
+        try {
+          const result = await apiService.getProduct(id);
+          if (result.success) {
+            return result;
+          }
+          throw new Error(result.error || 'API call failed');
+        } catch (apiError) {
+          logger.warn('API call failed, using localStorage fallback:', apiError.message);
+          // Fall back to localStorage
+        }
+      }
+      
+      // localStorage implementation
       const products = await storage.get('products', []);
-      return products.find(product => product.id === id) || null;
+      const product = products.find(p => p.id === id);
+      
+      if (!product) {
+        return {
+          success: false,
+          error: 'Ürün bulunamadı'
+        };
+      }
+      
+      return {
+        success: true,
+        product
+      };
     } catch (error) {
       logger.error(`ID'si ${id} olan ürün yüklenirken hata:`, error);
-      throw error;
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
 
@@ -52,7 +158,45 @@ class ProductService {
    */
   async create(productData) {
     try {
+      // Veri doğrulama
+      const validation = dataValidator.validateProduct(productData);
+      if (!validation.isValid) {
+        return {
+          success: false,
+          error: 'Geçersiz ürün verisi',
+          details: validation.errors
+        };
+      }
+      
+      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
+      
+      if (storageType === 'api') {
+        try {
+          const result = await apiService.createProduct(productData);
+          if (result.success) {
+            // Update local cache
+            const products = await storage.get('products', []);
+            products.push(result.product);
+            await storage.set('products', products);
+            return result;
+          }
+          throw new Error(result.error || 'API call failed');
+        } catch (apiError) {
+          logger.warn('API call failed, using localStorage fallback:', apiError.message);
+          // Fall back to localStorage
+        }
+      }
+      
+      // localStorage implementation
       const products = await storage.get('products', []);
+      
+      // SKU kontrolü
+      if (products.some(p => p.sku === productData.sku)) {
+        return {
+          success: false,
+          error: 'Bu SKU zaten kullanılıyor'
+        };
+      }
 
       // Yeni ID oluştur
       const newId = products.length > 0
@@ -87,10 +231,16 @@ class ProductService {
 
       logger.info(`✅ Yeni ürün oluşturuldu: ${newId} -> ${newProduct.name}`);
 
-      return newProduct;
+      return {
+        success: true,
+        product: newProduct
+      };
     } catch (error) {
       logger.error('Ürün oluşturulurken hata:', error);
-      throw error;
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
 
@@ -102,11 +252,37 @@ class ProductService {
    */
   async update(id, productData) {
     try {
+      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
+      
+      if (storageType === 'api') {
+        try {
+          const result = await apiService.updateProduct(id, productData);
+          if (result.success) {
+            // Update local cache
+            const products = await storage.get('products', []);
+            const productIndex = products.findIndex(p => p.id === id);
+            if (productIndex !== -1) {
+              products[productIndex] = result.product;
+              await storage.set('products', products);
+            }
+            return result;
+          }
+          throw new Error(result.error || 'API call failed');
+        } catch (apiError) {
+          logger.warn('API call failed, using localStorage fallback:', apiError.message);
+          // Fall back to localStorage
+        }
+      }
+      
+      // localStorage implementation
       const products = await storage.get('products', []);
       const index = products.findIndex(product => product.id === id);
 
       if (index === -1) {
-        return null;
+        return {
+          success: false,
+          error: 'Ürün bulunamadı'
+        };
       }
 
       // Status ve isActive alanlarını senkronize et
@@ -136,10 +312,16 @@ class ProductService {
 
       logger.info(`✅ Ürün güncellendi: ${id} -> ${updatedProduct.name}`);
 
-      return updatedProduct;
+      return {
+        success: true,
+        product: updatedProduct
+      };
     } catch (error) {
       logger.error(`ID'si ${id} olan ürün güncellenirken hata:`, error);
-      throw error;
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
 
@@ -196,11 +378,34 @@ class ProductService {
    */
   async delete(id) {
     try {
+      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
+      
+      if (storageType === 'api') {
+        try {
+          const result = await apiService.deleteProduct(id);
+          if (result.success) {
+            // Update local cache
+            const products = await storage.get('products', []);
+            const filteredProducts = products.filter(p => p.id !== id);
+            await storage.set('products', filteredProducts);
+            return result;
+          }
+          throw new Error(result.error || 'API call failed');
+        } catch (apiError) {
+          logger.warn('API call failed, using localStorage fallback:', apiError.message);
+          // Fall back to localStorage
+        }
+      }
+      
+      // localStorage implementation
       const products = await storage.get('products', []);
       const updatedProducts = products.filter(product => product.id !== id);
 
       if (updatedProducts.length === products.length) {
-        return false; // Ürün bulunamadı
+        return {
+          success: false,
+          error: 'Ürün bulunamadı'
+        };
       }
 
       await storage.set('products', updatedProducts);
@@ -210,10 +415,16 @@ class ProductService {
 
       logger.info(`✅ Ürün silindi: ${id}`);
 
-      return true;
+      return {
+        success: true,
+        message: 'Ürün başarıyla silindi'
+      };
     } catch (error) {
       logger.error(`ID'si ${id} olan ürün silinirken hata:`, error);
-      throw error;
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
 
