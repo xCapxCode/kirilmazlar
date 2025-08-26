@@ -12,6 +12,7 @@ export default defineConfig({
     include: "**/*.{jsx,tsx,js,ts}",
   })],
   publicDir: 'public',
+  base: '/',
   server: {
     port: 5000,
     strictPort: true, // ZORUNLU: Başka port kullanmaya izin verme
