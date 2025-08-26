@@ -2,7 +2,7 @@
 # KIRIILMAZLAR PANEL - RAILWAY OPTIMIZED DOCKERFILE v5.1
 # Ultra-reliable React application for Railway deployment
 # Complete Ubuntu-based rebuild for cache invalidation
-# FORCE REBUILD: 2025-01-31T15:30:00Z
+# FORCE REBUILD: 2025-01-26T14:35:00Z
 # ===========================================
 
 # Use Ubuntu-based Node.js image (COMPLETE ALPINE ELIMINATION)
