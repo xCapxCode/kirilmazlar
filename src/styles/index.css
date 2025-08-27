@@ -2,6 +2,35 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
+/* H1 Elements - Uniform font-size and margin */
+h1 {
+  font-size: 1.875rem;
+  /* 30px */
+  line-height: 2.25rem;
+  /* 36px */
+  margin-top: 0;
+  margin-bottom: 1rem;
+  /* 16px */
+  font-weight: 600;
+}
+
+@media (min-width: 640px) {
+  h1 {
+    font-size: 2.25rem;
+    /* 36px */
+    line-height: 2.5rem;
+    /* 40px */
+  }
+}
+
+@media (min-width: 1024px) {
+  h1 {
+    font-size: 3rem;
+    /* 48px */
+    line-height: 1;
+  }
+}
+
 /* PIXEL-PERFECT MOBILE BASE STYLES */
 * {
   box-sizing: border-box;
@@ -16,14 +45,17 @@ html {
   overflow-x: hidden;
   /* High-DPI text rendering */
   -webkit-font-smoothing: antialiased;
-  font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   /* Prevent text size adjustment on mobile */
-  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
 }
 
 body {
-  font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, system-ui, sans-serif;
 
   /* CRITICAL: Prevent mobile scroll issues */
   overscroll-behavior: none;
@@ -251,7 +283,6 @@ select {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
-  line-clamp: 1;
 }
 
 .line-clamp-2 {
@@ -259,7 +290,6 @@ select {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  line-clamp: 2;
 }
 
 .line-clamp-3 {
@@ -267,7 +297,6 @@ select {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
-  line-clamp: 3;
 }
 
 /* GLASS MORPHISM EFFECT */
@@ -389,7 +418,7 @@ input[type="checkbox"]:hover {
 
 /* LEGACY STYLES (TO BE REVIEWED) */
 footer {
-  height: 700px;
+  min-height: 500px;
   background-color: black;
   width: 100%;
   margin: 0;
@@ -415,7 +444,7 @@ footer {
   left: 0 !important;
   right: 0 !important;
   width: 100vw !important;
-  z-index: 999999 !important;
+  z-index: 9998 !important;
 
   /* Prevent any layout issues */
   display: flex !important;

@@ -162,11 +162,14 @@ class CustomerUserMappingService {
         );
 
         if (!existingUser && customer.username && customer.password) {
+          // Import AuthUtils for password hashing
+          const AuthUtils = (await import('../utils/auth.js')).default;
+          
           const newUser = {
             id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
             username: customer.username,
             email: customer.email,
-            password: customer.password,
+            password: AuthUtils.hashPassword(customer.password), // Secure password hash
             name: customer.name,
             phone: customer.phone,
             role: 'customer',

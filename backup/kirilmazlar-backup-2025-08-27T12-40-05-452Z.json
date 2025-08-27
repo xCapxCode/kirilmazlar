@@ -1,0 +1,142 @@
+{
+  "timestamp": "2025-08-27T12:40:05.450Z",
+  "version": "1.0.0",
+  "source": "localStorage",
+  "data": {
+    "users": {
+      "value": [
+        {
+          "id": "1",
+          "email": "admin@kirilmazlar.com",
+          "password": "hashed_password_123",
+          "role": "admin",
+          "name": "Admin User",
+          "createdAt": "2024-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "2",
+          "email": "user@kirilmazlar.com",
+          "password": "hashed_password_456",
+          "role": "user",
+          "name": "Test User",
+          "createdAt": "2024-01-02T00:00:00.000Z"
+        }
+      ],
+      "type": "array",
+      "size": 298
+    },
+    "products": {
+      "value": [
+        {
+          "id": "1",
+          "name": "Test Ürün 1",
+          "description": "Test ürün açıklaması",
+          "price": 100.5,
+          "categoryId": "1",
+          "stock": 50,
+          "isActive": true,
+          "createdAt": "2024-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "2",
+          "name": "Test Ürün 2",
+          "description": "İkinci test ürün",
+          "price": 250.75,
+          "categoryId": "2",
+          "stock": 25,
+          "isActive": true,
+          "createdAt": "2024-01-02T00:00:00.000Z"
+        }
+      ],
+      "type": "array",
+      "size": 330
+    },
+    "categories": {
+      "value": [
+        {
+          "id": "1",
+          "name": "Kategori 1",
+          "description": "İlk kategori",
+          "isActive": true,
+          "createdAt": "2024-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "2",
+          "name": "Kategori 2",
+          "description": "İkinci kategori",
+          "isActive": true,
+          "createdAt": "2024-01-01T00:00:00.000Z"
+        }
+      ],
+      "type": "array",
+      "size": 234
+    },
+    "customers": {
+      "value": [
+        {
+          "id": "1",
+          "name": "Müşteri 1",
+          "email": "musteri1@example.com",
+          "phone": "+90 555 123 4567",
+          "address": "Test Adres 1",
+          "createdAt": "2024-01-01T00:00:00.000Z"
+        }
+      ],
+      "type": "array",
+      "size": 153
+    },
+    "customer_orders": {
+      "value": [
+        {
+          "id": "1",
+          "customerId": "1",
+          "total": 351.25,
+          "status": "completed",
+          "items": [
+            {
+              "productId": "1",
+              "quantity": 2,
+              "price": 100.5
+            },
+            {
+              "productId": "2",
+              "quantity": 1,
+              "price": 250.75
+            }
+          ],
+          "notes": "Test sipariş",
+          "createdAt": "2024-01-03T00:00:00.000Z"
+        }
+      ],
+      "type": "array",
+      "size": 228
+    },
+    "business_info": {
+      "value": {
+        "name": "Kirilmazlar v1.0",
+        "address": "Test İş Adresi",
+        "phone": "+90 555 999 8888",
+        "email": "info@kirilmazlar.com",
+        "website": "https://kirilmazlar.com"
+      },
+      "type": "object",
+      "size": 148
+    },
+    "data_version": {
+      "value": "1.0.0",
+      "type": "string",
+      "size": 7
+    },
+    "device_id": {
+      "value": "test-device-1756298405451",
+      "type": "string",
+      "size": 27
+    }
+  },
+  "metadata": {
+    "totalKeys": 8,
+    "dataSize": 1425,
+    "hostname": "localhost",
+    "userAgent": "Node.js Backup Script"
+  }
+}

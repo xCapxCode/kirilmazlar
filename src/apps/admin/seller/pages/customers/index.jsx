@@ -1,5 +1,5 @@
 import storage from '@core/storage';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useAuth } from '../../../../../contexts/AuthContext';
 import { useModal } from '../../../../../contexts/ModalContext';
 import { useNotification } from '../../../../../contexts/NotificationContext';
@@ -8,6 +8,7 @@ import Icon from '../../../../../shared/components/AppIcon';
 import SaticiHeader from '../../../../../shared/components/ui/SaticiHeader';
 import CustomerDetailModal from './components/CustomerDetailModal';
 import CustomerStatusModal from './components/CustomerStatusModal';
+import { useDebounce, useVirtualScroll, useOptimizedAPI } from '../../../../../hooks/usePerformance';
 
 // Basit Müşteri Ekleme Formu
 const NewCustomerForm = ({ onSave, onCancel, showWarning }) => {

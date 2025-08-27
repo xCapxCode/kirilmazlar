@@ -189,9 +189,13 @@ class ErrorTracker {
           });
         });
 
-        observer.observe({ entryTypes: ['longtask'] });
+        // Check if longtask is supported before observing
+        if (PerformanceObserver.supportedEntryTypes.includes('longtask')) {
+          observer.observe({ entryTypes: ['longtask'] });
+        }
       } catch (error) {
-        logger.warn('Performance observer not supported for longtask');
+        // Silently handle unsupported entryTypes
+        console.debug('Performance observer longtask not supported');
       }
     }
 
@@ -215,9 +219,13 @@ class ErrorTracker {
           });
         });
 
-        observer.observe({ entryTypes: ['resource'] });
+        // Check if resource is supported before observing
+        if (PerformanceObserver.supportedEntryTypes.includes('resource')) {
+          observer.observe({ entryTypes: ['resource'] });
+        }
       } catch (error) {
-        logger.warn('Performance observer not supported for resource');
+        // Silently handle unsupported entryTypes
+        console.debug('Performance observer resource not supported');
       }
     }
   }

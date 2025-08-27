@@ -165,9 +165,13 @@ class BundleAnalyzer {
     });
 
     try {
-      observer.observe({ entryTypes: ['resource'] });
+      // Check if resource is supported before observing
+      if (PerformanceObserver.supportedEntryTypes && PerformanceObserver.supportedEntryTypes.includes('resource')) {
+        observer.observe({ entryTypes: ['resource'] });
+      }
     } catch (error) {
-      logger.error('Performance monitoring failed:', error);
+      // Silently handle unsupported entryTypes
+      console.debug('Performance observer resource not supported in BundleAnalyzer');
     }
 
     // Memory monitoring

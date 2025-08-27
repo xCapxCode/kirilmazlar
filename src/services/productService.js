@@ -2,7 +2,7 @@ import storage from '@core/storage';
 import logger from '../utils/productionLogger.js';
 import { generateId } from '../utils/helpers.js';
 import dataValidator from '../utils/dataValidator.js';
-import apiService from './apiService.js';
+import APIService from './apiService.js';
 /**
  * Ürün yönetimi için servis sınıfı
  * Ürün CRUD işlemleri ve senkronizasyon için kullanılır
@@ -15,8 +15,26 @@ class ProductService {
    */
   async getAll(filters = {}) {
     try {
-      // FIXED: Always use localStorage - unified storage approach
-      let products = await storage.get('products', []);
+      const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+      let products = [];
+      
+      if (isProduction) {
+        // Production: API'den veri çek
+        try {
+          const response = await APIService.getProducts(filters);
+          if (response.success && response.products) {
+            products = response.products;
+          } else {
+            throw new Error('API response invalid');
+          }
+        } catch (apiError) {
+          logger.warn('API çağrısı başarısız, localStorage kullanılıyor:', apiError.message);
+          products = await storage.get('products', []);
+        }
+      } else {
+        // Development: localStorage kullan
+        products = await storage.get('products', []);
+      }
       
       // Filtreleme
       if (filters.search) {
@@ -95,7 +113,24 @@ class ProductService {
    */
   async getById(id) {
     try {
-      // FIXED: Always use localStorage - unified storage approach
+      const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+      
+      if (isProduction) {
+        // Production: API'den veri çek
+        try {
+          const response = await APIService.getProduct(id);
+          if (response.success && response.product) {
+            return {
+              success: true,
+              product: response.product
+            };
+          }
+        } catch (apiError) {
+          logger.warn('API çağrısı başarısız, localStorage kullanılıyor:', apiError.message);
+        }
+      }
+      
+      // Development veya API başarısız: localStorage kullan
       const products = await storage.get('products', []);
       const product = products.find(p => p.id === id);
       
@@ -136,7 +171,25 @@ class ProductService {
         };
       }
       
-      // FIXED: Always use localStorage - unified storage approach
+      const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+      
+      if (isProduction) {
+        // Production: API'ye kaydet
+        try {
+          const response = await APIService.createProduct(productData);
+          if (response.success && response.product) {
+            logger.info('Yeni ürün oluşturuldu:', response.product.id);
+            return {
+              success: true,
+              product: response.product
+            };
+          }
+        } catch (apiError) {
+          logger.warn('API çağrısı başarısız, localStorage kullanılıyor:', apiError.message);
+        }
+      }
+      
+      // Development veya API başarısız: localStorage implementation
       const products = await storage.get('products', []);
       
       // SKU kontrolü
@@ -201,7 +254,25 @@ class ProductService {
    */
   async update(id, productData) {
     try {
-      // FIXED: Always use localStorage - unified storage approach
+      const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+      
+      if (isProduction) {
+        // Production: API'de güncelle
+        try {
+          const response = await APIService.updateProduct(id, productData);
+          if (response.success && response.product) {
+            logger.info('Ürün güncellendi:', response.product.id);
+            return {
+              success: true,
+              product: response.product
+            };
+          }
+        } catch (apiError) {
+          logger.warn('API çağrısı başarısız, localStorage kullanılıyor:', apiError.message);
+        }
+      }
+      
+      // Development veya API başarısız: localStorage implementation
       const products = await storage.get('products', []);
       const index = products.findIndex(product => product.id === id);
 
@@ -305,7 +376,25 @@ class ProductService {
    */
   async delete(id) {
     try {
-      // FIXED: Always use localStorage - unified storage approach
+      const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+      
+      if (isProduction) {
+        // Production: API'den sil
+        try {
+          const response = await APIService.deleteProduct(id);
+          if (response.success) {
+            logger.info('Ürün silindi:', id);
+            return {
+              success: true,
+              message: 'Ürün başarıyla silindi'
+            };
+          }
+        } catch (apiError) {
+          logger.warn('API çağrısı başarısız, localStorage kullanılıyor:', apiError.message);
+        }
+      }
+      
+      // Development veya API başarısız: localStorage implementation
       const products = await storage.get('products', []);
       const updatedProducts = products.filter(product => product.id !== id);
 

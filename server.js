@@ -19,7 +19,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import path from 'path';
 import fs from 'fs';
-import http from 'http';
+import { createServer } from 'http';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import socketManager from './websocket/socketManager.js';
@@ -34,7 +34,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-const server = http.createServer(app);
+const server = createServer(app);
 const PORT = process.env.PORT || 3001;
 
 // Trust proxy for Railway deployment
@@ -55,9 +55,10 @@ import usersRoutes from './routes/users.js';
 import customersRoutes from './routes/customers.js';
 import ordersRoutes from './routes/orders.js';
 import productsRoutes from './routes/products.js';
+import migrationRoutes from './routes/migration.js';
 import authMiddleware from './middleware/auth.js';
 
-// Set database pool for routes and middleware
+// Set database pool for routes and middleware (migration route doesn't need setPool)
 authRoutes.setPool(pool);
 usersRoutes.setPool(pool);
 customersRoutes.setPool(pool);
@@ -82,10 +83,10 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'", "https:", "wss:"],
-      fontSrc: ["'self'", "data:"],
+      fontSrc: ["'self'", "data:", "https://fonts.googleapis.com", "https://fonts.gstatic.com"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
       frameSrc: ["'none'"],
@@ -186,6 +187,7 @@ app.use('/api/users', usersRoutes.router);
 app.use('/api/customers', customersRoutes.router);
 app.use('/api/orders', ordersRoutes.router);
 app.use('/api/products', productsRoutes.router);
+app.use('/api/migration', migrationRoutes);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
@@ -242,7 +244,7 @@ socketManager.initialize(server);
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Kırılmazlar Panel Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔌 WebSocket server initialized`);
+  console.log(`🔌 WebSocket: Enabled`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
   console.log(`📁 Static files: ${process.env.NODE_ENV === 'production' ? 'Enabled' : 'Disabled (API only)'}`);
 });

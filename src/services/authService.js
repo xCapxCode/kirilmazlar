@@ -1,9 +1,10 @@
-// Yerel Authentication Service
+// Production Authentication Service - API Based
 import storage from '@core/storage';
 import logger from '@utils/productionLogger';
 import { TEST_BUSINESS } from '../data/testUsers.js';
 import sessionManagementService from './sessionManagementService.js';
-import apiService from './apiService.js';
+import APIService from './apiService.js';
+import AuthUtils from '../utils/auth.js';
 
 class AuthService {
   constructor() {
@@ -54,42 +55,82 @@ class AuthService {
   async login(emailOrUsername, password, rememberMe = false) {
     try {
       const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
-      const storageType = import.meta.env.VITE_STORAGE_TYPE || 'localStorage';
-      
-      logger.debug('🔐 Login attempt started:', { 
-        emailOrUsername, 
-        rememberMe, 
-        environment: isProduction ? 'PRODUCTION' : 'DEVELOPMENT',
-        storageType 
+
+      logger.debug('🔐 Login attempt started:', {
+        emailOrUsername,
+        rememberMe,
+        environment: isProduction ? 'PRODUCTION' : 'DEVELOPMENT'
       });
 
-      // Use localStorage authentication
-      logger.debug('💾 Using localStorage authentication...');
+      // Use API authentication in production, fallback to localStorage in development
+      if (isProduction || import.meta.env.VITE_USE_API === 'true') {
+        logger.debug('🌐 Using API authentication...');
+        return await this._loginWithAPI(emailOrUsername, password, rememberMe);
+      } else {
+        logger.debug('💾 Using localStorage authentication (development mode)...');
+        return await this._loginWithLocalStorage(emailOrUsername, password, rememberMe);
+      }
+    } catch (error) {
+      logger.error('❌ Login error:', error);
+      await this.clearAuthStorage();
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
 
-      // DETAYLI STORAGE DEBUG
-      logger.debug('🔍 LocalStorage debug başlıyor...');
-      
-      // Tüm localStorage anahtarlarını kontrol et
-      const allKeys = Object.keys(localStorage);
-      logger.debug('🗝️ Tüm localStorage anahtarları:', allKeys);
-      
-      // Kirilmazlar ile başlayan anahtarları filtrele
-      const kirilmazlarKeys = allKeys.filter(key => key.startsWith('kirilmazlar_'));
-      logger.debug('🏷️ Kirilmazlar anahtarları:', kirilmazlarKeys);
-      
-      // Her anahtar için değer boyutunu kontrol et
-      kirilmazlarKeys.forEach(key => {
-        const value = localStorage.getItem(key);
-        logger.debug(`📦 ${key}: ${value ? value.length : 0} karakter`);
-      });
-      
-      // Storage'ı direkt kullan - DataService dependency'si yok
-      logger.debug('🔐 Getting users from storage...');
+  // API-based login
+  async _loginWithAPI(emailOrUsername, password, rememberMe = false) {
+    try {
+      const response = await APIService.login(emailOrUsername, password, rememberMe);
+
+      if (response.success && response.user) {
+        // Set current user and auth state
+        this.currentUser = response.user;
+        await storage.set('currentUser', response.user);
+        await storage.set('isAuthenticated', true);
+
+        // Set session expiry based on remember me
+        if (rememberMe) {
+          const rememberExpiry = Date.now() + (30 * 24 * 60 * 60 * 1000);
+          await storage.set('rememberMe', true);
+          await storage.set('sessionExpiry', rememberExpiry);
+        } else {
+          const standardExpiry = Date.now() + (24 * 60 * 60 * 1000);
+          await storage.set('rememberMe', false);
+          await storage.set('sessionExpiry', standardExpiry);
+        }
+
+        // Initialize session
+        if (this.sessionManager) {
+          await this.sessionManager.initializeSession(response.user.id);
+        }
+
+        logger.info('✅ API login successful:', { userId: response.user.id, rememberMe });
+
+        return {
+          success: true,
+          user: response.user
+        };
+      } else {
+        throw new Error(response.error || 'Login failed');
+      }
+    } catch (error) {
+      logger.error('❌ API login error:', error);
+      throw error;
+    }
+  }
+
+  // LocalStorage-based login (development fallback)
+  async _loginWithLocalStorage(emailOrUsername, password, rememberMe = false) {
+    try {
+
+      // Storage'dan kullanıcıları al
       let users = storage.get('users', []);
-      
+
       // Eğer storage'dan kullanıcı gelmiyorsa, direkt localStorage'dan dene
       if (!users || users.length === 0) {
-        logger.debug('🔍 Storage boş, direkt localStorage kontrol ediliyor...');
         const rawUsers = localStorage.getItem('kirilmazlar_users');
         if (rawUsers) {
           try {
@@ -101,71 +142,29 @@ class AuthService {
           }
         }
       }
-      
+
       logger.debug('🔐 Users found:', users.length);
-      logger.debug('🔐 Users data:', users);
-      
-      // Raw localStorage kontrolü
-      const rawUsers = localStorage.getItem('kirilmazlar_users');
-      logger.debug('🔍 Raw users from localStorage:', rawUsers ? rawUsers.substring(0, 200) + '...' : 'NULL');
-      
-      // Manuel parse dene
-      if (rawUsers) {
-        try {
-          const parsedUsers = JSON.parse(rawUsers);
-          logger.debug('✅ Manuel parse başarılı:', parsedUsers.length, 'kullanıcı');
-          parsedUsers.forEach((user, index) => {
-            logger.debug(`👤 User ${index + 1}:`, {
-              username: user.username,
-              email: user.email,
-              hasPassword: !!user.password,
-              passwordLength: user.password ? user.password.length : 0,
-              role: user.role
-            });
-          });
-        } catch (parseError) {
-          logger.error('❌ Manuel parse hatası:', parseError);
-        }
-      }
-      
-      // Production'da kullanıcı listesini detaylı logla
-      if (isProduction) {
-        const usernames = users.map(u => u.username || u.email);
-        logger.info('🔐 Production users available:', usernames);
-        
-        // Storage durumunu kontrol et
-        const storageKeys = Object.keys(localStorage);
-        logger.info('💾 LocalStorage keys:', storageKeys.length, storageKeys.slice(0, 5));
-      }
-      
-      // Debug: Check if specific user exists
-      const testUser = users.find(u => u.username === emailOrUsername || u.email === emailOrUsername);
-      logger.debug('🔐 Test user found:', testUser);
-      if (testUser) {
-        logger.debug('🔐 Password match:', testUser.password === password);
-      }
 
       // Find user by email or username
       const user = users.find(u =>
-        (u.email === emailOrUsername || u.username === emailOrUsername) &&
-        u.password === password
+        u.email === emailOrUsername || u.username === emailOrUsername
       );
 
       if (!user) {
-        logger.warn('❌ User not found:', emailOrUsername, 'Available users:', users.map(u => u.username || u.email));
+        logger.warn('❌ User not found:', emailOrUsername);
+        throw new Error('Invalid email/username or password');
+      }
+
+      // Verify password using secure hash comparison
+      const isPasswordValid = AuthUtils.verifyPassword(password, user.password);
+      if (!isPasswordValid) {
+        logger.warn('❌ Invalid password for user:', emailOrUsername);
         throw new Error('Invalid email/username or password');
       }
 
       if (!user.isActive) {
         throw new Error('Account is not active');
       }
-
-      // Customer-User mapping repair devre dışı - fake kullanıcı oluşturmayı önlemek için
-      // const needsRepair = await customerUserMappingService.isRepairNeeded();
-      // if (needsRepair) {
-      //   logger.debug('🔧 Repairing customer-user mappings...');
-      //   await customerUserMappingService.repairAllMappings();
-      // }
 
       // Get full user profile
       let fullUserProfile = { ...user };
@@ -192,29 +191,30 @@ class AuthService {
         await this.sessionManager.initializeSession(userWithoutPassword.id);
       }
 
-      // Generate JWT token for API authentication
+      // Generate secure JWT token for API authentication
       const tokenPayload = {
         userId: userWithoutPassword.id,
         username: userWithoutPassword.username,
+        email: userWithoutPassword.email,
         role: userWithoutPassword.role,
-        sessionId: Date.now().toString()
+        name: userWithoutPassword.name
       };
-      
-      // Create a simple token for API authentication
-      const token = btoa(JSON.stringify(tokenPayload));
-      
+
+      // Create secure JWT token
+      const token = AuthUtils.createSessionToken(tokenPayload);
+      const refreshToken = AuthUtils.createRefreshToken(tokenPayload);
+
       // Set token in API service
-      if (apiService && apiService.setToken) {
-        apiService.setToken(token);
-        logger.debug('🔑 API token set for authentication');
-      }
-      
+      APIService.setToken(token);
+      logger.debug('🔑 API token set for authentication');
+
       // Set current user and auth state with remember me logic
       this.currentUser = userWithoutPassword;
       await storage.set('currentUser', userWithoutPassword);
       await storage.set('isAuthenticated', true);
       await storage.set('auth_token', token);
-      
+      await storage.set('refresh_token', refreshToken);
+
       // Remember me functionality
       if (rememberMe) {
         // Set longer session duration (30 days)
@@ -230,57 +230,33 @@ class AuthService {
         logger.debug('🔐 Standard session - 24 hours');
       }
 
-      logger.debug('✅ Login successful:', { userId: userWithoutPassword.id, rememberMe });
-
-      // Production'da başarılı giriş detaylarını logla
-      if (isProduction) {
-        logger.info('🎉 Production login success:', {
-          username: userWithoutPassword.username || userWithoutPassword.email,
-          role: userWithoutPassword.role,
-          userId: userWithoutPassword.id,
-          rememberMe,
-          timestamp: new Date().toISOString()
-        });
-      }
+      logger.debug('✅ LocalStorage login successful:', { userId: userWithoutPassword.id, rememberMe });
 
       return {
         success: true,
         user: userWithoutPassword
       };
-
     } catch (error) {
-      logger.error('❌ Login error:', error);
-      
-      // Production'da hata detaylarını logla
-      const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
-      if (isProduction) {
-        const users = storage.get('users', []);
-        logger.error('🚨 Production login error details:', {
-          emailOrUsername,
-          error: error.message,
-          usersCount: users.length,
-          availableUsers: users.map(u => u.username || u.email),
-          storageSize: Object.keys(localStorage).length
-        });
-      }
-      
-      await this.clearAuthStorage(); // Clear on error
-      return {
-        success: false,
-        error: error.message
-      };
+      logger.error('❌ LocalStorage login error:', error);
+      throw error;
     }
   }
 
   // Logout
   async logout() {
     try {
-      // Clear API token
-      if (apiService && apiService.setToken) {
-        apiService.setToken(null);
-        logger.debug('🔑 API token cleared');
+      // Use API logout in production
+      const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+
+      if (isProduction || import.meta.env.VITE_USE_API === 'true') {
+        try {
+          await APIService.logout();
+          logger.debug('🌐 API logout successful');
+        } catch (error) {
+          logger.warn('⚠️ API logout failed, continuing with local cleanup:', error);
+        }
       }
-      
+
       await this.clearAuthStorage();
       logger.info('👋 Logout successful');
       return { success: true };
@@ -321,14 +297,14 @@ class AuthService {
 
       if (savedUser && isAuthenticated) {
         this.currentUser = savedUser;
-        
+
         // Restore API token if available
         const savedToken = storage.get('auth_token');
-        if (savedToken && apiService && apiService.setToken) {
-          apiService.setToken(savedToken);
+        if (savedToken) {
+          APIService.setToken(savedToken);
           logger.debug('🔑 API token restored from storage');
         }
-        
+
         return savedUser;
       }
 
@@ -360,7 +336,7 @@ class AuthService {
       if (!sessionExpiry) {
         return true; // No expiry set, assume valid
       }
-      
+
       const isValid = Date.now() < sessionExpiry;
       if (!isValid) {
         logger.debug('🔐 Session expired');
@@ -375,9 +351,55 @@ class AuthService {
   // Get current authentication token
   getToken() {
     try {
-      return storage.get('auth_token');
+      const token = storage.get('auth_token');
+
+      // Validate token before returning
+      if (token && AuthUtils.isTokenValid(token)) {
+        return token;
+      }
+
+      // Try to refresh token if main token is invalid
+      return this._refreshTokenIfNeeded();
     } catch (error) {
       logger.error('❌ Get token error:', error);
+      return null;
+    }
+  }
+
+  // Refresh token if needed
+  async _refreshTokenIfNeeded() {
+    try {
+      const refreshToken = storage.get('refresh_token');
+
+      if (!refreshToken || !AuthUtils.isTokenValid(refreshToken)) {
+        logger.warn('🔄 Refresh token invalid, logout required');
+        await this.logout();
+        return null;
+      }
+
+      // Get user info from refresh token
+      const userInfo = AuthUtils.getUserFromToken(refreshToken);
+      if (!userInfo) {
+        await this.logout();
+        return null;
+      }
+
+      // Create new tokens
+      const newToken = AuthUtils.createSessionToken(userInfo);
+      const newRefreshToken = AuthUtils.createRefreshToken(userInfo);
+
+      // Save new tokens
+      await storage.set('auth_token', newToken);
+      await storage.set('refresh_token', newRefreshToken);
+
+      // Update API service token
+      APIService.setToken(newToken);
+
+      logger.info('🔄 Token refreshed successfully');
+      return newToken;
+    } catch (error) {
+      logger.error('❌ Token refresh error:', error);
+      await this.logout();
       return null;
     }
   }
@@ -506,11 +528,14 @@ class AuthService {
         }
       }
 
+      // Hash password securely
+      const hashedPassword = AuthUtils.hashPassword(password);
+
       // Yeni kullanıcı oluştur
       const newUser = {
         id: 'user-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
         email,
-        password, // Production'da hash'lenecek
+        password: hashedPassword, // Secure password hash
         username: additionalData.username || email.split('@')[0],
         name: additionalData.name || '',
         phone: additionalData.phone || '',

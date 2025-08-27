@@ -64,14 +64,6 @@ export default {
           900: '#7c2d12'
         }
       },
-      spacing: {
-        'safe-top': 'env(safe-area-inset-top)',
-        'safe-bottom': 'env(safe-area-inset-bottom)',
-        'safe-left': 'env(safe-area-inset-left)',
-        'safe-right': 'env(safe-area-inset-right)',
-        '18': '4.5rem',   // 72px - Perfect for mobile touch targets
-        '22': '5.5rem',   // 88px - Extra large touch targets
-      },
       height: {
         'screen-safe': 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
         'touch': '44px',

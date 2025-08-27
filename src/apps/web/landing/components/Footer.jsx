@@ -33,7 +33,7 @@ const Footer = () => {
 
   return (
     <>
-      <footer id="footer" className="relative text-white w-full overflow-hidden h-[500px]">
+      <footer id="footer" className="relative text-white w-full overflow-hidden min-h-[500px]">
         {/* Arka Plan Görseli ve Kaplama */}
         <div
           className="absolute inset-0 bg-cover bg-center"

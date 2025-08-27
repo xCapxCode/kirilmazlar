@@ -2,7 +2,7 @@ import storage from '@core/storage';
 import logger from '../utils/productionLogger.js';
 import { generateId } from '../utils/helpers.js';
 import dataValidator from '../utils/dataValidator.js';
-import apiService from './apiService.js';
+import APIService from './apiService.js';
 /**
  * Sipariş yönetimi için servis sınıfı
  * Sipariş CRUD işlemleri ve senkronizasyon için kullanılır
@@ -15,8 +15,21 @@ class OrderService {
    */
   async getAll(options = {}) {
     try {
-      // localStorage implementation
-      // PRIMARY SOURCE: customer_orders storage'ı ana kaynak
+      const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+      
+      if (isProduction) {
+        // Production: API'den veri al
+        try {
+          const response = await APIService.getOrders();
+          if (response.success && response.orders) {
+            return this.normalizeOrders(response.orders, options);
+          }
+        } catch (apiError) {
+          logger.warn('API çağrısı başarısız, localStorage kullanılıyor:', apiError.message);
+        }
+      }
+      
+      // Development veya API başarısız: localStorage implementation
       const customerOrders = await storage.get('customer_orders', []);
       const sellerOrders = await storage.get('orders', []);
 
@@ -159,7 +172,21 @@ class OrderService {
    */
   async getById(id) {
     try {
-      // localStorage implementation
+      const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+      
+      if (isProduction) {
+        // Production: API'den veri al
+        try {
+          const response = await APIService.getOrder(id);
+          if (response.success && response.order) {
+            return this.normalizeOrder(response.order);
+          }
+        } catch (apiError) {
+          logger.warn('API çağrısı başarısız, localStorage kullanılıyor:', apiError.message);
+        }
+      }
+      
+      // Development veya API başarısız: localStorage implementation
       const customerOrders = await storage.get('customer_orders', []);
       const sellerOrders = await storage.get('orders', []);
 
@@ -175,26 +202,34 @@ class OrderService {
         return null;
       }
 
-      // Siparişi normalize et
-      return {
-        id: order.id,
-        orderNumber: order.orderNumber || order.order_number || `SIP-${order.id}`,
-        customerName: order.customerName || order.customer_name || 'Müşteri',
-        customerEmail: order.customerEmail || order.customer_email || '',
-        customerPhone: order.customerPhone || order.customer_phone || '',
-        items: order.items || order.orderItems || [],
-        total: parseFloat(order.total || order.total_amount || 0),
-        status: this.normalizeStatus(order.status),
-        orderDate: order.createdAt || order.created_at || order.orderDate || new Date().toISOString(),
-        deliveryAddress: order.deliveryAddress || order.delivery_address || '',
-        notes: order.notes || order.order_notes || '',
-        paymentMethod: order.paymentMethod || order.payment_method || 'Nakit',
-        source: order.source || 'customer'
-      };
+      return this.normalizeOrder(order);
     } catch (error) {
       console.error(`ID'si ${id} olan sipariş yüklenirken hata:`, error);
       throw error;
     }
+  }
+  
+  /**
+   * Tek sipariş normalize eder
+   * @param {Object} order - Ham sipariş verisi
+   * @returns {Object} - Normalize edilmiş sipariş
+   */
+  normalizeOrder(order) {
+    return {
+      id: order.id,
+      orderNumber: order.orderNumber || order.order_number || `SIP-${order.id}`,
+      customerName: order.customerName || order.customer_name || 'Müşteri',
+      customerEmail: order.customerEmail || order.customer_email || '',
+      customerPhone: order.customerPhone || order.customer_phone || '',
+      items: order.items || order.orderItems || [],
+      total: parseFloat(order.total || order.total_amount || 0),
+      status: this.normalizeStatus(order.status),
+      orderDate: order.createdAt || order.created_at || order.orderDate || new Date().toISOString(),
+      deliveryAddress: order.deliveryAddress || order.delivery_address || '',
+      notes: order.notes || order.order_notes || '',
+      paymentMethod: order.paymentMethod || order.payment_method || 'Nakit',
+      source: order.source || 'customer'
+    };
   }
 
   /**
@@ -210,7 +245,22 @@ class OrderService {
         throw new Error('Geçersiz sipariş verisi: ' + validation.errors.join(', '));
       }
       
-      // localStorage implementation
+      const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+      
+      if (isProduction) {
+        // Production: API'ye kaydet
+        try {
+          const response = await APIService.createOrder(orderData);
+          if (response.success && response.order) {
+            logger.info('Yeni sipariş oluşturuldu:', response.order.id);
+            return response.order;
+          }
+        } catch (apiError) {
+          logger.warn('API çağrısı başarısız, localStorage kullanılıyor:', apiError.message);
+        }
+      }
+      
+      // Development veya API başarısız: localStorage implementation
       // Order settings'i yükle
       const orderSettings = await storage.get('order_settings', {
         orderPrefix: 'SIP',
@@ -367,7 +417,22 @@ class OrderService {
    */
   async update(id, updateData) {
     try {
-      // localStorage implementation
+      const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+      
+      if (isProduction) {
+        // Production: API'de güncelle
+        try {
+          const response = await APIService.updateOrder(id, updateData);
+          if (response.success && response.order) {
+            logger.info(`Sipariş güncellendi: ${id}`);
+            return response.order;
+          }
+        } catch (apiError) {
+          logger.warn('API çağrısı başarısız, localStorage kullanılıyor:', apiError.message);
+        }
+      }
+      
+      // Development veya API başarısız: localStorage implementation
       const customerOrders = await storage.get('customer_orders', []);
       const sellerOrders = await storage.get('orders', []);
       

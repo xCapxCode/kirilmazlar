@@ -4,7 +4,7 @@ import { ALL_USERS, INITIAL_CUSTOMERS } from '../data/initialData.js';
 import { DEMO_CUSTOMERS, DEMO_ORDERS } from '../data/demoData.js';
 import dataValidator from '../utils/dataValidator.js';
 import logger from '../utils/productionLogger.js';
-import apiService from './apiService.js';
+import APIService from './apiService.js';
 
 class DataService {
     constructor() {
@@ -101,6 +101,35 @@ class DataService {
                 logger.info('📦 Initial data loaded as fallback');
             }
             
+            // API'den verileri çek
+            const [users, customers, products, orders] = await Promise.allSettled([
+                APIService.getUsers(),
+                APIService.getCustomers(), 
+                APIService.getProducts(),
+                APIService.getOrders()
+            ]);
+
+            // Başarılı verileri localStorage'a kaydet
+            if (users.status === 'fulfilled' && users.value.success) {
+                await storage.set('users', users.value.users || users.value.data);
+                logger.info('Kullanıcı verileri senkronize edildi');
+            }
+
+            if (customers.status === 'fulfilled' && customers.value.success) {
+                await storage.set('customers', customers.value.customers || customers.value.data);
+                logger.info('Müşteri verileri senkronize edildi');
+            }
+
+            if (products.status === 'fulfilled' && products.value.success) {
+                await storage.set('products', products.value.products || products.value.data);
+                logger.info('Ürün verileri senkronize edildi');
+            }
+
+            if (orders.status === 'fulfilled' && orders.value.success) {
+                await storage.set('orders', orders.value.orders || orders.value.data);
+                logger.info('Sipariş verileri senkronize edildi');
+            }
+            
             // Try to sync with API (non-blocking)
             this.backgroundSync();
             
@@ -117,10 +146,10 @@ class DataService {
             setTimeout(async () => {
                 try {
                     const [users, customers, products, orders] = await Promise.allSettled([
-                        apiService.getUsers(),
-                        apiService.getCustomers(),
-                        apiService.getProducts(),
-                        apiService.getOrders()
+                        APIService.getUsers(),
+                        APIService.getCustomers(),
+                        APIService.getProducts(),
+                        APIService.getOrders()
                     ]);
                     
                     // Update local cache with API data
@@ -144,6 +173,8 @@ class DataService {
                         logger.debug('📥 Orders synced from API');
                     }
                     
+                    // Son senkronizasyon zamanını kaydet
+                    await storage.set('last_sync', new Date().toISOString());
                     logger.info('✅ Background sync completed');
                 } catch (syncError) {
                     logger.warn('⚠️ Background sync failed:', syncError.message);
@@ -421,18 +452,39 @@ class DataService {
     }
 
     // Sistem durumu raporu
-    getSystemStatus() {
-        return {
-            isInitialized: this.isInitialized,
-            dataVersion: storage.get('dataVersion'),
-            userCount: storage.get('users', []).length,
-            productCount: storage.get('products', []).length,
-            categoryCount: storage.get('categories', []).length,
-            orderCount: storage.get('orders', []).length,
-            isAuthenticated: storage.get('isAuthenticated', false),
-            currentUser: storage.get('currentUser')?.email || null,
-            lastUpdate: new Date().toISOString()
-        };
+    async getSystemStatus() {
+        try {
+            const status = {
+                isInitialized: this.isInitialized,
+                dataVersion: storage.get('dataVersion'),
+                userCount: storage.get('users', []).length,
+                productCount: storage.get('products', []).length,
+                categoryCount: storage.get('categories', []).length,
+                orderCount: storage.get('orders', []).length,
+                isAuthenticated: storage.get('isAuthenticated', false),
+                currentUser: storage.get('currentUser')?.email || null,
+                lastUpdate: new Date().toISOString(),
+                environment: import.meta.env.VITE_APP_ENVIRONMENT || 'development',
+                isProduction: import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production',
+                lastSync: storage.get('last_sync'),
+                apiConnection: false
+            };
+
+            // API bağlantısını test et
+            if (status.isProduction) {
+                try {
+                    const healthCheck = await APIService.healthCheck();
+                    status.apiConnection = healthCheck.success;
+                } catch (error) {
+                    status.apiConnection = false;
+                }
+            }
+
+            return status;
+        } catch (error) {
+            logger.error('Sistem durumu kontrol edilirken hata:', error);
+            throw error;
+        }
     }
 }
 

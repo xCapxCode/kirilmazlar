@@ -5,6 +5,7 @@ import storage from '../../../core/storage';
 import { trackRender, useMemoizedCallbacks } from '../../../utils/memoizationHelpers';
 import Icon from '../AppIcon';
 import NotificationDropdown from './NotificationDropdown';
+import NotificationCenter from '../../../components/common/NotificationCenter';
 
 const Header = () => {
   // Performance tracking
@@ -83,6 +84,9 @@ const Header = () => {
 
               {/* Bildirimler */}
               <NotificationDropdown />
+              
+              {/* Real-time Notification Center */}
+              <NotificationCenter />
 
               {/* Kullanıcı Profil Dropdown */}
               <div className="relative" ref={userMenuRef}>

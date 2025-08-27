@@ -28,7 +28,7 @@ class WebSocketService {
         
         this.socket = io(serverUrl, {
           auth: {
-            token: token
+            token
           },
           transports: ['websocket', 'polling'],
           timeout: 20000,

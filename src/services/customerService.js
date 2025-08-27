@@ -2,7 +2,7 @@ import storage from '@core/storage';
 import logger from '../utils/productionLogger.js';
 import { generateId } from '../utils/helpers.js';
 import dataValidator from '../utils/dataValidator.js';
-import apiService from './apiService.js';
+import APIService from './apiService.js';
 // Removed orderService import to avoid circular dependency
 
 /**
@@ -16,7 +16,21 @@ class CustomerService {
    */
   async getAll(filters = {}) {
     try {
-      // FIXED: Always use localStorage - unified storage approach
+      const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+      
+      if (isProduction) {
+        // Production: API'den veri al
+        try {
+          const response = await APIService.getCustomers();
+          if (response.success && response.customers) {
+            return this.processCustomers(response.customers, filters);
+          }
+        } catch (apiError) {
+          logger.warn('API çağrısı başarısız, localStorage kullanılıyor:', apiError.message);
+        }
+      }
+      
+      // Development veya API başarısız: localStorage implementation
       let customers = await storage.get('customers', []);
       
       // Sipariş verilerini al ve müşteri-sipariş ilişkisini kur
@@ -84,11 +98,7 @@ class CustomerService {
         customers = customers.slice(start, end);
       }
       
-      return {
-        success: true,
-        customers,
-        total: customers.length
-      };
+      return this.processCustomers(customers, filters);
     } catch (error) {
       logger.error('Müşteri listesi getirme hatası:', error);
       return {
@@ -106,7 +116,24 @@ class CustomerService {
    */
   async getById(id) {
     try {
-      // FIXED: Always use localStorage - unified storage approach
+      const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+      
+      if (isProduction) {
+        // Production: API'den veri al
+        try {
+          const response = await APIService.getCustomer(id);
+          if (response.success && response.customer) {
+            return {
+              success: true,
+              customer: response.customer
+            };
+          }
+        } catch (apiError) {
+          logger.warn('API çağrısı başarısız, localStorage kullanılıyor:', apiError.message);
+        }
+      }
+      
+      // Development veya API başarısız: localStorage implementation
       const customers = await storage.get('customers', []);
       const customer = customers.find(customer => customer.id === id);
       
@@ -147,10 +174,27 @@ class CustomerService {
         };
       }
       
-      // FIXED: Always use localStorage - unified storage approach
-      
       console.log('🔄 CustomerService.create başlatılıyor:', customerData);
 
+      const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+      
+      if (isProduction) {
+        // Production: API'ye kaydet
+        try {
+          const response = await APIService.createCustomer(customerData);
+          if (response.success && response.customer) {
+            logger.info('Yeni müşteri oluşturuldu:', response.customer.id);
+            return {
+              success: true,
+              customer: response.customer
+            };
+          }
+        } catch (apiError) {
+          logger.warn('API çağrısı başarısız, localStorage kullanılıyor:', apiError.message);
+        }
+      }
+      
+      // Development veya API başarısız: localStorage implementation
       const customers = await storage.get('customers', []);
       console.log('📋 Mevcut müşteriler:', customers.length);
       
@@ -192,11 +236,14 @@ class CustomerService {
         );
 
         if (!existingUser) {
+          // Import AuthUtils for password hashing
+          const AuthUtils = (await import('../utils/auth.js')).default;
+          
           const newUser = {
             id: newCustomer.id,
             username: customerData.username,
             email: customerData.email,
-            password: customerData.password, // Gerçek uygulamada hash'lenecek
+            password: AuthUtils.hashPassword(customerData.password), // Secure password hash
             name: customerData.name,
             role: 'customer',
             customerId: newCustomer.id,
@@ -233,7 +280,21 @@ class CustomerService {
    */
   async update(id, updateData) {
     try {
-      // FIXED: Always use localStorage - unified storage approach
+      const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+      
+      if (isProduction) {
+        // Production: API'de güncelle
+        try {
+          const response = await APIService.updateCustomer(id, updateData);
+          if (response.success && response.customer) {
+            return response.customer;
+          }
+        } catch (apiError) {
+          logger.warn('API çağrısı başarısız, localStorage kullanılıyor:', apiError.message);
+        }
+      }
+      
+      // Development veya API başarısız: localStorage implementation
       const customers = await storage.get('customers', []);
       const customerIndex = customers.findIndex(customer => customer.id === id);
 
@@ -284,7 +345,21 @@ class CustomerService {
    */
   async delete(id) {
     try {
-      // FIXED: Always use localStorage - unified storage approach
+      const isProduction = import.meta.env.PROD || import.meta.env.VITE_APP_ENVIRONMENT === 'production';
+      
+      if (isProduction) {
+        // Production: API'den sil
+        try {
+          const response = await APIService.deleteCustomer(id);
+          if (response.success) {
+            return true;
+          }
+        } catch (apiError) {
+          logger.warn('API çağrısı başarısız, localStorage kullanılıyor:', apiError.message);
+        }
+      }
+      
+      // Development veya API başarısız: localStorage implementation
       const customers = await storage.get('customers', []);
       const customerToDelete = customers.find(customer => customer.id === id);
       const filteredCustomers = customers.filter(customer => customer.id !== id);

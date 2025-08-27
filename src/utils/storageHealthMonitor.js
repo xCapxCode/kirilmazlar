@@ -1,7 +1,7 @@
 // Storage Health Monitor - Future Protection System
 // Bu sistem gelecekteki storage conflicts'ı önleyecek
 
-import storage from '@core/storage';
+import storage from '../core/storage/index.js';
 import logger from '@utils/productionLogger';
 
 class StorageHealthMonitor {

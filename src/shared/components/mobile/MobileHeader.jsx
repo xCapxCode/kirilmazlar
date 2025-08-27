@@ -4,6 +4,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useCart } from '../../../contexts/CartContext';
 import Icon from '../AppIcon';
 import NotificationDropdown from '../ui/NotificationDropdown';
+import NotificationCenter from '../common/NotificationCenter';
 
 const MobileHeader = ({
   title = 'Kırılmazlar Gıda',
@@ -88,6 +89,9 @@ const MobileHeader = ({
 
           {/* Sağ Taraf - Action Buttons */}
           <div className="flex items-center gap-1 flex-shrink-0">
+            {/* Real-time Notification Center */}
+            <NotificationCenter />
+            
             {/* Search Button */}
             {showSearch && (
               <button

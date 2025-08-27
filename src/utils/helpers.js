@@ -35,7 +35,7 @@ export const generateUUID = () => {
 export const formatCurrency = (amount, currency = 'TRY') => {
   return new Intl.NumberFormat('tr-TR', {
     style: 'currency',
-    currency: currency
+    currency
   }).format(amount);
 };
 

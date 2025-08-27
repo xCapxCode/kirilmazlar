@@ -121,12 +121,11 @@ const LandingPage = () => {
         onLoginClick={() => setShowLoginModal(true)}
         showLoginButton={true}
       />
-      <main className="w-full">
+      <main className="pt-28">
+        {/* Hero Section */}
         <section
-          className="relative overflow-hidden flex items-center justify-center w-full hero-section"
+          className="relative min-h-screen flex items-center justify-center overflow-hidden"
           style={{
-            height: '100vh',
-            minHeight: '700px',
             backgroundImage: `url('/assets/images/landing/anasayfa.png')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center center',
@@ -137,10 +136,10 @@ const LandingPage = () => {
           <div className="relative z-10 w-full max-w-7xl mx-auto h-full flex flex-col justify-center items-center px-4 sm:px-8">
             <div className="flex-grow flex items-center justify-center text-center">
               <div>
-                <h1 className="text-4xl sm:text-5xl font-bold text-white mb-6 drop-shadow-lg leading-tight">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6 drop-shadow-lg leading-tight px-4">
                   Taze Meyve ve Sebzelerin
                   <span
-                    className="block text-6xl sm:text-7xl md:text-8xl mt-2.5 text-green-400"
+                    className="block text-4xl sm:text-5xl md:text-6xl lg:text-7xl mt-2.5 text-green-400"
                     style={{
                       textShadow: '0 0 25px rgba(52, 211, 153, 0.5), 0 0 10px rgba(16, 185, 129, 0.5)'
                     }}
@@ -148,7 +147,7 @@ const LandingPage = () => {
                     En Güvenilir Adresi
                   </span>
                 </h1>
-                <p className="text-lg sm:text-xl text-white/90 mb-8 max-w-3xl mx-auto drop-shadow-md leading-relaxed">
+                <p className="text-base sm:text-lg md:text-xl text-white/90 mb-8 max-w-3xl mx-auto drop-shadow-md leading-relaxed px-4">
                   Günlük taze ürünler, hızlı teslimat ve uygun fiyatlarla ailenizin sağlıklı beslenme ihtiyaçlarını karşılıyoruz.
                 </p>
 
@@ -156,7 +155,7 @@ const LandingPage = () => {
                 <div className="mb-12">
                   <button
                     onClick={() => setShowLoginModal(true)}
-                    className="bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 text-white px-8 py-4 rounded-2xl font-semibold text-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+                    className="bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold text-base sm:text-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
                   >
                     <span className="flex items-center justify-center space-x-2">
                       <Icon name="LogIn" size={24} className="text-green-300" />
@@ -168,33 +167,33 @@ const LandingPage = () => {
             </div>
             {/* Özellikler Bölümü */}
             <div className="w-full pb-8">
-              <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-white">
-                  <div className="flex items-center space-x-4">
-                    <Icon name="ShoppingBag" size={40} className="text-green-300" />
+              <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-4 sm:p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 text-white">
+                  <div className="flex items-center space-x-3 sm:space-x-4">
+                    <Icon name="ShoppingBag" size={32} className="text-green-300 sm:w-10 sm:h-10" />
                     <div>
-                      <h3 className="font-bold text-base sm:text-lg">1. Ürünleri Seç</h3>
+                      <h3 className="font-bold text-sm sm:text-base lg:text-lg">1. Ürünleri Seç</h3>
                       <p className="text-xs sm:text-sm text-white/80">İstediğiniz ürünleri keşfedin.</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <Icon name="ShoppingCart" size={40} className="text-green-300" />
+                  <div className="flex items-center space-x-3 sm:space-x-4">
+                    <Icon name="ShoppingCart" size={32} className="text-green-300 sm:w-10 sm:h-10" />
                     <div>
-                      <h3 className="font-bold text-base sm:text-lg">2. Sepete Ekle</h3>
+                      <h3 className="font-bold text-sm sm:text-base lg:text-lg">2. Sepete Ekle</h3>
                       <p className="text-xs sm:text-sm text-white/80">Alışveriş sepetinizi oluşturun.</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <Icon name="CreditCard" size={40} className="text-green-300" />
+                  <div className="flex items-center space-x-3 sm:space-x-4">
+                    <Icon name="CreditCard" size={32} className="text-green-300 sm:w-10 sm:h-10" />
                     <div>
-                      <h3 className="font-bold text-base sm:text-lg">3. Güvenle Öde</h3>
+                      <h3 className="font-bold text-sm sm:text-base lg:text-lg">3. Güvenle Öde</h3>
                       <p className="text-xs sm:text-sm text-white/80">Siparişi güvenle tamamlayın.</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <Icon name="Truck" size={40} className="text-green-300" />
+                  <div className="flex items-center space-x-3 sm:space-x-4">
+                    <Icon name="Truck" size={32} className="text-green-300 sm:w-10 sm:h-10" />
                     <div>
-                      <h3 className="font-bold text-base sm:text-lg">4. Kapına Gelsin</h3>
+                      <h3 className="font-bold text-sm sm:text-base lg:text-lg">4. Kapına Gelsin</h3>
                       <p className="text-xs sm:text-sm text-white/80">Taze ürünlerinizi teslim alın.</p>
                     </div>
                   </div>
@@ -277,6 +276,40 @@ const LandingPage = () => {
             </div>
           </div>
         </section>
+
+        {/* Popüler Ürünler Bölümü */}
+        <div className="py-12 sm:py-16 bg-gradient-to-b from-green-50 to-white">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="text-center mb-8 sm:mb-12">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+                Popüler Ürünlerimiz
+              </h2>
+              <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-4">
+                En çok tercih edilen taze ürünlerimizi keşfedin
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+              {popularProducts.map((product, index) => (
+                <div key={index} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+                  <div className="h-40 sm:h-48 bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
+                    <Icon name={product.icon} size={48} className="text-green-600 sm:w-16 sm:h-16" />
+                  </div>
+                  <div className="p-4 sm:p-6">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">{product.name}</h3>
+                    <p className="text-sm sm:text-base text-gray-600 mb-4">{product.description}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xl sm:text-2xl font-bold text-green-600">{product.price}</span>
+                      <button className="bg-green-500 hover:bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base transition-colors">
+                        Sepete Ekle
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
         {/* Neden Bizi Tercih Etmelisiniz? */}
         <section className="py-20 bg-white">
@@ -362,7 +395,7 @@ const LandingPage = () => {
 
       {/* Cookie Consent Banner */}
       {showCookieBanner && (
-        <div className="fixed bottom-6 left-6 right-6 z-50 max-w-md mx-auto">
+        <div className="fixed bottom-6 left-6 right-6 z-[9996] max-w-md mx-auto">
           <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-6">
             <div className="flex items-start space-x-4">
               <div className="flex-shrink-0">

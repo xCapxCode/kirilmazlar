@@ -8,8 +8,8 @@
 
 class ProductionLogger {
   constructor() {
-    this.isDevelopment = import.meta.env.DEV || import.meta.env.NODE_ENV === 'development';
-    this.isProduction = import.meta.env.PROD || import.meta.env.NODE_ENV === 'production';
+    this.isDevelopment = process.env.NODE_ENV === 'development';
+    this.isProduction = process.env.NODE_ENV === 'production';
 
     // Log levels
     this.levels = {
@@ -168,11 +168,11 @@ class ProductionLogger {
     try {
       // Railway deployment bilgilerini topla
       const railwayInfo = {
-        environment: import.meta.env.VITE_APP_ENVIRONMENT || 'unknown',
-        railwayUrl: import.meta.env.VITE_API_BASE_URL || 'not-set',
-        nodeEnv: import.meta.env.NODE_ENV || 'unknown',
-        mode: import.meta.env.MODE || 'unknown',
-        prod: import.meta.env.PROD || false
+        environment: process.env.VITE_APP_ENVIRONMENT || 'unknown',
+        railwayUrl: process.env.VITE_API_BASE_URL || 'not-set',
+        nodeEnv: process.env.NODE_ENV || 'unknown',
+        mode: process.env.MODE || 'unknown',
+        prod: process.env.NODE_ENV === 'production'
       };
       
       // Gerçek bir hata servisi entegrasyonu burada olabilir
