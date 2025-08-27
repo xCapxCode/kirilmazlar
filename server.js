@@ -189,9 +189,24 @@ app.use('/api/products', productsRoutes.router);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'dist')));
+  // Static files with aggressive cache busting
+  app.use(express.static(path.join(__dirname, 'dist'), {
+    maxAge: 0, // No cache for static files
+    etag: false, // Disable etag
+    lastModified: false, // Disable last-modified
+    setHeaders: (res, path) => {
+      // Force no-cache for all files
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }));
   
   app.get('*', (req, res) => {
+    // Force no-cache for index.html
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
   });
 }
