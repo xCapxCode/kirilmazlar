@@ -114,7 +114,7 @@ export default defineConfig({
               return `images/[name]-v2-${timestamp}-${random}.[ext]`;
             }
             if (/css/i.test(ext)) {
-              return `css/[name]-v2-${timestamp}-${random}.[ext]`;
+              return `assets/css/[name]-v2-${timestamp}-${random}.[ext]`;
             }
             return `assets/[name]-v2-${timestamp}-${random}.[ext]`;
           }
