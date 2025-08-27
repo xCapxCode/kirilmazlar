@@ -97,26 +97,26 @@ export default defineConfig({
           },
           chunkFileNames: () => {
             const timestamp = Date.now();
-            const random = Math.random().toString(36).substring(2, 8);
-            return `js/chunk-${timestamp}-${random}.js`;
+            const random = Math.random().toString(36).substring(2, 15);
+            return `js/chunk-v2-${timestamp}-${random}.js`;
           },
           entryFileNames: () => {
             const timestamp = Date.now();
-            const random = Math.random().toString(36).substring(2, 8);
-            return `js/[name]-${timestamp}-${random}.js`;
+            const random = Math.random().toString(36).substring(2, 15);
+            return `js/[name]-v2-${timestamp}-${random}.js`;
           },
           assetFileNames: (assetInfo) => {
             const timestamp = Date.now();
-            const random = Math.random().toString(36).substring(2, 8);
+            const random = Math.random().toString(36).substring(2, 15);
             const info = assetInfo.name.split('.');
             const ext = info[info.length - 1];
             if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext)) {
-              return `images/[name]-${timestamp}-${random}.[ext]`;
+              return `images/[name]-v2-${timestamp}-${random}.[ext]`;
             }
             if (/css/i.test(ext)) {
-              return `css/[name]-${timestamp}-${random}.[ext]`;
+              return `css/[name]-v2-${timestamp}-${random}.[ext]`;
             }
-            return `assets/[name]-${timestamp}-${random}.[ext]`;
+            return `assets/[name]-v2-${timestamp}-${random}.[ext]`;
           }
         },
         external: []
