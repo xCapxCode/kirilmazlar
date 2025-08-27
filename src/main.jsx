@@ -14,10 +14,8 @@ import dataService from './services/dataService';
 // Storage Health Monitor - Future protection
 import './utils/storageHealthMonitor';
 
-// Temel verileri sağla - TEST_USERS KALDIRILDI
-// import { TEST_USERS } from './data/testUsers.js'; // KULLANMA
-
-// Storage'ı başlat ve temel verileri yükle
+// Test data initialization - Development için
+import { initializeAllTestData } from './utils/initializeTestData.js';
 
 // Debug info için
 import './utils/debugInfo';
@@ -33,6 +31,9 @@ async function initializeApp() {
 
     // DataService'i başlat - Temel data yapılarını kurar
     dataService.initializeData();
+
+    // Test verilerini initialize et (development için)
+    initializeAllTestData();
 
     // Cross-browser sync removed - unused service
 

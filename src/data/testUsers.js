@@ -1,5 +1,28 @@
-// Test kullanıcıları kaldırıldı - Gerçek kullanıcı sistemi kullanılıyor
-export const TEST_USERS = [];
+// Test kullanıcıları - Development için
+export const TEST_USERS = [
+  {
+    id: 'user-1',
+    username: 'admin',
+    email: 'admin@kirilmazlar.com',
+    password: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/VjPoyNdO2', // password: admin123
+    name: 'Admin User',
+    role: 'admin',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    lastLogin: null
+  },
+  {
+    id: 'user-2',
+    username: 'test',
+    email: 'test@example.com',
+    password: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/VjPoyNdO2', // password: admin123
+    name: 'Test User',
+    role: 'customer',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    lastLogin: null
+  }
+];
 
 export const TEST_BUSINESS = {
   id: 'business-1',
