@@ -281,7 +281,14 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Apply updated_at triggers
+-- Apply updated_at triggers (with DROP IF EXISTS to prevent conflicts)
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
+DROP TRIGGER IF EXISTS update_customers_updated_at ON customers;
+DROP TRIGGER IF EXISTS update_categories_updated_at ON categories;
+DROP TRIGGER IF EXISTS update_products_updated_at ON products;
+DROP TRIGGER IF EXISTS update_orders_updated_at ON orders;
+DROP TRIGGER IF EXISTS update_settings_updated_at ON settings;
+
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_customers_updated_at BEFORE UPDATE ON customers FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_categories_updated_at BEFORE UPDATE ON categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -303,7 +310,8 @@ $$ language 'plpgsql';
 -- Create sequence for order numbers
 CREATE SEQUENCE IF NOT EXISTS order_number_seq START 1;
 
--- Apply order number trigger
+-- Apply order number trigger (with DROP IF EXISTS to prevent conflicts)
+DROP TRIGGER IF EXISTS generate_order_number_trigger ON orders;
 CREATE TRIGGER generate_order_number_trigger BEFORE INSERT ON orders FOR EACH ROW EXECUTE FUNCTION generate_order_number();
 
 -- Function to update customer statistics
@@ -332,9 +340,10 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Apply customer stats trigger
-CREATE TRIGGER update_customer_stats_trigger 
-    AFTER INSERT OR UPDATE OR DELETE ON orders 
+-- Apply customer stats trigger (with DROP IF EXISTS to prevent conflicts)
+DROP TRIGGER IF EXISTS update_customer_stats_trigger ON orders;
+CREATE TRIGGER update_customer_stats_trigger
+    AFTER INSERT OR UPDATE OR DELETE ON orders
     FOR EACH ROW EXECUTE FUNCTION update_customer_stats();
 
 -- ===========================================

@@ -1,6 +1,4 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+/* Tailwind imports removed - using single entry point in tailwind.css */
 
 /* H1 Elements - Uniform font-size and margin */
 h1 {
